@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7806c8520b3afcd49b007e24e3f7132f, type: 3}
+  m_Name: Test Tileset
+  m_EditorClassIdentifier: 
+  Texture: {fileID: 2800000, guid: a70fd5b94a9943b49b8cf0af202874fc, type: 3}
+  tiles:
+  - Name: Tile
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 6}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 1
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 0
+    tileset: {fileID: 11400000}
+  - Name: Sand
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 0}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 1
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 1
+    tileset: {fileID: 11400000}
+  - Name: KRISHA
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 3}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 0
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 2
+    tileset: {fileID: 11400000}
+  - Name: Stone
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 9}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 1
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 3
+    tileset: {fileID: 11400000}
+  - Name: Bricks
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 12}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 1
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 4
+    tileset: {fileID: 11400000}
+  - Name: Concreate
+    Type: 1
+    VariationsCount: 5
+    Position: {x: 0, y: 15}
+    Size: {x: 2, y: 3}
+    BlendOverlap: 0
+    OverlapDepthIsIndex: 1
+    OverlapDepth: 5
+    tileset: {fileID: 11400000}
+  TileSize: {x: 8, y: 8}

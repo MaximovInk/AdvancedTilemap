@@ -19,15 +19,16 @@ namespace AdvancedTilemap.Lighting
         {
             meshFilter.sharedMesh = mesh;
         }
-        /*
-        public void GenMesh(float radius,float fade,float resolution,float intensity)
-        {
-            meshFilter.sharedMesh = Utilites.GenCircle(radius, Color.Lerp(Color.clear,Color.white, intensity), resolution, fade);
-        }
-        */
+
         public void SetMat(Material mat)
         {
             meshRenderer.sharedMaterial = mat;
+        }
+
+        public void SetColor(Color color)
+        {
+            if(meshRenderer != null && meshRenderer.sharedMaterial != null)
+            meshRenderer.sharedMaterial.color = color;
         }
 
     }

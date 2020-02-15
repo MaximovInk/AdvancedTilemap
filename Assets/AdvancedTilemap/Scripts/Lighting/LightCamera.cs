@@ -6,13 +6,17 @@ namespace AdvancedTilemap.Lighting
     [RequireComponent(typeof(Camera))]
     public class LightCamera : MonoBehaviour
     {
+        [SerializeField, HideInInspector]
         private Camera cam;
         public Camera RenderCamera;
         public Color Darkness = Color.black;
         public Transform Quad;
         public Vector2 Offset;
+        [SerializeField, HideInInspector]
         private Vector2 resolution;
-        private RenderTexture renderTexture;
+        [SerializeField, HideInInspector]
+        private RenderTexture RenderTexture;
+        public Material RenderTextureMaterial;
 
         private void OnEnable()
         {
@@ -26,9 +30,10 @@ namespace AdvancedTilemap.Lighting
             UpdateLightView();
         }
 
-        private void UpdateLightView()
+        public void UpdateLightView()
         {
-
+            resolution.x = Screen.width;
+            resolution.y = Screen.height;
 
             float cameraHeight = cam.orthographicSize * 2;
             Vector2 cameraSize = new Vector3(cam.aspect * cameraHeight, cameraHeight, 1);
@@ -42,25 +47,26 @@ namespace AdvancedTilemap.Lighting
             RenderCamera.orthographicSize = cam.orthographicSize;
             RenderCamera.orthographic = true;
 
-            if (renderTexture == null || renderTexture.width != Screen.width || renderTexture.height != Screen.height)
+            if (RenderTexture == null || RenderTexture.width != Screen.width || RenderTexture.height != Screen.height)
             {
-                renderTexture = new RenderTexture(Screen.width,Screen.height,0);
-                renderTexture.name = "_RenderTexture Instance";
+                RenderTexture = new RenderTexture(Screen.width, Screen.height, 0);
+                RenderTexture.name = "_RenderTexture Instance";
 
-                RenderCamera.targetTexture = renderTexture;
-                Quad.GetComponent<Renderer>().sharedMaterial.mainTexture = renderTexture;
+                RenderCamera.targetTexture = RenderTexture;
+
+                Quad.GetComponent<Renderer>().sharedMaterial = new Material( RenderTextureMaterial);
+                Quad.GetComponent<Renderer>().sharedMaterial.mainTexture = RenderTexture;
             }
+
         }
 
         private void Update()
         {
-            if (resolution.x != Screen.width || resolution.y != Screen.height)
+            if (((resolution.x != Screen.width || resolution.y != Screen.height) && Screen.width != 0 && Screen.height != 0))
             {
-                // do stuff
                 UpdateLightView();
-                resolution.x = Screen.width;
-                resolution.y = Screen.height;
-            }        
+            }
+
         }
     }
 }

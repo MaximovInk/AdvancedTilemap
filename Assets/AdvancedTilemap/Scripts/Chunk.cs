@@ -251,7 +251,6 @@ namespace AdvancedTilemap
 
         private void GenerateMesh()
         {
-            print("rebuild mesh");
 
             meshRebuild = false;
             meshData.Clear();
