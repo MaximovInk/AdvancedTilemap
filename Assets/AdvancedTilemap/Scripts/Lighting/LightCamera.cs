@@ -47,7 +47,7 @@ namespace AdvancedTilemap.Lighting
             RenderCamera.orthographicSize = cam.orthographicSize;
             RenderCamera.orthographic = true;
 
-            if (RenderTexture == null || RenderTexture.width != Screen.width || RenderTexture.height != Screen.height)
+            if ((RenderTexture == null || RenderTexture.width != Screen.width || RenderTexture.height != Screen.height) && (Screen.width > 0 && Screen.height > 0))
             {
                 RenderTexture = new RenderTexture(Screen.width, Screen.height, 0);
                 RenderTexture.name = "_RenderTexture Instance";

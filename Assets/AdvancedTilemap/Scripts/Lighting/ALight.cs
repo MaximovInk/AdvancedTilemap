@@ -11,12 +11,6 @@ namespace AdvancedTilemap.Lighting
         public Material MaskMaterial;
 
         public Color OverlayColor = Color.white;
-        [Range(0f,1f)]
-        public float Fade = 0.95f;
-        [Range(0f,1f)]
-        public float Intensity = 1f;
-
-        public int SmoothIterations = 0;
 
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
@@ -54,6 +48,18 @@ namespace AdvancedTilemap.Lighting
         [SerializeField, HideInInspector]
         protected Mesh maskMesh;
 
+
+        #region Temp_data
+
+        protected int[] triangles;
+        protected Vector3[] vertices;
+        protected Vector2[] uv;
+
+        protected List<Vector2> points;
+
+        #endregion
+
+
         private void LateUpdate()
         {
             updateMeshTimer += Time.deltaTime;
@@ -61,7 +67,7 @@ namespace AdvancedTilemap.Lighting
             if (updateMeshTimer > UpdateMeshRate)
             {
                 updateMeshTimer = 0f;
-                BeginUpdateMesh();
+                CalculatePoints();
             }
         }
 
@@ -71,21 +77,19 @@ namespace AdvancedTilemap.Lighting
             meshRenderer = GetComponent<MeshRenderer>();
             mesh = new Mesh();
             maskMesh = new Mesh();
-            BeginUpdateMesh();
+            CalculatePoints();
         }
 
         private void Update()
         {
-            BeginUpdateMesh();
-            EndUpdateMesh();
+            CalculatePoints();
+            GenerateMesh();
+            meshRenderer?.sharedMaterial?.SetColor("_Color", OverlayColor);
         }
 
-        protected virtual void EndUpdateMesh()
+        protected virtual void GenerateMesh()
         {
-            ApplyMesh();
-            ApplyToMask();
-            meshRenderer?.sharedMaterial?.SetColor("_Color", OverlayColor);
-            
+
         }
 
         protected virtual void SmoothPoints(ref List<Vector2> points)
@@ -93,19 +97,39 @@ namespace AdvancedTilemap.Lighting
            
         }
 
-        protected virtual void BeginUpdateMesh()
+        protected virtual void CalculatePoints()
         {
            
         }
 
-        protected void ApplyToMask()
+        protected virtual void ApplyData()
+        {
+            mesh.Clear();
+            maskMesh.Clear();
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.uv = uv;
+            mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+            maskMesh.vertices = vertices;
+            maskMesh.triangles = triangles;
+            maskMesh.uv = uv;
+            maskMesh.RecalculateNormals();
+            mesh.RecalculateTangents();
+
+            ApplyToMesh();
+            ApplyToMask();
+        }
+
+        private void ApplyToMask()
         {
             lightMask.SetMesh(maskMesh);
             lightMask.SetMat(MaskMaterial);
             lightMask.SetColor(OverlayColor);
         }
 
-        protected void ApplyMesh()
+        private void ApplyToMesh()
         {
             meshFilter.sharedMesh = mesh;
             meshRenderer.sharedMaterial = MeshMaterial;
