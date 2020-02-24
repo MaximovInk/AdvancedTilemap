@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using AdvancedTilemap.Liquid;
 
 namespace AdvancedTilemap
 {
@@ -38,10 +39,13 @@ namespace AdvancedTilemap
         private bool colliderRebuild = false;
         private bool lightUpdate = false;
         private bool lightRebuild = false;
+        private bool fluidRebuild = false;
 
         private MaterialPropertyBlock prop;
 
         private PolygonCollider2D polygonCollider2D;
+        [HideInInspector, SerializeField]
+        private LiquidChunk liquidChunk;
 
         #region public_methods
 
@@ -60,7 +64,35 @@ namespace AdvancedTilemap
                 }
             }
             return true;
-            //return lightChunk.IsEmpty();
+        }
+
+        public void UpdateLiquid()
+        {
+            if (Layer.LiquidEnabled)
+            {
+                liquidChunk = GetComponentInChildren<LiquidChunk>();
+
+                if (liquidChunk == null)
+                {
+                    //create new liquid chunk
+                    var go = new GameObject();
+                    go.transform.SetParent(transform);
+                    go.transform.localPosition = Vector3.zero;
+                    go.transform.localScale = Vector3.one;
+                    go.transform.localRotation = Quaternion.identity;
+
+                    liquidChunk = go.AddComponent<LiquidChunk>();
+                    liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE);
+                }
+               
+            }
+            else
+            {
+                if (liquidChunk != null)
+                {
+                    DestroyImmediate(liquidChunk.gameObject);
+                }
+            }
         }
 
         public void UpdateColliderProperties()
@@ -132,6 +164,7 @@ namespace AdvancedTilemap
             UpdateColliderComponent();
             UpdateFlags();
             UpdateRenderer();
+            UpdateLiquid();
         }
 
         public void UpdateColliderComponent()
@@ -143,7 +176,9 @@ namespace AdvancedTilemap
                 DestroyImmediate(polygonCollider2D);
             if (polygonCollider2D == null && Layer.ColliderEnabled)
             {
-                polygonCollider2D = gameObject.AddComponent<PolygonCollider2D>();
+                polygonCollider2D = gameObject.GetComponent<PolygonCollider2D>();
+                if(polygonCollider2D == null)
+                    polygonCollider2D = gameObject.AddComponent<PolygonCollider2D>();
                 colliderRebuild = true;
             }
         }
@@ -152,9 +187,22 @@ namespace AdvancedTilemap
         {
             if (meshRebuild)
                 GenerateMesh();
-            if (colliderRebuild)
+            if (colliderRebuild || meshRebuild)
                 GenerateCollider();
             meshData.ApplyToMesh();
+        }
+
+        public float GetLiquid(int gx, int gy)
+        {
+            return liquidChunk.GetLiquid(gx,gy);
+        }
+        public void SetLiquid(int gx, int gy,float value)
+        {
+            liquidChunk.SetLiquid(gx, gy,value);
+        }
+        public void AddLiquid(int gx, int gy,float value)
+        {
+            liquidChunk.AddLiguid(gx, gy,value);
         }
 
         public byte GetBitmask(int gx, int gy)
@@ -536,6 +584,9 @@ namespace AdvancedTilemap
             {
                 UpdateMesh();
             }
+
+            if (liquidChunk != null && liquidChunk.genMesh)
+                liquidChunk.ApplyData();
         }
 
         #endregion
@@ -545,9 +596,11 @@ namespace AdvancedTilemap
         private void GenerateCollider()
         {
             colliderRebuild = false;
+
+
             if (polygonCollider2D == null)
                 return;
-
+            polygonCollider2D.pathCount = 0;
             List<ColliderSegment> segments = GetSegments();
             List<List<Vector2>> paths = FindPaths(segments);
 

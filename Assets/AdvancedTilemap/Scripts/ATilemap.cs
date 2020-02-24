@@ -39,6 +39,8 @@ namespace AdvancedTilemap
 
         private float loadTimer = 0;
 
+        private SpriteRenderer previewTextureBrush;
+
         #region events
 
         public event TileDataChanged OnTileDataChanged;
@@ -48,6 +50,45 @@ namespace AdvancedTilemap
         #endregion
 
         #region public methods
+
+        public void GenPreviewTextureBrush(int sizeX =1,int sizeY = 1)
+        {
+            if (previewTextureBrush == null)
+            {
+                var go = new GameObject();
+                go.name = "_PreviewTextureBrushInstance";
+                previewTextureBrush = go.AddComponent<SpriteRenderer>();
+            }
+            previewTextureBrush.gameObject.hideFlags = HideFlags.HideAndDontSave;
+
+            /*var tex = Layers[layer].Tileset.Texture;
+             var rect = Layers[layer].Tileset.GetTile(id).GetTexPreview();
+             rect = new Rect(rect.x*tex.width,rect.y* tex.height,rect.width* tex.width,rect.height* tex.height);
+
+             var sprite = Sprite.Create(tex, rect, new Vector2(0,0), Layers[layer].Tileset.PPU);*/
+            var sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(1,1,1,1), new Vector2(0, 0), 1);
+
+            previewTextureBrush.sharedMaterial = Layers[0].Material;
+            previewTextureBrush.sortingOrder = 9999;
+            previewTextureBrush.color = new Color(1,1,1,0.5f);
+            previewTextureBrush.sprite = sprite;
+            previewTextureBrush.transform.localScale = new Vector3(sizeX,sizeY,1);
+        }
+
+        public void SetActivePreviewBrush(bool value)
+        {
+            if (previewTextureBrush == null)
+                return;
+            previewTextureBrush.gameObject.SetActive(value);
+        }
+
+        public bool UpdatePreviewBrushPos(Vector2 position)
+        {
+            if (previewTextureBrush == null)
+                return false;
+            previewTextureBrush.transform.position = (Vector2)Utilites.GetGridPosition(new Vector2(position.x+0.5f - previewTextureBrush.transform.localScale.x / 2f, position.y+0.5f-previewTextureBrush.transform.localScale.y/2f));
+            return true;
+        }
 
         public void TrimAll()
         {
@@ -94,30 +135,37 @@ namespace AdvancedTilemap
             return layer;
         }
 
-        public int GetAirDistance(int gx ,int gy, int layer)
+        public void SetLiquid(int gx,int gy, float value,int layer)
         {
-            int i = 0;
-            for (; i < maxLightDistance; i++)
-            {
-                if (GetTile(gx+i+1, gy, layer) == 0)
-                {
-                    break;
-                }
-                if (GetTile(gx-i-1, gy, layer) == 0)
-                {
-                    break;
-                }
-                if (GetTile(gx, gy-i-1, layer) == 0)
-                {
-                    break;
-                }
-                if (GetTile(gx, gy+i+1, layer) == 0)
-                {
-                    break;
-                }
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
+            int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
+            if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
+            if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
 
-            }
-            return i;
+            chunk.SetLiquid(chunkGridX, chunkGridY,value);
+        }
+
+        public void AddLiquid(int gx, int gy, float value, int layer)
+        {
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
+            int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
+            if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
+            if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
+
+            chunk.AddLiquid(chunkGridX, chunkGridY,value);
+        }
+
+        public float GetLiquid(int gx, int gy, int layer)
+        {
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
+            int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
+            if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
+            if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
+
+            return chunk.GetLiquid(chunkGridX, chunkGridY);
         }
 
         public void SetTile(int gx, int gy, byte idx, int layer)
@@ -431,8 +479,8 @@ namespace AdvancedTilemap
                 {
                     UnloadAllChunks();
 
-                    var min = Utils.GetGridPosition(Utils.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
-                    var max = Utils.GetGridPosition(Utils.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
+                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
+                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
                     LoadChunks(min, max);
                     loadTimer = 0;
                 }

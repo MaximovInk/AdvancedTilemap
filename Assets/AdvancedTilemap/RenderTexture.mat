@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: RenderTexture
   m_Shader: {fileID: 4800000, guid: 2ed97566f6a372741af194b344084e75, type: 3}
-  m_ShaderKeywords: _SAMPLES_LOW
+  m_ShaderKeywords: ETC1_EXTERNAL_ALPHA _SAMPLES_LOW
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

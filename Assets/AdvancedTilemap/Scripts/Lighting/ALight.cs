@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using AdvancedTilemap.Extra;
 
 namespace AdvancedTilemap.Lighting
 {
-    [ExecuteInEditMode]
-    [RequireComponent(typeof(MeshFilter),typeof(MeshRenderer))]
+    [ExecuteAlways]
+    [RequireComponent(typeof(MeshFilter),typeof(MeshRenderer),typeof(TransformChangedEvent))]
     public class ALight : MonoBehaviour
     {
         public Material MeshMaterial;
@@ -14,6 +15,7 @@ namespace AdvancedTilemap.Lighting
 
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
+        private TransformChangedEvent transformObserver;
 
         protected LightMask lightMask { 
             get 
@@ -48,7 +50,6 @@ namespace AdvancedTilemap.Lighting
         [SerializeField, HideInInspector]
         protected Mesh maskMesh;
 
-
         #region Temp_data
 
         protected int[] triangles;
@@ -59,32 +60,45 @@ namespace AdvancedTilemap.Lighting
 
         #endregion
 
+        private void OnEnable()
+        {
+            mesh = new Mesh();
+            maskMesh = new Mesh();
+            meshFilter = GetComponent<MeshFilter>();
+            meshRenderer = GetComponent<MeshRenderer>();
+            transformObserver = GetComponent<TransformChangedEvent>();
+            if (transformObserver == null)
+            {
+                transformObserver = gameObject.AddComponent<TransformChangedEvent>();
+            }
+            transformObserver.TransformChanged += CreateLight;
+            mesh = new Mesh();
+            maskMesh = new Mesh();
+            CreateLight();
+        }
 
-        private void LateUpdate()
+        private void OnDisable()
+        {
+            transformObserver.TransformChanged -= CreateLight;
+        }
+
+        public void CreateLight()
+        {
+            CalculatePoints();
+            GenerateMesh();
+            ApplyData();
+            meshRenderer?.sharedMaterial?.SetColor("_Color", OverlayColor);
+        }
+
+        private void Update()
         {
             updateMeshTimer += Time.deltaTime;
 
             if (updateMeshTimer > UpdateMeshRate)
             {
                 updateMeshTimer = 0f;
-                CalculatePoints();
+                CreateLight();
             }
-        }
-
-        private void OnEnable()
-        {
-            meshFilter = GetComponent<MeshFilter>();
-            meshRenderer = GetComponent<MeshRenderer>();
-            mesh = new Mesh();
-            maskMesh = new Mesh();
-            CalculatePoints();
-        }
-
-        private void Update()
-        {
-            CalculatePoints();
-            GenerateMesh();
-            meshRenderer?.sharedMaterial?.SetColor("_Color", OverlayColor);
         }
 
         protected virtual void GenerateMesh()
@@ -125,14 +139,14 @@ namespace AdvancedTilemap.Lighting
         private void ApplyToMask()
         {
             lightMask.SetMesh(maskMesh);
-            lightMask.SetMat(MaskMaterial);
+            lightMask.SetMat(new Material(MaskMaterial));
             lightMask.SetColor(OverlayColor);
         }
 
         private void ApplyToMesh()
         {
             meshFilter.sharedMesh = mesh;
-            meshRenderer.sharedMaterial = MeshMaterial;
+            meshRenderer.sharedMaterial = new Material(MeshMaterial);
         }
     }
 }

@@ -14,6 +14,7 @@ namespace AdvancedTilemap
         public PhysicsMaterial2D PhysicsMaterial2D { get { return physMaterial; } set { physMaterial = value; UpdateColliderProperties(); } }
         public bool IsTrigger { get { return isTrigger; } set { isTrigger = value; UpdateColliderProperties(); } }
         public bool ColliderEnabled { get => colliderGeneration; set { colliderGeneration = value; UpdateCollider(); } }
+        public bool LiquidEnabled { get => fluidEnabled; set { fluidEnabled = value; UpdateWater(); } }
         public Material Material { get => material; set { material = value; UpdateRenderer(true, true, true); } }
         public Color TintColor { get => tintColor; set { tintColor = value; UpdateRenderer(color: true); } }
         public string Tag { get { return _tag; } set { _tag = value; UpdateChunksFlags(); } }
@@ -33,6 +34,8 @@ namespace AdvancedTilemap
         private Material material;
         [HideInInspector, SerializeField]
         private bool colliderGeneration = false;
+        [HideInInspector, SerializeField]
+        private bool fluidEnabled = false;
 
         [HideInInspector,SerializeField]
         public int Index;
@@ -62,6 +65,14 @@ namespace AdvancedTilemap
             BuildChunkCache();
         }
 
+        private void UpdateWater()
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.UpdateLiquid();
+            }
+        }
+
         public void CalculateBounds()
         {
 
@@ -78,10 +89,10 @@ namespace AdvancedTilemap
                 bounds.Encapsulate(max - Vector2.one * 0.5f);
             }
 
-            MinGridX = Utils.GetGridX(bounds.min);
-            MinGridY = Utils.GetGridY(bounds.min);
-            MaxGridX = Utils.GetGridX(bounds.min);
-            MaxGridY = Utils.GetGridY(bounds.min);
+            MinGridX = Utilites.GetGridX(bounds.min);
+            MinGridY = Utilites.GetGridY(bounds.min);
+            MaxGridX = Utilites.GetGridX(bounds.min);
+            MaxGridY = Utilites.GetGridY(bounds.min);
         }
 
         public void RefreshAll(bool immediate = false)

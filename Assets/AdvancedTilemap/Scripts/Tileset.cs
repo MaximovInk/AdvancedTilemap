@@ -19,6 +19,8 @@ namespace AdvancedTilemap
         public bool OverlapDepthIsIndex = true;
         public int OverlapDepth;
 
+     
+
         public Tileset tileset;
 
         public Vector2 GetTexPos(int variation = 0)
@@ -76,6 +78,7 @@ namespace AdvancedTilemap
     [CreateAssetMenu(menuName = "TileTerrain2D")]
     public class Tileset : ScriptableObject
     {
+        public int PPU = 8;
         public int ZLenght => tiles.Max(n=>n.OverlapDepth);
 
         public Texture2D Texture;
@@ -104,9 +107,5 @@ namespace AdvancedTilemap
             return tiles.Find(n => n.Name == name);
         }
 
-        public byte GetTileAt(byte idx)
-        {
-            return (byte)(idx + 1);
-        }
     }
 }

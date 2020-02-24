@@ -25,6 +25,35 @@ namespace AdvancedTilemap.Lighting
             }
         }
 
+        protected override void GenerateMesh()
+        {
+            int vertexCount = points.Count + 1;
+            vertices = new Vector3[vertexCount];
+            triangles = new int[(vertexCount - 2) * 3];
+            uv = new Vector2[vertexCount];
+
+            vertices[0] = Vector3.zero;
+            uv[0] = new Vector2(0.5f, 0.5f);
+
+            for (int i = 0; i < vertexCount - 1; i++)
+            {
+                var point = transform.InverseTransformPoint(points[i]);
+
+                vertices[i + 1] = point;
+
+                uv[i + 1] = new Vector2(point.x / (Radius * 2) + 0.5f, point.y / (Radius * 2) + 0.5f);
+
+                if (i < vertexCount - 2)
+                {
+                    triangles[i * 3] = 0;
+                    triangles[i * 3 + 1] = i + 1;
+                    triangles[i * 3 + 2] = i + 2;
+                }
+            }
+
+            //ApplyData();
+        }
+
         protected override void CalculatePoints()
         {
             if (MaskMaterial == null)
@@ -59,37 +88,10 @@ namespace AdvancedTilemap.Lighting
 
                 points.Add(point);
                 distances.Add(distance);
-                Debug.DrawLine(transform.position, point, Color.red);
 
             }
 
             SmoothPoints(ref points);
-
-            int vertexCount = points.Count + 1;
-            vertices = new Vector3[vertexCount];
-            triangles = new int[(vertexCount - 2) * 3];
-            uv = new Vector2[vertexCount];
-
-            vertices[0] = Vector3.zero;
-            uv[0] = new Vector2(0.5f, 0.5f);
-
-            for (int i = 0; i < vertexCount - 1; i++)
-            {
-                var point = transform.InverseTransformPoint(points[i]);
-
-                vertices[i + 1] = point;
-
-                uv[i + 1] = new Vector2(point.x / (Radius*2) + 0.5f, point.y / (Radius*2) + 0.5f);
-
-                if (i < vertexCount - 2)
-                {
-                    triangles[i * 3] = 0;
-                    triangles[i * 3 + 1] = i + 1;
-                    triangles[i * 3 + 2] = i + 2;
-                }
-            }
-
-            ApplyData();
         }
     }
     

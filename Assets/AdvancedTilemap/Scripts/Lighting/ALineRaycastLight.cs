@@ -35,7 +35,7 @@ namespace AdvancedTilemap.Lighting
                 }
                 
 
-                Debug.DrawLine((Vector2)transform.position+new Vector2(i*stepSize, 0), (Vector2)transform.position+ point, Color.red);
+                //Debug.DrawLine((Vector2)transform.position+new Vector2(i*stepSize, 0), (Vector2)transform.position+ point, Color.red);
 
                 points.Add(new Vector2(i*stepSize, 0));
                 points.Add(point);
@@ -53,7 +53,7 @@ namespace AdvancedTilemap.Lighting
                 }
 
 
-                Debug.DrawLine((Vector2)transform.position + new Vector2(i * stepSize + stepSize, 0), (Vector2)transform.position + point, Color.red);
+                //Debug.DrawLine((Vector2)transform.position + new Vector2(i * stepSize + stepSize, 0), (Vector2)transform.position + point, Color.red);
 
                 points.Add(new Vector2(i * stepSize + stepSize, 0));
                 points.Add(point);
@@ -85,7 +85,7 @@ namespace AdvancedTilemap.Lighting
                 triangles[trig + 5] = vert + 1;
             }
 
-            ApplyData();
+            //ApplyData();
         }
 	}
 }

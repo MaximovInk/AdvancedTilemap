@@ -92,7 +92,15 @@ namespace AdvancedTilemap
             CalculateIndexes();
             EditorUtility.SetDirty(target);
         }
-        
+
+        private void GenTexture(bool erase = false)
+        {
+            tilemap.GenPreviewTextureBrush( erase ? eraseSize : brushSize, erase ? eraseSize : brushSize);
+            tilemap.SetActivePreviewBrush(true);
+        }
+
+        private bool shiftBefore;
+
         private void OnSceneGUI()
         {
             if (Tools.current != Tool.None && Tools.current != Tool.Rect)
@@ -107,6 +115,8 @@ namespace AdvancedTilemap
             if (selectedLayer < 0 || selectedLayer > tilemap.Layers.Count || selectedTile == 0)
                 return;
 
+           
+
             Event e = Event.current;
             int controlID = GUIUtility.GetControlID(FocusType.Passive);
             HandleUtility.AddDefaultControl(controlID);
@@ -120,22 +130,41 @@ namespace AdvancedTilemap
                     e.Use();
                     break;
             }
+            Vector3 mousePosition = e.mousePosition;
+            Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+            mousePosition = ray.origin;
+
+            if (!tilemap.UpdatePreviewBrushPos(mousePosition))
+            {
+                GenTexture();
+            }
+
+            if (!e.shift && shiftBefore)
+            {
+                shiftBefore = false;
+                GenTexture(false);
+            }
+
+            if (e.shift && !shiftBefore)
+            {
+                shiftBefore = true;
+                GenTexture(true);
+            }
+
 
             if ((e.type == EventType.MouseDrag || e.type == EventType.MouseDown) && e.button == 0)
             {
                 GUIUtility.hotControl = controlID;
 
-                Vector3 mousePosition = e.mousePosition;
-                Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
-                mousePosition = ray.origin;
                 Vector2 localPos = tilemap.transform.InverseTransformPoint(mousePosition);
 
-                var gridX = Utils.GetGridX(localPos);
-                var gridY = Utils.GetGridY(localPos);
+                var gridX = Utilites.GetGridX(localPos);
+                var gridY = Utilites.GetGridY(localPos);
 
                 if (e.shift)
                 {
-                    
+
+                   
                     int brushMin = eraseSize / 2;
                     int brushMax = eraseSize - brushMin;
 
@@ -143,16 +172,14 @@ namespace AdvancedTilemap
                     {
                         for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
                         {
-                            tilemap.SetColor(ix, iy, Color.white, selectedLayer);
-                            tilemap.Erase(ix, iy, selectedLayer);
+                            tilemap.SetLiquid(ix, iy, 0, selectedLayer);
+                            //tilemap.SetColor(ix, iy, Color.white, selectedLayer);
+                            //tilemap.Erase(ix, iy, selectedLayer);
                         }
                     }
                 }
                 else if(e.control)
                 {
-                    //tilemap.SetLight(gridX, gridY,Color.white,selectedLayer);
-                    //tilemap.Layers[selectedLayer].UpdateLight();
-
                     selectedTile = tilemap.GetTile(gridX, gridY, selectedLayer);
                 }
                 else
@@ -165,8 +192,9 @@ namespace AdvancedTilemap
                     {
                         for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
                         {
-                            tilemap.SetTile(ix, iy, selectedTile,selectedLayer);
-                            tilemap.SetColor(ix, iy, paintColor, selectedLayer);
+                            tilemap.SetLiquid(ix,iy,1,selectedLayer);
+                           // tilemap.SetTile(ix, iy, selectedTile,selectedLayer);
+                           // tilemap.SetColor(ix, iy, paintColor, selectedLayer);
                         }
                     }
                 }
@@ -179,6 +207,11 @@ namespace AdvancedTilemap
         private Vector2 scrollPos;
 
         private static bool showHelp = false;
+
+        private void OnDisable()
+        {
+            tilemap.SetActivePreviewBrush(false);
+        }
 
         public override void OnInspectorGUI()
         {
@@ -249,7 +282,9 @@ namespace AdvancedTilemap
 
                             if (GUILayout.Button("", GUILayout.Width(40), GUILayout.Height(40)))
                             {
-                                selectedTile = tilemap.Layers[selectedLayer].Tileset.GetTileAt((byte)i);
+                                selectedTile = (byte)(i+1);
+                                GenTexture();
+                               
                             }
 
                             var rect = GUILayoutUtility.GetLastRect();
@@ -266,10 +301,13 @@ namespace AdvancedTilemap
                     GUILayout.EndScrollView();
 
                     paintColor = EditorGUILayout.ColorField(paintColor);
-
+                    EditorGUI.BeginChangeCheck();
                     brushSize = EditorGUILayout.IntSlider(brushSize, 1, 64);
                     eraseSize = EditorGUILayout.IntSlider(eraseSize, 1, 64);
-
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        GenTexture();
+                    }
                     GUILayout.EndVertical();
                 }
 
@@ -280,97 +318,10 @@ namespace AdvancedTilemap
                 tilemap.Layers[selectedLayer].LayerMask = EditorGUILayout.LayerField( "LayerMask:", tilemap.Layers[selectedLayer].LayerMask);
                 tilemap.Layers[selectedLayer].PhysicsMaterial2D = EditorGUILayout.ObjectField( "Name:", tilemap.Layers[selectedLayer].PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
                 tilemap.Layers[selectedLayer].IsTrigger = EditorGUILayout.Toggle( "Is trigger:", tilemap.Layers[selectedLayer].IsTrigger);
-                tilemap.Layers[selectedLayer].ColliderEnabled = EditorGUILayout.Toggle( "Collider enabled:", tilemap.Layers[selectedLayer].ColliderEnabled);
+                tilemap.Layers[selectedLayer].ColliderEnabled = EditorGUILayout.Toggle( "Collider enabled:", tilemap.Layers[selectedLayer].ColliderEnabled); 
+                tilemap.Layers[selectedLayer].LiquidEnabled = EditorGUILayout.Toggle("Liquid enabled:", tilemap.Layers[selectedLayer].LiquidEnabled);
                 tilemap.Layers[selectedLayer].Tag = EditorGUILayout.TagField("Tag:", tilemap.Layers[selectedLayer].Tag);
 
-
-                /*EditorGUI.indentLevel++;
-
-                EditorGUI.DrawRect(new Rect(rect.x, rect.y + 18, rect.width, rect.height - 18), Color.white);
-                EditorGUI.HelpBox(new Rect(rect.x, rect.y + 18, rect.width, rect.height - 18), "", MessageType.None);
-
-                tilemap.Layers[index].name = EditorGUI.TextField(rect0, "Name:", tilemap.Layers[index].name);
-                tilemap.Layers[index].Tileset = EditorGUI.ObjectField(rect1, "Name:", tilemap.Layers[index].Tileset, typeof(Tileset), false) as Tileset;
-                tilemap.Layers[index].Material = EditorGUI.ObjectField(rect2, "Name:", tilemap.Layers[index].Material, typeof(Material), false) as Material;
-                tilemap.Layers[index].TintColor = EditorGUI.ColorField(rect3, "Tint color:", tilemap.Layers[index].TintColor);
-                tilemap.Layers[index].LayerMask = EditorGUI.LayerField(rect4, "LayerMask:", tilemap.Layers[index].LayerMask);
-                //tilemap.Layers[index].ZOrder = EditorGUI.FloatField(rect5, "Z order:", tilemap.Layers[index].ZOrder);
-                tilemap.Layers[index].PhysicsMaterial2D = EditorGUI.ObjectField(rect5, "Name:", tilemap.Layers[index].PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
-                tilemap.Layers[index].IsTrigger = EditorGUI.Toggle(rect6, "Is trigger:", tilemap.Layers[index].IsTrigger);
-                tilemap.Layers[index].ColliderEnabled = EditorGUI.Toggle(rect7, "Collider enabled:", tilemap.Layers[index].ColliderEnabled);
-                tilemap.Layers[index].Tag = EditorGUI.TagField(rect8, "Tag:", tilemap.Layers[index].Tag);
-
-                EditorGUI.indentLevel--;*/
-
-
-                /*
-                mapBox = EditorGUILayout.Foldout(mapBox, "Map", true);
-                if (mapBox)
-                {
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-
-                    GUILayout.Label("Map properties:");
-                    EditorGUILayout.Space();
-
-                    //tilemap.Tag = EditorGUILayout.TagField("Tag:", tilemap.Tag);
-                    tilemap.DisplayChunksInHierarchy = GUILayout.Toggle(tilemap.DisplayChunksInHierarchy, "Display chunks in hierarchy");
-                    tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim:", tilemap.AutoTrim);
-
-                    if (GUILayout.Button("Refresh map"))
-                    {
-                        tilemap.RefreshAll(true);
-                    }
-                    if (GUILayout.Button("Clear all"))
-                    {
-                        tilemap.Clear();
-                    }
-                    GUILayout.EndVertical();
-                }
-
-                rendererBox = EditorGUILayout.Foldout(rendererBox, "Renderer", true);
-                if (rendererBox)
-                {
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-
-                    GUILayout.Label("Renderer properties:");
-                    EditorGUILayout.Space();
-
-                    tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order:", tilemap.SortingOrder);
-                    //tilemap.Material = EditorGUILayout.ObjectField("Material:", tilemap.Material, typeof(Material), false) as Material;
-                    //tilemap.TintColor = EditorGUILayout.ColorField("Color:", tilemap.TintColor);
-                    GUILayout.EndVertical();
-                }
-
-                colliderBox = EditorGUILayout.Foldout(colliderBox, "Collider", true);
-                if (colliderBox)
-                {
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-
-                    GUILayout.Label("Collider properties:");
-                    EditorGUILayout.Space();
-
-                    //tilemap.ColliderEnabled = EditorGUILayout.Toggle("Collider generation:", tilemap.ColliderEnabled);
-                    //tilemap.IsTrigger = GUILayout.Toggle(tilemap.IsTrigger, "Is trigger");
-                    //tilemap.LayerMask = EditorGUILayout.LayerField("Layer", tilemap.LayerMask);
-                    //tilemap.PhysicsMaterial2D = (PhysicsMaterial2D)EditorGUILayout.ObjectField("Physics material 2D:", tilemap.PhysicsMaterial2D, typeof(PhysicsMaterial2D), false);
-
-                    GUILayout.EndVertical();
-                }
-
-                lightingBox = EditorGUILayout.Foldout(lightingBox, "Lighing", true);
-                if (lightingBox)
-                {
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-                    GUILayout.Label("Lighting properties:");
-                    EditorGUILayout.Space();
-
-                    if (GUILayout.Button("Clear all"))
-                    {
-                        tilemap.Clear();
-                    }
-                    GUILayout.EndVertical();
-                }
-                */
 
             }
 
