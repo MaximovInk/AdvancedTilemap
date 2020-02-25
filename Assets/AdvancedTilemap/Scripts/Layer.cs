@@ -1,6 +1,5 @@
-﻿using System;
+﻿using AdvancedTilemap.Liquid;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace AdvancedTilemap
@@ -14,8 +13,9 @@ namespace AdvancedTilemap
         public PhysicsMaterial2D PhysicsMaterial2D { get { return physMaterial; } set { physMaterial = value; UpdateColliderProperties(); } }
         public bool IsTrigger { get { return isTrigger; } set { isTrigger = value; UpdateColliderProperties(); } }
         public bool ColliderEnabled { get => colliderGeneration; set { colliderGeneration = value; UpdateCollider(); } }
-        public bool LiquidEnabled { get => fluidEnabled; set { fluidEnabled = value; UpdateWater(); } }
+        public bool LiquidEnabled { get => liquidEnabled; set { liquidEnabled = value; UpdateLiquid(); } }
         public Material Material { get => material; set { material = value; UpdateRenderer(true, true, true); } }
+        public Material LiquidMaterial { get => liquidMaterial; set { liquidMaterial = value; UpdateLiquid(); } }
         public Color TintColor { get => tintColor; set { tintColor = value; UpdateRenderer(color: true); } }
         public string Tag { get { return _tag; } set { _tag = value; UpdateChunksFlags(); } }
         public float ZOrder;
@@ -33,9 +33,11 @@ namespace AdvancedTilemap
         [HideInInspector, SerializeField]
         private Material material;
         [HideInInspector, SerializeField]
+        private Material liquidMaterial;
+        [HideInInspector, SerializeField]
         private bool colliderGeneration = false;
         [HideInInspector, SerializeField]
-        private bool fluidEnabled = false;
+        private bool liquidEnabled = false;
 
         [HideInInspector,SerializeField]
         public int Index;
@@ -65,7 +67,7 @@ namespace AdvancedTilemap
             BuildChunkCache();
         }
 
-        private void UpdateWater()
+        private void UpdateLiquid()
         {
             foreach (var chunk in chunksCache)
             {
@@ -201,6 +203,260 @@ namespace AdvancedTilemap
             return chunk;
         }
 
-       
+        private void Update()
+        {
+            if (!Application.isPlaying)
+                return;
+
+        }
+
+
+        #region liquid_physics
+
+        private bool GetSettled(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return false;
+            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
+            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
+            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
+            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
+            return chunk.GetSettled(chunkGridX, chunkGridY);
+        }
+
+        private void SetSettled(int x, int y, bool value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return;
+            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
+            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
+            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
+            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
+            chunk.SetSettled(chunkGridX, chunkGridY,value);
+        }
+
+        private byte GetSettleCount(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return 0;
+            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
+            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
+            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
+            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
+            return chunk.GetSettleCount(chunkGridX, chunkGridY);
+        }
+
+        private void SetSettleCount(int x, int y, byte value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return;
+            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
+            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
+            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
+            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
+            chunk.SetSettleCount(chunkGridX, chunkGridY, value);
+        }
+
+        private float CalculateVerticalFlowValue(float remainingLiquid, float destination)
+        {
+            float sum = remainingLiquid + destination;
+            float value = 0;
+
+            if (sum <= LiquidChunk.MAX_VALUE)
+            {
+                value = LiquidChunk.MAX_VALUE;
+            }
+            else if (sum < 2 * LiquidChunk.MAX_VALUE + LiquidChunk.MAX_COMPRESSION)
+            {
+                value = (LiquidChunk.MAX_VALUE * LiquidChunk.MAX_VALUE + sum * LiquidChunk.MAX_COMPRESSION) / (LiquidChunk.MAX_VALUE + LiquidChunk.MAX_COMPRESSION);
+            }
+            else
+            {
+                value = (sum + LiquidChunk.MAX_COMPRESSION) / 2f;
+            }
+
+            return value;
+        }
+
+        public void SimulateLiquid(Vector2Int min, Vector2Int max)
+        {
+            for (int y = min.y; y < max.y; ++y)
+            {
+                for (int x = min.x; x < max.x; ++x)
+                {
+                    SimulateCell(x, y);
+                }
+            }
+        }
+
+        private bool IsEmpty(int x, int y)
+        {
+            return Tilemap.GetTile(x, y, Index) == 0;
+        }
+
+        private float GetLiquid(int x, int y) =>
+            Tilemap.GetLiquid(x, y, Index);
+
+        private void SetLiquid(int x, int y, float value)=>
+            Tilemap.SetLiquid(x, y, value, Index);
+
+        private void AddLiquid(int x, int y, float value) =>
+            Tilemap.AddLiquid(x, y, value, Index);
+
+        private void SimulateCell(int x, int y)
+        {
+            if (!IsEmpty(x,y))
+            {
+                //Debug.Log("!isempty");
+                SetLiquid(x, y, 0);
+                return;
+            }
+            var liquidValue = Tilemap.GetLiquid(x, y, Index);
+
+            if (liquidValue == 0)
+                return;
+            if (GetSettled(x, y))
+                return;
+            if (liquidValue < LiquidChunk.MIN_VALUE)
+            {
+                SetLiquid(x, y, 0);
+                return;
+            }
+
+            var startValue = liquidValue;
+            var remainingValue = startValue;
+            var flow = 0f;
+            //Bottom
+            if (IsEmpty(x, y - 1))
+            {
+                var bLiquid = GetLiquid(x, y - 1);
+                flow = CalculateVerticalFlowValue(startValue, bLiquid) - bLiquid;
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(LiquidChunk.MAX_FLOW, startValue))
+                    flow = Mathf.Min(LiquidChunk.MAX_FLOW, startValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x, y - 1, false);
+                    SetLiquid(x, y, remainingValue);
+                    AddLiquid(x, y - 1, flow);
+                }
+            }
+
+            if (remainingValue < LiquidChunk.MIN_VALUE)
+            {
+                AddLiquid(x,y,-remainingValue);
+                return;
+            }
+            //Left
+            if (IsEmpty(x - 1, y))
+            {
+                flow = (remainingValue - GetLiquid(x - 1, y)) / 4f;
+                if (flow > LiquidChunk.MIN_FLOW)
+                    flow *= LiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x-1, y, false);
+                    AddLiquid(x, y, -flow);
+                    AddLiquid(x - 1, y, flow);
+                }
+            }
+
+            if (remainingValue < LiquidChunk.MIN_VALUE)
+            {
+                SetLiquid(x, y, 0);
+                return;
+            }
+            //Right
+
+            if (IsEmpty(x + 1, y))
+            {
+                flow = (remainingValue - GetLiquid(x + 1, y)) / 3f;
+                if (flow > LiquidChunk.MIN_FLOW)
+                    flow *= LiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x+1, y, false);
+                    AddLiquid(x, y,-flow);
+                    AddLiquid(x + 1, y, flow);
+                }
+            }
+
+            if (remainingValue < LiquidChunk.MIN_VALUE)
+            {
+                SetLiquid(x, y, 0);
+                return;
+            }
+            //Top
+
+            if (IsEmpty(x,y+1))
+            {
+                flow = remainingValue - CalculateVerticalFlowValue(remainingValue, GetLiquid(x, y + 1));
+                if (flow > LiquidChunk.MIN_FLOW)
+                    flow *= LiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(LiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x, y + 1, false);
+                    SetLiquid(x, y, GetLiquid(x, y) - flow);
+                    SetLiquid(x, y + 1, GetLiquid(x, y + 1) + flow);
+                }
+            }
+
+            if (remainingValue < LiquidChunk.MIN_VALUE)
+            {
+                SetLiquid(x, y, 0);
+                return;
+            }
+
+            if (startValue == remainingValue)
+            {
+                var newSettleCount = (byte)(GetSettleCount(x, y) + 1);
+                SetSettleCount(x, y, newSettleCount);
+                if (newSettleCount >= 10)
+                {
+                    SetSettled(x, y, true);
+                }
+            }
+            else
+            {
+                SetSettled(x + 1, y, false);
+
+                SetSettled(x - 1, y, false);
+
+                SetSettled(x, y + 1, false);
+
+                SetSettled(x, y - 1, false);
+            }
+
+        }
+
+        #endregion
     }
 }

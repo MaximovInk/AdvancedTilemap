@@ -26,6 +26,7 @@ namespace AdvancedTilemap
         private ATilemap tilemap;
         public static byte selectedTile = 1;
         public static Color32 paintColor = Color.white;
+        public static bool waterPlacing = false;
         public static int brushSize = 1;
         public static int eraseSize = 1;
 
@@ -172,9 +173,14 @@ namespace AdvancedTilemap
                     {
                         for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
                         {
-                            tilemap.SetLiquid(ix, iy, 0, selectedLayer);
-                            //tilemap.SetColor(ix, iy, Color.white, selectedLayer);
-                            //tilemap.Erase(ix, iy, selectedLayer);
+                            if (waterPlacing)
+                            {
+                                tilemap.SetLiquid(ix, iy, 0, selectedLayer);
+                                continue;
+                            }
+
+                            tilemap.SetColor(ix, iy, Color.white, selectedLayer);
+                            tilemap.Erase(ix, iy, selectedLayer);
                         }
                     }
                 }
@@ -192,9 +198,14 @@ namespace AdvancedTilemap
                     {
                         for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
                         {
-                            tilemap.SetLiquid(ix,iy,1,selectedLayer);
-                           // tilemap.SetTile(ix, iy, selectedTile,selectedLayer);
-                           // tilemap.SetColor(ix, iy, paintColor, selectedLayer);
+                            if (waterPlacing)
+                            {
+                                tilemap.AddLiquid(ix, iy, 0.05f, selectedLayer);
+                                continue;
+                            }
+
+                            tilemap.SetTile(ix, iy, selectedTile,selectedLayer);
+                            tilemap.SetColor(ix, iy, paintColor, selectedLayer);
                         }
                     }
                 }
@@ -244,9 +255,24 @@ namespace AdvancedTilemap
                 tilemap.ClearAll();
             }
 
+            tilemap.LiquidStepsDuration = EditorGUILayout.FloatField("Liquid steps duration",tilemap.LiquidStepsDuration);
+
+            tilemap.ZBlockOffset = EditorGUILayout.FloatField("Z block types offset", tilemap.ZBlockOffset);
+
+            tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
+
+            tilemap.chunkLoadingOffset = EditorGUILayout.IntField("Chunk loading offset", tilemap.chunkLoadingOffset);
+            tilemap.ChunkLoadingDuration = EditorGUILayout.FloatField("Chunk loading rate", tilemap.ChunkLoadingDuration);
+            tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
+            tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
+
+
+
             tempLayer = EditorGUILayout.Popup("Selected layer:", tempLayer, layersNames);
 
             selectedLayer = tempLayer - 1;
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             if (selectedLayer >= 0 && selectedLayer < tilemap.Layers.Count)
             {
@@ -271,8 +297,10 @@ namespace AdvancedTilemap
                     }
 
                     GUILayout.Label("Paint:");
-                    scrollPos = GUILayout.BeginScrollView(scrollPos);
 
+
+                    waterPlacing = EditorGUILayout.Toggle("Placing water", waterPlacing);
+                    scrollPos = GUILayout.BeginScrollView(scrollPos);
                     GUILayout.BeginHorizontal();
 
                     if (tilemap.Layers[selectedLayer].Tileset != null)
@@ -314,6 +342,7 @@ namespace AdvancedTilemap
                 tilemap.Layers[selectedLayer].name = EditorGUILayout.TextField( "Name:", tilemap.Layers[selectedLayer].name);
                 tilemap.Layers[selectedLayer].Tileset = EditorGUILayout.ObjectField( "Tileset:", tilemap.Layers[selectedLayer].Tileset, typeof(Tileset), false) as Tileset;
                 tilemap.Layers[selectedLayer].Material = EditorGUILayout.ObjectField( "Material:", tilemap.Layers[selectedLayer].Material, typeof(Material), false) as Material;
+                tilemap.Layers[selectedLayer].LiquidMaterial = EditorGUILayout.ObjectField("LiquidMaterial:", tilemap.Layers[selectedLayer].LiquidMaterial, typeof(Material), false) as Material;
                 tilemap.Layers[selectedLayer].TintColor = EditorGUILayout.ColorField( "Tint color:", tilemap.Layers[selectedLayer].TintColor);
                 tilemap.Layers[selectedLayer].LayerMask = EditorGUILayout.LayerField( "LayerMask:", tilemap.Layers[selectedLayer].LayerMask);
                 tilemap.Layers[selectedLayer].PhysicsMaterial2D = EditorGUILayout.ObjectField( "Name:", tilemap.Layers[selectedLayer].PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
@@ -325,7 +354,7 @@ namespace AdvancedTilemap
 
             }
 
-
+            EditorGUILayout.EndVertical();
         }
     }
 }

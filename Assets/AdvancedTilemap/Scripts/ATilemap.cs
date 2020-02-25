@@ -13,15 +13,16 @@ namespace AdvancedTilemap
     public class ATilemap : MonoBehaviour
     {
         public const int CHUNK_SIZE = 32;
+        public const int MIN_LIQUID_Y = -100;
 
         public bool AutoTrim = true;
 
         public bool DisplayChunksInHierarchy { get { return displayChunksHierarchy; } set { displayChunksHierarchy = value; UpdateChunksFlags(); } }
         public int SortingOrder { get { return sortingOrder; } set { sortingOrder = value; UpdateRenderer(); } }
+        public float LiquidStepsDuration = 0.1f;
+        public float ChunkLoadingDuration = 0.5f;
 
         public List<Layer> Layers = new List<Layer>();
-
-        public int maxLightDistance = 10;
 
         [SerializeField]
         private bool displayChunksHierarchy = true;
@@ -30,14 +31,10 @@ namespace AdvancedTilemap
 
         public float ZBlockOffset = 0.1f;
 
-        public Vector2Int RenderMin;
-        public Vector2Int RenderMax;
-
         public int chunkLoadingOffset = 2;
 
-        public float loadRate = 0.5f;
-
         private float loadTimer = 0;
+        private float liquidTimer = 0;
 
         private SpriteRenderer previewTextureBrush;
 
@@ -422,7 +419,7 @@ namespace AdvancedTilemap
                 {
                     var chunk = Layers[i].chunksCache.ElementAt(j).Value;
 
-                    chunk.Disable();
+                    chunk.Unload();
 
                       
                 }
@@ -439,7 +436,7 @@ namespace AdvancedTilemap
                 {
                     var chunk = Layers[i].chunksCache.ElementAt(j).Value;
 
-                    chunk.Enable();
+                    chunk.Load();
 
                 }
             }
@@ -450,7 +447,22 @@ namespace AdvancedTilemap
 
             for (int i = 0; i < Layers.Count; i++)
             {
-                for (int x = min.x; x < max.x; x++)
+                for (int j = 0; j < Layers[i].chunksCache.Count; j++)
+                {
+                    var chunk = Layers[i].chunksCache.ElementAt(j).Value;
+                    var x = chunk.GridPosX;
+                    var y = chunk.GridPosY;
+                    if (x >= min.x && x <= max.x && y >= min.y && y <= max.y)
+                    {
+                        chunk.Load();
+                    }
+                    else
+                    {
+                        chunk.Unload();
+                    }
+                }
+
+                /*for (int x = min.x; x < max.x; x++)
                 {
                     for (int y = min.y; y < max.y; y++)
                     {
@@ -458,36 +470,51 @@ namespace AdvancedTilemap
 
                         if (chunk != null)
                         {
-                            chunk.Enable();
+                            chunk.Load();
 
                         }
-
-
                     }
-                }
+                }*/
             }
         }
 
         private void Update()
         {
-            loadTimer += Time.deltaTime;
-
-
             if (Application.isPlaying)
             {
-                if (loadTimer > loadRate)
+                loadTimer += Time.deltaTime;
+                if (loadTimer > ChunkLoadingDuration)
                 {
-                    UnloadAllChunks();
+                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
+                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
 
-                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
-                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE*chunkLoadingOffset));
                     LoadChunks(min, max);
-                    loadTimer = 0;
+                    loadTimer -= ChunkLoadingDuration;
+                }
+                liquidTimer += Time.deltaTime;
+                if (liquidTimer > LiquidStepsDuration)
+                {
+                    liquidTimer -= LiquidStepsDuration;
+
+                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
+                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
+
+                    for (int i = 0; i < Layers.Count; i++)
+                    {
+                        if (!Layers[i].LiquidEnabled)
+                            continue;
+
+                        Layers[i].SimulateLiquid(min, max);
+                    }
                 }
             }
 
 
+
+
         }
         #endregion
+
+        
     }
 }

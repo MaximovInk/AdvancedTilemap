@@ -84,7 +84,7 @@ namespace AdvancedTilemap
                     liquidChunk = go.AddComponent<LiquidChunk>();
                     liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE);
                 }
-               
+                liquidChunk.SetMaterial(Layer.LiquidMaterial);
             }
             else
             {
@@ -192,6 +192,26 @@ namespace AdvancedTilemap
             meshData.ApplyToMesh();
         }
 
+        public byte GetSettleCount(int x, int y)
+        {
+            return liquidChunk.GetSettleCount(x,y);
+        }
+
+        public void SetSettleCount(int x, int y,byte value)
+        {
+            liquidChunk.SetSettleCount(x, y,value);
+        }
+
+        public bool GetSettled(int x ,int y)
+        {
+            return liquidChunk.GetSettled(x,y);
+        }
+
+        public void SetSettled(int x, int y,bool value)
+        {
+            liquidChunk.SetSettled(x,y,value);
+        }
+
         public float GetLiquid(int gx, int gy)
         {
             return liquidChunk.GetLiquid(gx,gy);
@@ -202,7 +222,7 @@ namespace AdvancedTilemap
         }
         public void AddLiquid(int gx, int gy,float value)
         {
-            liquidChunk.AddLiguid(gx, gy,value);
+            liquidChunk.AddLiquid(gx, gy,value);
         }
 
         public byte GetBitmask(int gx, int gy)
@@ -282,14 +302,20 @@ namespace AdvancedTilemap
             return colors[gx + gy * ATilemap.CHUNK_SIZE];
         }
 
-        public void Enable()
+        public void Load()
         {
+            //gameObject.SetActive(true);
             meshRenderer.enabled = true;
+            if (Layer.LiquidEnabled)
+                liquidChunk.gameObject.SetActive(true);
         }
 
-        public void Disable()
+        public void Unload()
         {
+            //gameObject.SetActive(false);
             meshRenderer.enabled = false;
+            if (Layer.LiquidEnabled)
+                liquidChunk.gameObject.SetActive(false);
         }
 
         #endregion
