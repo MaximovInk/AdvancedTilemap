@@ -22,8 +22,8 @@ struct Input {
 
  void vert(inout appdata_full v, out Input o)
     {
-      o.vertColors= v.color.rgb;    // grab vertex colors from appdata
-      o.uv_MainTex = v.texcoord;   // maybe need this
+      o.vertColors= v.color.rgb;
+      o.uv_MainTex = v.texcoord;
  
     }
  
