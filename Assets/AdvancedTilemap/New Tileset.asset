@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7806c8520b3afcd49b007e24e3f7132f, type: 3}
   m_Name: New Tileset
   m_EditorClassIdentifier: 
+  PPU: 8
   Texture: {fileID: 2800000, guid: 505d765302d015040a307f96c8788e71, type: 3}
   tiles:
   - Name: Tile
@@ -26,7 +27,7 @@ MonoBehaviour:
   - Name: Tile
     Type: 1
     VariationsCount: 0
-    Position: {x: 0, y: 0}
+    Position: {x: 2, y: 0}
     Size: {x: 2, y: 3}
     BlendOverlap: 1
     OverlapDepthIsIndex: 1
