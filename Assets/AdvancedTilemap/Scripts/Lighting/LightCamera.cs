@@ -58,6 +58,8 @@ namespace AdvancedTilemap.Lighting
                 Quad.GetComponent<Renderer>().sharedMaterial.mainTexture = RenderTexture;
             }
 
+            Quad.GetComponent<Renderer>().sharedMaterial.SetColor("_Darkness", Darkness);
+
         }
 
         private void Update()

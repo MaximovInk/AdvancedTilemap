@@ -1,5 +1,6 @@
 ﻿using AdvancedTilemap.Liquid;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace AdvancedTilemap
@@ -208,11 +209,18 @@ namespace AdvancedTilemap
             if (!Application.isPlaying)
                 return;
 
+            foreach (var chunk in chunksCache)
+            {
+                if (chunk.Value.Loaded != chunk.Value.gameObject.activeSelf)
+                {
+                    chunk.Value.gameObject.SetActive(chunk.Value.Loaded);
+                }
+            }
         }
 
 
         #region liquid_physics
-
+        
         private bool GetSettled(int x, int y)
         {
             var chunk = GetOrCreateChunk(x, y, false);
@@ -235,30 +243,6 @@ namespace AdvancedTilemap
             if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
             if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
             chunk.SetSettled(chunkGridX, chunkGridY,value);
-        }
-
-        private byte GetSettleCount(int x, int y)
-        {
-            var chunk = GetOrCreateChunk(x, y, false);
-            if (chunk == null)
-                return 0;
-            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
-            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
-            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
-            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
-            return chunk.GetSettleCount(chunkGridX, chunkGridY);
-        }
-
-        private void SetSettleCount(int x, int y, byte value)
-        {
-            var chunk = GetOrCreateChunk(x, y, false);
-            if (chunk == null)
-                return;
-            int chunkGridX = (x < 0 ? -x - 1 : x) % ATilemap.CHUNK_SIZE;
-            int chunkGridY = (y < 0 ? -y - 1 : y) % ATilemap.CHUNK_SIZE;
-            if (x < 0) chunkGridX = ATilemap.CHUNK_SIZE - 1 - chunkGridX;
-            if (y < 0) chunkGridY = ATilemap.CHUNK_SIZE - 1 - chunkGridY;
-            chunk.SetSettleCount(chunkGridX, chunkGridY, value);
         }
 
         private float CalculateVerticalFlowValue(float remainingLiquid, float destination)
@@ -284,18 +268,49 @@ namespace AdvancedTilemap
 
         public void SimulateLiquid(Vector2Int min, Vector2Int max)
         {
-            for (int y = min.y; y < max.y; ++y)
+            Parallel.For(min.x,max.x,(int x)=> {
+                for (int y = min.y; y < max.y; ++y)
+                {
+                    //for (int x = min.x; x < max.x; ++x)
+                    //{
+                        SimulateCell(x, y);
+                    //}
+                }
+            });
+            /*for (int y = min.y; y < max.y; ++y)
             {
                 for (int x = min.x; x < max.x; ++x)
                 {
                     SimulateCell(x, y);
                 }
-            }
+            }*/
+
+            Parallel.For(min.x, max.x, (int x) => {
+                for (int y = min.y; y < max.y; ++y)
+                {
+                    if (GetLiquid(x, y) < LiquidChunk.MIN_VALUE)
+                    {
+                        SetSettled(x, y, false);
+                    }
+                }
+            });
+
+            /*for (int y = min.y,i = 0; y < max.y; ++y)
+            {
+                for (int x = min.x; x < max.x; ++x,i++)
+                {
+                    if (GetLiquid(x, y) < LiquidChunk.MIN_VALUE)
+                    {
+                        SetSettled(x, y, false);
+                    }
+                }
+            }*/
+
         }
 
         private bool IsEmpty(int x, int y)
         {
-            return Tilemap.GetTile(x, y, Index) == 0;
+            return Tilemap.GetTile(x, y, Index) == 0 && ATilemap.MIN_LIQUID_Y < y;
         }
 
         private float GetLiquid(int x, int y) =>
@@ -309,13 +324,14 @@ namespace AdvancedTilemap
 
         private void SimulateCell(int x, int y)
         {
-            if (!IsEmpty(x,y))
+            if (!IsEmpty(x, y))
             {
-                //Debug.Log("!isempty");
-                SetLiquid(x, y, 0);
+                if (GetLiquid(x, y) != 0)
+                    SetLiquid(x, y, 0);
                 return;
             }
-            var liquidValue = Tilemap.GetLiquid(x, y, Index);
+
+            var liquidValue = GetLiquid(x, y);
 
             if (liquidValue == 0)
                 return;
@@ -330,11 +346,15 @@ namespace AdvancedTilemap
             var startValue = liquidValue;
             var remainingValue = startValue;
             var flow = 0f;
+
             //Bottom
             if (IsEmpty(x, y - 1))
             {
                 var bLiquid = GetLiquid(x, y - 1);
                 flow = CalculateVerticalFlowValue(startValue, bLiquid) - bLiquid;
+                if (bLiquid > 0 && flow > LiquidChunk.MIN_FLOW)
+                    flow *= LiquidChunk.FLOW_SPEED;
+
                 flow = Mathf.Max(flow, 0);
                 if (flow > Mathf.Min(LiquidChunk.MAX_FLOW, startValue))
                     flow = Mathf.Min(LiquidChunk.MAX_FLOW, startValue);
@@ -344,8 +364,9 @@ namespace AdvancedTilemap
                     remainingValue -= flow;
 
                     SetSettled(x, y - 1, false);
-                    SetLiquid(x, y, remainingValue);
+                    AddLiquid(x, y, -flow);
                     AddLiquid(x, y - 1, flow);
+
                 }
             }
 
@@ -368,16 +389,16 @@ namespace AdvancedTilemap
                 if (flow != 0)
                 {
                     remainingValue -= flow;
-
-                    SetSettled(x-1, y, false);
+                    SetSettled(x - 1, y, false);
                     AddLiquid(x, y, -flow);
                     AddLiquid(x - 1, y, flow);
+
                 }
             }
 
             if (remainingValue < LiquidChunk.MIN_VALUE)
             {
-                SetLiquid(x, y, 0);
+                AddLiquid(x, y, -remainingValue);
                 return;
             }
             //Right
@@ -395,21 +416,21 @@ namespace AdvancedTilemap
                 if (flow != 0)
                 {
                     remainingValue -= flow;
-
-                    SetSettled(x+1, y, false);
+                    SetSettled(x + 1, y, false);
                     AddLiquid(x, y,-flow);
                     AddLiquid(x + 1, y, flow);
+
                 }
             }
 
             if (remainingValue < LiquidChunk.MIN_VALUE)
             {
-                SetLiquid(x, y, 0);
+                AddLiquid(x, y, -remainingValue);
                 return;
             }
             //Top
 
-            if (IsEmpty(x,y+1))
+            if (IsEmpty(x, y + 1))
             {
                 flow = remainingValue - CalculateVerticalFlowValue(remainingValue, GetLiquid(x, y + 1));
                 if (flow > LiquidChunk.MIN_FLOW)
@@ -424,25 +445,21 @@ namespace AdvancedTilemap
                     remainingValue -= flow;
 
                     SetSettled(x, y + 1, false);
-                    SetLiquid(x, y, GetLiquid(x, y) - flow);
-                    SetLiquid(x, y + 1, GetLiquid(x, y + 1) + flow);
+                    AddLiquid(x,y,-flow);
+                    AddLiquid(x, y+1, flow);
+
                 }
             }
 
             if (remainingValue < LiquidChunk.MIN_VALUE)
             {
-                SetLiquid(x, y, 0);
+                AddLiquid(x, y, -remainingValue);
                 return;
             }
 
-            if (startValue == remainingValue)
+            if (startValue-remainingValue < LiquidChunk.STABLE_FLOW)
             {
-                var newSettleCount = (byte)(GetSettleCount(x, y) + 1);
-                SetSettleCount(x, y, newSettleCount);
-                if (newSettleCount >= 10)
-                {
-                    SetSettled(x, y, true);
-                }
+                SetSettled(x, y, true);
             }
             else
             {
@@ -454,6 +471,26 @@ namespace AdvancedTilemap
 
                 SetSettled(x, y - 1, false);
             }
+
+            /* if (startValue == remainingValue)
+             {
+                 var newSettleCount = (byte)(GetSettleCount(x, y) + 1);
+                 SetSettleCount(x, y, newSettleCount);
+                 if (newSettleCount >= 10)
+                 {
+                     SetSettled(x, y, true);
+                 }
+             }
+             else
+             {
+                 SetSettled(x + 1, y, false);
+
+                 SetSettled(x - 1, y, false);
+
+                 SetSettled(x, y + 1, false);
+
+                 SetSettled(x, y - 1, false);
+             }*/
 
         }
 

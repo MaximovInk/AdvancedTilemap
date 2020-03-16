@@ -200,7 +200,7 @@ namespace AdvancedTilemap
                         {
                             if (waterPlacing)
                             {
-                                tilemap.AddLiquid(ix, iy, 0.05f, selectedLayer);
+                                tilemap.AddLiquid(ix, iy, 0.1f, selectedLayer);
                                 continue;
                             }
 
@@ -266,7 +266,8 @@ namespace AdvancedTilemap
             tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
             tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
 
-
+            tilemap.LiquidMinColor = EditorGUILayout.ColorField("Liquid min color:", tilemap.LiquidMinColor);
+            tilemap.LiquidMaxColor = EditorGUILayout.ColorField("Liquid max color:", tilemap.LiquidMaxColor);
 
             tempLayer = EditorGUILayout.Popup("Selected layer:", tempLayer, layersNames);
 

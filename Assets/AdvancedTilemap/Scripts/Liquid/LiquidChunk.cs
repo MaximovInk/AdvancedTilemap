@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace AdvancedTilemap.Liquid
 {
@@ -9,13 +10,13 @@ namespace AdvancedTilemap.Liquid
 		private float[] data;
 		[HideInInspector, SerializeField]
 		private bool[] settledData;
-		[HideInInspector, SerializeField]
-		private byte[] settleCount;
 
 		private MeshFilter meshFilter;
 		private MeshRenderer meshRenderer;
 
 		private MeshData meshData;
+
+		public Chunk Chunk;
 
 		public const float MAX_VALUE = 1F;
 		public const float MIN_VALUE = 0.005F;
@@ -27,6 +28,8 @@ namespace AdvancedTilemap.Liquid
 
 		public const float FLOW_SPEED = 1F;
 
+		public const float STABLE_FLOW = 0.0001F;
+
 		private void OnEnable()
 		{
 			if (meshData == null)
@@ -36,21 +39,25 @@ namespace AdvancedTilemap.Liquid
 				meshFilter = gameObject.GetComponent<MeshFilter>();
 			if (meshRenderer == null)
 				meshRenderer = gameObject.GetComponent<MeshRenderer>();
+			if (Chunk == null)
+				Chunk = GetComponentInParent<Chunk>();
 		}
 
-		public void Init(int w,int h)
+		public void Init(int w,int h,Chunk chunk)
 		{
 			if (meshFilter == null)
 				meshFilter = gameObject.AddComponent<MeshFilter>();
 			if (meshRenderer == null)
 				meshRenderer = gameObject.AddComponent<MeshRenderer>();
 
-			data = new float[w*h];
+			Chunk = chunk;
 			settledData = new bool[w * h];
-			settleCount = new byte[w * h];
+			data = new float[w * h];
 		}
 
-		public bool genMesh = false;
+		public bool meshRebuild = false;
+
+
 
 		public bool GetSettled(int x, int y)
 		{
@@ -59,28 +66,18 @@ namespace AdvancedTilemap.Liquid
 
 		public void SetSettled(int x, int y,bool value)
 		{
-			if (!value)
-				SetSettleCount(x, y, 0);
 
 			settledData[x + y * ATilemap.CHUNK_SIZE] = value;
-		}
 
-
-		public byte GetSettleCount(int x, int y)
-		{
-			return settleCount[x + y * ATilemap.CHUNK_SIZE];
-		}
-
-		public void SetSettleCount(int x, int y, byte value)
-		{
-			settleCount[x + y * ATilemap.CHUNK_SIZE] = value;
+			meshRebuild = true;
 		}
 
 		public void AddLiquid(int x, int y, float value)
 		{
-			data[x + y * ATilemap.CHUNK_SIZE] = Mathf.Clamp(data[x + y * ATilemap.CHUNK_SIZE]+value,0,MAX_VALUE);
+			data[x + y * ATilemap.CHUNK_SIZE] += value;
 			settledData[x + y * ATilemap.CHUNK_SIZE] = false;
-			genMesh = true;
+
+			meshRebuild = true;
 		}
 
 		public float GetLiquid(int x, int y)
@@ -90,24 +87,28 @@ namespace AdvancedTilemap.Liquid
 
 		public void SetLiquid(int x, int y, float value)
 		{
-			data[x + y * ATilemap.CHUNK_SIZE] = Mathf.Clamp(value,0,MAX_VALUE);
-			genMesh = true;
+			meshRebuild = true;
+			data[x + y * ATilemap.CHUNK_SIZE] = value;
 		}
 
-		private void GenMesh()
+		public void GenMesh()
 		{
-			genMesh = false;
+			meshRebuild = false;
 
 			meshData.Clear();
 
-			int c = 0;
 			for (int i = 0; i < data.Length; i++)
 			{
 				if (data[i] > 0)
 				{
-					var ix = i % ATilemap.CHUNK_SIZE;
-					var iy = i / ATilemap.CHUNK_SIZE;
-					meshData.AddSquare(Vector2.zero, Vector2.one, ix, iy, ix + 1f, iy + data[i], 0, 0, 0, 0, 0, Color.white); c++;
+					int ix = i % ATilemap.CHUNK_SIZE;
+					int iy = i / ATilemap.CHUNK_SIZE;
+					float val = Mathf.Clamp01(data[i]);
+
+					var topEmpty = Chunk.Layer.Tilemap.GetLiquid(ix+Chunk.GridPosX,iy+1+Chunk.GridPosY, (Chunk.Layer.Index)) == 0;
+
+					Color color = Color.Lerp(Chunk.Layer.Tilemap.LiquidMinColor, Chunk.Layer.Tilemap.LiquidMaxColor, data[i] / 4f);
+					meshData.AddSquare(Vector2.zero, Vector2.one, ix, iy, ix + 1f,iy+ (topEmpty ? val : 1), 0, 0, 0, 0, 0, color);
 				}
 			}
 		}
@@ -122,12 +123,20 @@ namespace AdvancedTilemap.Liquid
 
 		public void ApplyData()
 		{
-			//if(genMesh)
-				GenMesh();
-
 			meshData.ApplyToMesh();
 
 			meshFilter.mesh = meshData.GetMesh();
+		}
+
+		private void LateUpdate()
+		{
+
+
+			if (meshRebuild)
+			{
+				GenMesh();
+				ApplyData();
+			}
 		}
 	}
 }

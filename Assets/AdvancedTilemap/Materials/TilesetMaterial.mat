@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: TilesetMaterial
-  m_Shader: {fileID: 4800000, guid: 00ea5e3d432177844817041cf88d2ad3, type: 3}
+  m_Shader: {fileID: 4800000, guid: 6916a99562da5b445a9084b66626ae14, type: 3}
   m_ShaderKeywords: ETC1_EXTERNAL_ALPHA _ALPHATEST_ON _GLOSSYREFLECTIONS_OFF _SPECULARHIGHLIGHTS_OFF
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

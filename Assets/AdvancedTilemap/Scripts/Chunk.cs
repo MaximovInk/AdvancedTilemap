@@ -37,15 +37,14 @@ namespace AdvancedTilemap
         private bool isDirty = false;
         private bool meshRebuild = false;
         private bool colliderRebuild = false;
-        private bool lightUpdate = false;
-        private bool lightRebuild = false;
-        private bool fluidRebuild = false;
 
         private MaterialPropertyBlock prop;
 
         private PolygonCollider2D polygonCollider2D;
         [HideInInspector, SerializeField]
         private LiquidChunk liquidChunk;
+
+        public bool Loaded = false;
 
         #region public_methods
 
@@ -77,12 +76,12 @@ namespace AdvancedTilemap
                     //create new liquid chunk
                     var go = new GameObject();
                     go.transform.SetParent(transform);
-                    go.transform.localPosition = Vector3.zero;
+                    go.transform.localPosition = new Vector3(0,0,0.05f);
                     go.transform.localScale = Vector3.one;
                     go.transform.localRotation = Quaternion.identity;
 
                     liquidChunk = go.AddComponent<LiquidChunk>();
-                    liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE);
+                    liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE,this);
                 }
                 liquidChunk.SetMaterial(Layer.LiquidMaterial);
             }
@@ -192,7 +191,7 @@ namespace AdvancedTilemap
             meshData.ApplyToMesh();
         }
 
-        public byte GetSettleCount(int x, int y)
+        /*public byte GetSettleCount(int x, int y)
         {
             return liquidChunk.GetSettleCount(x,y);
         }
@@ -200,7 +199,7 @@ namespace AdvancedTilemap
         public void SetSettleCount(int x, int y,byte value)
         {
             liquidChunk.SetSettleCount(x, y,value);
-        }
+        }*/
 
         public bool GetSettled(int x ,int y)
         {
@@ -276,7 +275,6 @@ namespace AdvancedTilemap
             tiles[index] = tileIdx;
             var tile = Layer.Tileset.GetTile(tileIdx);
             AddBlock(gx, gy, tile, colors[gx + gy * ATilemap.CHUNK_SIZE]);
-            lightUpdate = true;
         }
 
         public void Erase(int gx, int gy)
@@ -288,7 +286,6 @@ namespace AdvancedTilemap
             colliderRebuild = true;
 
             tiles[gx + gy * ATilemap.CHUNK_SIZE] = 0;
-            lightUpdate = true;
         }
 
         public void SetColor(int gx, int gy, Color32 color)
@@ -304,18 +301,20 @@ namespace AdvancedTilemap
 
         public void Load()
         {
+            Loaded = true;
             //gameObject.SetActive(true);
-            meshRenderer.enabled = true;
+            /*meshRenderer.enabled = true;
             if (Layer.LiquidEnabled)
-                liquidChunk.gameObject.SetActive(true);
+                liquidChunk.gameObject.SetActive(true);*/
         }
 
         public void Unload()
         {
-            //gameObject.SetActive(false);
-            meshRenderer.enabled = false;
+            Loaded = false;
+           // gameObject.SetActive(false);
+            /*meshRenderer.enabled = false;
             if (Layer.LiquidEnabled)
-                liquidChunk.gameObject.SetActive(false);
+                liquidChunk.gameObject.SetActive(false);*/
         }
 
         #endregion
@@ -606,13 +605,10 @@ namespace AdvancedTilemap
             if (!meshRenderer.enabled)
                 return;
 
-            if (isDirty || meshRebuild || colliderRebuild || lightUpdate || lightRebuild)
+            if (isDirty || meshRebuild || colliderRebuild)
             {
                 UpdateMesh();
             }
-
-            if (liquidChunk != null && liquidChunk.genMesh)
-                liquidChunk.ApplyData();
         }
 
         #endregion

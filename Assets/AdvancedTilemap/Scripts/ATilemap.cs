@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace AdvancedTilemap
 {
@@ -12,7 +14,7 @@ namespace AdvancedTilemap
     [ExecuteAlways]
     public class ATilemap : MonoBehaviour
     {
-        public const int CHUNK_SIZE = 32;
+        public const int CHUNK_SIZE = 16;
         public const int MIN_LIQUID_Y = -100;
 
         public bool AutoTrim = true;
@@ -32,6 +34,9 @@ namespace AdvancedTilemap
         public float ZBlockOffset = 0.1f;
 
         public int chunkLoadingOffset = 2;
+
+        public Color LiquidMinColor;
+        public Color LiquidMaxColor;
 
         private float loadTimer = 0;
         private float liquidTimer = 0;
@@ -57,19 +62,19 @@ namespace AdvancedTilemap
                 previewTextureBrush = go.AddComponent<SpriteRenderer>();
             }
             previewTextureBrush.gameObject.hideFlags = HideFlags.HideAndDontSave;
-
+            //MAYBE ADD PREVIEW TEXTURE
             /*var tex = Layers[layer].Tileset.Texture;
              var rect = Layers[layer].Tileset.GetTile(id).GetTexPreview();
              rect = new Rect(rect.x*tex.width,rect.y* tex.height,rect.width* tex.width,rect.height* tex.height);
 
              var sprite = Sprite.Create(tex, rect, new Vector2(0,0), Layers[layer].Tileset.PPU);*/
             var sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(1,1,1,1), new Vector2(0, 0), 1);
-
-            previewTextureBrush.sharedMaterial = Layers[0].Material;
+            previewTextureBrush.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
             previewTextureBrush.sortingOrder = 9999;
             previewTextureBrush.color = new Color(1,1,1,0.5f);
             previewTextureBrush.sprite = sprite;
             previewTextureBrush.transform.localScale = new Vector3(sizeX,sizeY,1);
+
         }
 
         public void SetActivePreviewBrush(bool value)
@@ -134,7 +139,17 @@ namespace AdvancedTilemap
 
         public void SetLiquid(int gx,int gy, float value,int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            if (!Layers[layer].LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer["+layer+"] disabled");
+                return;
+            }
+
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy, false);
+
+            if (chunk == null)
+                return;
+
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -145,7 +160,17 @@ namespace AdvancedTilemap
 
         public void AddLiquid(int gx, int gy, float value, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            if (!Layers[layer].LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer[" + layer + "] disabled");
+                return;
+            }
+
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
+
+            if (chunk == null)
+                return;
+
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -156,7 +181,17 @@ namespace AdvancedTilemap
 
         public float GetLiquid(int gx, int gy, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            if (!Layers[layer].LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer[" + layer + "] disabled");
+                return 0;
+            }
+
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy, false);
+
+            if (chunk == null)
+                return 0;
+
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -198,7 +233,10 @@ namespace AdvancedTilemap
 
         public byte GetTile(int gx, int gy, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
+
+            if (chunk == null)
+                return 0;
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -209,7 +247,9 @@ namespace AdvancedTilemap
 
         public void Erase(int gx, int gy, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
+            if (chunk == null)
+                return;
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -272,7 +312,9 @@ namespace AdvancedTilemap
 
         public byte GetBitmask(int gx, int gy, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
+            if (chunk == null)
+                return 0;
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -349,7 +391,9 @@ namespace AdvancedTilemap
 
         public Color32 GetColor(int gx, int gy, int layer)
         {
-            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
+            Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
+            if (chunk == null)
+                return Color.clear;
             int chunkGridX = (gx < 0 ? -gx - 1 : gx) % CHUNK_SIZE;
             int chunkGridY = (gy < 0 ? -gy - 1 : gy) % CHUNK_SIZE;
             if (gx < 0) chunkGridX = CHUNK_SIZE - 1 - chunkGridX;
@@ -428,8 +472,6 @@ namespace AdvancedTilemap
 
         public void LoadAllChunks()
         {
-            List<Tuple<int, int>> loaded = new List<Tuple<int, int>>();
-
             for (int i = 0; i < Layers.Count; i++)
             {
                 for (int j = 0; j < Layers[i].chunksCache.Count; j++)
@@ -444,8 +486,25 @@ namespace AdvancedTilemap
 
         public void LoadChunks(Vector2Int min, Vector2Int max)
         {
+            // Profiler.BeginSample("[ATilemap]Load Chunks");
 
-            for (int i = 0; i < Layers.Count; i++)
+            Parallel.For(0, Layers.Count, (int i) => {
+                for (int j = 0; j < Layers[i].chunksCache.Count; j++)
+                {
+                    var chunk = Layers[i].chunksCache.ElementAt(j).Value;
+                    var x = chunk.GridPosX;
+                    var y = chunk.GridPosY;
+                    if (x >= min.x && x <= max.x && y >= min.y && y <= max.y)
+                    {
+                        chunk.Load();
+                    }
+                    else
+                    {
+                        chunk.Unload();
+                    }
+                }
+            });
+            /*for (int i = 0; i < Layers.Count; i++)
             {
                 for (int j = 0; j < Layers[i].chunksCache.Count; j++)
                 {
@@ -461,37 +520,47 @@ namespace AdvancedTilemap
                         chunk.Unload();
                     }
                 }
+            }*/
 
-                /*for (int x = min.x; x < max.x; x++)
-                {
-                    for (int y = min.y; y < max.y; y++)
-                    {
-                        var chunk = Layers[i].GetOrCreateChunk(x, y, false);
+            /* for (int i = 0; i < Layers.Count; i++)
+             {
+                 for (int j = 0; j < Layers[i].chunksCache.Count; j++)
+                 {
+                     var chunk = Layers[i].chunksCache.ElementAt(j).Value;
+                     var x = chunk.GridPosX;
+                     var y = chunk.GridPosY;
+                     if (x >= min.x && x <= max.x && y >= min.y && y <= max.y)
+                     {
+                         chunk.Load();
+                     }
+                     else
+                     {
+                         chunk.Unload();
+                     }
+                 }
+             }*/
 
-                        if (chunk != null)
-                        {
-                            chunk.Load();
-
-                        }
-                    }
-                }*/
-            }
+            //Profiler.EndSample();
         }
+
+
 
         private void Update()
         {
             if (Application.isPlaying)
             {
                 loadTimer += Time.deltaTime;
+
                 if (loadTimer > ChunkLoadingDuration)
                 {
                     var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
                     var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
-
                     LoadChunks(min, max);
                     loadTimer -= ChunkLoadingDuration;
                 }
+
                 liquidTimer += Time.deltaTime;
+
                 if (liquidTimer > LiquidStepsDuration)
                 {
                     liquidTimer -= LiquidStepsDuration;
@@ -508,11 +577,8 @@ namespace AdvancedTilemap
                     }
                 }
             }
-
-
-
-
         }
+
         #endregion
 
         
