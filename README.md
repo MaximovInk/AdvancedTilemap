@@ -6,6 +6,7 @@ Trello : https://trello.com/b/vjc93JAf/advancedtilemap
 Futures:
 - [x] Infinity map
 - [x] Chunk loading
+- [x] Multi threading
 - [x] Raycast lighting
 - [x] Layers
 - [x] Liquid physics (like starbound)
