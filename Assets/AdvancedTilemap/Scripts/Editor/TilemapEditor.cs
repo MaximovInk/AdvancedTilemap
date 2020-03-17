@@ -6,7 +6,7 @@ using UnityEditorInternal;
 namespace AdvancedTilemap
 {
     public enum BrushType
-    { 
+    {
         Squad,
         Circle,
         Triangle
@@ -66,13 +66,13 @@ namespace AdvancedTilemap
         {
             GUI.Label(rect, "Layers");
         }
-        
+
         private void DrawElement(Rect rect, int index, bool active, bool focused)
         {
             EditorGUI.LabelField(new Rect(rect.x + 10, rect.y, rect.width * 0.3f, 15), "idx:" + index + ")" + tilemap.Layers[index].name);
 
         }
-        
+
         private void AddItem(ReorderableList list)
         {
             tilemap.Layers.Add(tilemap.CreateLayer());
@@ -96,11 +96,67 @@ namespace AdvancedTilemap
 
         private void GenTexture(bool erase = false)
         {
-            tilemap.GenPreviewTextureBrush( erase ? eraseSize : brushSize, erase ? eraseSize : brushSize);
+            tilemap.GenPreviewTextureBrush(erase ? eraseSize : brushSize, erase ? eraseSize : brushSize);
             tilemap.SetActivePreviewBrush(true);
         }
 
         private bool shiftBefore;
+
+        private Vector2Int LastMousePos;
+
+        private void DrawByErase(int xMin, int yMin, int xMax, int yMax)
+        {
+            for (int ix = xMin; ix < xMax; ix++)
+            {
+                for (int iy = yMin; iy < yMax; iy++)
+                {
+                    if (waterPlacing)
+                    {
+                        tilemap.SetLiquid(ix, iy, 0, selectedLayer);
+                        continue;
+                    }
+
+                    tilemap.SetColor(ix, iy, Color.white, selectedLayer);
+                    tilemap.Erase(ix, iy, selectedLayer);
+                }
+            }
+        }
+
+        private void DrawByBrush(int xMin, int yMin, int xMax, int yMax)
+        {
+            for (int ix = xMin; ix < xMax; ix++)
+            {
+                for (int iy = yMin; iy < yMax; iy++)
+                {
+                    if (waterPlacing)
+                    {
+                        tilemap.AddLiquid(ix, iy, 0.1f, selectedLayer);
+                        continue;
+                    }
+
+                    tilemap.SetTile(ix, iy, selectedTile, selectedLayer);
+                    tilemap.SetColor(ix, iy, paintColor, selectedLayer);
+                }
+            }
+        }
+
+        private void BresenhamLine(int x0, int y0, int x1, int y1, int min, int max, bool brush = true)
+        {
+            int dx = Mathf.Abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+            int dy = Mathf.Abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+            int err = (dx > dy ? dx : -dy) / 2, e2;
+            for (; ; )
+            {
+                if (brush)
+                    DrawByBrush(x0 - min, y0 - min, x0 + max, y0 + max);
+                else
+                    DrawByErase(x0 - min, y0 - min, x0 + max, y0 + max);
+                if (x0 == x1 && y0 == y1) break;
+                e2 = err;
+                if (e2 > -dx) { err -= dy; x0 += sx; }
+                if (e2 < dy) { err += dx; y0 += sy; }
+            }
+        }
 
         private void OnSceneGUI()
         {
@@ -116,7 +172,7 @@ namespace AdvancedTilemap
             if (selectedLayer < 0 || selectedLayer > tilemap.Layers.Count || selectedTile == 0)
                 return;
 
-           
+
 
             Event e = Event.current;
             int controlID = GUIUtility.GetControlID(FocusType.Passive);
@@ -131,6 +187,7 @@ namespace AdvancedTilemap
                     e.Use();
                     break;
             }
+
             Vector3 mousePosition = e.mousePosition;
             Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
             mousePosition = ray.origin;
@@ -153,6 +210,14 @@ namespace AdvancedTilemap
             }
 
 
+            if (e.type == EventType.MouseDown && e.button == 0)
+            {
+                var localPos = tilemap.transform.InverseTransformPoint(mousePosition);
+                var gridX = Utilites.GetGridX(localPos);
+                var gridY = Utilites.GetGridY(localPos);
+                LastMousePos = new Vector2Int(gridX, gridY);
+            }
+
             if ((e.type == EventType.MouseDrag || e.type == EventType.MouseDown) && e.button == 0)
             {
                 GUIUtility.hotControl = controlID;
@@ -164,57 +229,40 @@ namespace AdvancedTilemap
 
                 if (e.shift)
                 {
+                    int eraseMin = eraseSize / 2;
+                    int eraseMax = eraseSize - eraseMin;
 
-                   
-                    int brushMin = eraseSize / 2;
-                    int brushMax = eraseSize - brushMin;
+                    //DrawByErase(gridX - eraseMin, gridY - eraseMin, gridX + eraseMax, gridY + eraseMax);
 
-                    for (int ix = gridX - brushMin; ix < gridX + brushMax; ix++)
-                    {
-                        for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
-                        {
-                            if (waterPlacing)
-                            {
-                                tilemap.SetLiquid(ix, iy, 0, selectedLayer);
-                                continue;
-                            }
-
-                            tilemap.SetColor(ix, iy, Color.white, selectedLayer);
-                            tilemap.Erase(ix, iy, selectedLayer);
-                        }
-                    }
+                    BresenhamLine(LastMousePos.x, LastMousePos.y,gridX, gridY,eraseMin,eraseMax,false);
                 }
-                else if(e.control)
+                else if (e.control)
                 {
                     selectedTile = tilemap.GetTile(gridX, gridY, selectedLayer);
                 }
                 else
                 {
-                   
+
                     int brushMin = brushSize / 2;
                     int brushMax = brushSize - brushMin;
 
-                    for (int ix = gridX - brushMin; ix < gridX + brushMax; ix++)
-                    {
-                        for (int iy = gridY - brushMin; iy < gridY + brushMax; iy++)
-                        {
-                            if (waterPlacing)
-                            {
-                                tilemap.AddLiquid(ix, iy, 0.1f, selectedLayer);
-                                continue;
-                            }
-
-                            tilemap.SetTile(ix, iy, selectedTile,selectedLayer);
-                            tilemap.SetColor(ix, iy, paintColor, selectedLayer);
-                        }
-                    }
+                    //DrawByBrush(gridX - brushMin, gridY - brushMin, gridX + brushMax, gridY + brushMax);
+                    BresenhamLine(LastMousePos.x, LastMousePos.y, gridX, gridY, brushMin, brushMax);
                 }
+
+                LastMousePos = new Vector2Int(gridX, gridY);
+
+                tilemap.Layers[selectedLayer].UpdateMesh();
+
                 EditorUtility.SetDirty(tilemap);
+
                 e.Use();
 
             }
         }
-        
+
+
+
         private Vector2 scrollPos;
 
         private static bool showHelp = false;
@@ -255,7 +303,7 @@ namespace AdvancedTilemap
                 tilemap.ClearAll();
             }
 
-            tilemap.LiquidStepsDuration = EditorGUILayout.FloatField("Liquid steps duration",tilemap.LiquidStepsDuration);
+            tilemap.LiquidStepsDuration = EditorGUILayout.FloatField("Liquid steps duration", tilemap.LiquidStepsDuration);
 
             tilemap.ZBlockOffset = EditorGUILayout.FloatField("Z block types offset", tilemap.ZBlockOffset);
 
@@ -311,9 +359,9 @@ namespace AdvancedTilemap
 
                             if (GUILayout.Button("", GUILayout.Width(40), GUILayout.Height(40)))
                             {
-                                selectedTile = (byte)(i+1);
+                                selectedTile = (byte)(i + 1);
                                 GenTexture();
-                               
+
                             }
 
                             var rect = GUILayoutUtility.GetLastRect();
@@ -340,15 +388,15 @@ namespace AdvancedTilemap
                     GUILayout.EndVertical();
                 }
 
-                tilemap.Layers[selectedLayer].name = EditorGUILayout.TextField( "Name:", tilemap.Layers[selectedLayer].name);
-                tilemap.Layers[selectedLayer].Tileset = EditorGUILayout.ObjectField( "Tileset:", tilemap.Layers[selectedLayer].Tileset, typeof(Tileset), false) as Tileset;
-                tilemap.Layers[selectedLayer].Material = EditorGUILayout.ObjectField( "Material:", tilemap.Layers[selectedLayer].Material, typeof(Material), false) as Material;
+                tilemap.Layers[selectedLayer].name = EditorGUILayout.TextField("Name:", tilemap.Layers[selectedLayer].name);
+                tilemap.Layers[selectedLayer].Tileset = EditorGUILayout.ObjectField("Tileset:", tilemap.Layers[selectedLayer].Tileset, typeof(Tileset), false) as Tileset;
+                tilemap.Layers[selectedLayer].Material = EditorGUILayout.ObjectField("Material:", tilemap.Layers[selectedLayer].Material, typeof(Material), false) as Material;
                 tilemap.Layers[selectedLayer].LiquidMaterial = EditorGUILayout.ObjectField("LiquidMaterial:", tilemap.Layers[selectedLayer].LiquidMaterial, typeof(Material), false) as Material;
-                tilemap.Layers[selectedLayer].TintColor = EditorGUILayout.ColorField( "Tint color:", tilemap.Layers[selectedLayer].TintColor);
-                tilemap.Layers[selectedLayer].LayerMask = EditorGUILayout.LayerField( "LayerMask:", tilemap.Layers[selectedLayer].LayerMask);
-                tilemap.Layers[selectedLayer].PhysicsMaterial2D = EditorGUILayout.ObjectField( "Name:", tilemap.Layers[selectedLayer].PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
-                tilemap.Layers[selectedLayer].IsTrigger = EditorGUILayout.Toggle( "Is trigger:", tilemap.Layers[selectedLayer].IsTrigger);
-                tilemap.Layers[selectedLayer].ColliderEnabled = EditorGUILayout.Toggle( "Collider enabled:", tilemap.Layers[selectedLayer].ColliderEnabled); 
+                tilemap.Layers[selectedLayer].TintColor = EditorGUILayout.ColorField("Tint color:", tilemap.Layers[selectedLayer].TintColor);
+                tilemap.Layers[selectedLayer].LayerMask = EditorGUILayout.LayerField("LayerMask:", tilemap.Layers[selectedLayer].LayerMask);
+                tilemap.Layers[selectedLayer].PhysicsMaterial2D = EditorGUILayout.ObjectField("Name:", tilemap.Layers[selectedLayer].PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
+                tilemap.Layers[selectedLayer].IsTrigger = EditorGUILayout.Toggle("Is trigger:", tilemap.Layers[selectedLayer].IsTrigger);
+                tilemap.Layers[selectedLayer].ColliderEnabled = EditorGUILayout.Toggle("Collider enabled:", tilemap.Layers[selectedLayer].ColliderEnabled);
                 tilemap.Layers[selectedLayer].LiquidEnabled = EditorGUILayout.Toggle("Liquid enabled:", tilemap.Layers[selectedLayer].LiquidEnabled);
                 tilemap.Layers[selectedLayer].Tag = EditorGUILayout.TagField("Tag:", tilemap.Layers[selectedLayer].Tag);
 

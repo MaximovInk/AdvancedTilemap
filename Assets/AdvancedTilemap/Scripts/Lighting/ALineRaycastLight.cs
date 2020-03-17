@@ -16,30 +16,27 @@ namespace AdvancedTilemap.Lighting
 
             points = new List<Vector2>();
 
-            for (int i = 0; i <= steps; i++)
+            float angle = transform.eulerAngles.z - Angle;
+            var dir = AngleToDirection(angle, true);
+
+            var hit = Physics2D.Raycast(transform.position, dir, LineDistance, ObstaclesMask);
+            Vector2 point;
+            if (hit)
             {
+                point = transform.InverseTransformPoint(hit.point);
+                point = OffsetDirection(Vector2.zero, point, hit.distance, LineDistance);
+            }
+            else
+            {
+                point = dir * LineDistance;
+            }
+            points.Add(Vector2.zero);
+            points.Add(point);
 
-                float angle = transform.eulerAngles.z - Angle;
-                var dir = AngleToDirection(angle, true);
-                var hit = Physics2D.Raycast(transform.position+new Vector3(i*stepSize, 0,0), dir, LineDistance, ObstaclesMask);
-                Vector2 point;
-                if (hit)
-                {
-                    point = transform.InverseTransformPoint (hit.point);
-                    point = OffsetDirection(new Vector3(i * stepSize, 0), point, hit.distance, LineDistance);
-                }
-                else
-                {
-                    point = dir * LineDistance + new Vector2(i*stepSize, 0);
-                    
-                }
-                
 
-                //Debug.DrawLine((Vector2)transform.position+new Vector2(i*stepSize, 0), (Vector2)transform.position+ point, Color.red);
-
-                points.Add(new Vector2(i*stepSize, 0));
-                points.Add(point);
-
+            for (int i = 1; i <= steps; i++)
+            {
+               
                 hit = Physics2D.Raycast(transform.position + new Vector3(i * stepSize + stepSize, 0, 0), dir, LineDistance, ObstaclesMask);
 
                 if (hit)
@@ -52,8 +49,8 @@ namespace AdvancedTilemap.Lighting
                     point = dir * LineDistance + new Vector2(i * stepSize + stepSize, 0);
                 }
 
-
-                //Debug.DrawLine((Vector2)transform.position + new Vector2(i * stepSize + stepSize, 0), (Vector2)transform.position + point, Color.red);
+                points.Add(new Vector2(i * stepSize + stepSize, 0));
+                points.Add(point);
 
                 points.Add(new Vector2(i * stepSize + stepSize, 0));
                 points.Add(point);

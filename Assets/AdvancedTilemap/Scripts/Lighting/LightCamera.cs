@@ -18,6 +18,12 @@ namespace AdvancedTilemap.Lighting
         private RenderTexture RenderTexture;
         public Material RenderTextureMaterial;
 
+        private void OnValidate()
+        {
+
+            UpdateLightView();
+        }
+
         private void OnEnable()
         {
             resolution = new Vector2(Screen.width, Screen.height);
@@ -27,6 +33,11 @@ namespace AdvancedTilemap.Lighting
             if (Quad == null || RenderCamera == null)
                 return;
 
+            UpdateLightView();
+        }
+
+        private void Start()
+        {
             UpdateLightView();
         }
 

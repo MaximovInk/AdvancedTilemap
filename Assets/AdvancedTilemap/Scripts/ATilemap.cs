@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace AdvancedTilemap
 {
@@ -14,7 +13,7 @@ namespace AdvancedTilemap
     [ExecuteAlways]
     public class ATilemap : MonoBehaviour
     {
-        public const int CHUNK_SIZE = 16;
+        public const int CHUNK_SIZE = 32;
         public const int MIN_LIQUID_Y = -100;
 
         public bool AutoTrim = true;
@@ -92,11 +91,16 @@ namespace AdvancedTilemap
             return true;
         }
 
-        public void TrimAll()
+        public void TrimAll(bool immediate = false)
         {
             for (int i = 0; i < Layers.Count; i++)
             {
-                Layers[i].Trim();
+                if (immediate)
+                {
+                    Layers[i].Trim();
+                    continue;
+                }
+                Layers[i].TrimInvoke = true;
             }
         }
 
@@ -214,7 +218,7 @@ namespace AdvancedTilemap
             if (chunk.GetTile(chunkGridX, chunkGridY) == idx)
                 return;
 
-            var genVariation = GetTile(gx, gy,layer) != idx;
+            var genVariation = chunk.GetTile(chunkGridX, chunkGridY) != idx;
 
             chunk.SetTile(chunkGridX, chunkGridY, idx);
            
@@ -227,8 +231,7 @@ namespace AdvancedTilemap
             if (genVariation)
                 GenVariation(gx, gy,layer);
 
-            if (AutoTrim)
-                Layers[layer].Trim();
+             Layers[layer].TrimInvoke = true;
         }
 
         public byte GetTile(int gx, int gy, int layer)
@@ -265,7 +268,7 @@ namespace AdvancedTilemap
             SetVariation(gx, gy, 0,layer);
 
             if (AutoTrim)
-                Layers[layer].Trim();
+                Layers[layer].TrimInvoke = true;
         }
 
         public void SetVariation(int gx, int gy, byte variation, int layer)
@@ -486,8 +489,6 @@ namespace AdvancedTilemap
 
         public void LoadChunks(Vector2Int min, Vector2Int max)
         {
-            // Profiler.BeginSample("[ATilemap]Load Chunks");
-
             Parallel.For(0, Layers.Count, (int i) => {
                 for (int j = 0; j < Layers[i].chunksCache.Count; j++)
                 {
@@ -504,46 +505,7 @@ namespace AdvancedTilemap
                     }
                 }
             });
-            /*for (int i = 0; i < Layers.Count; i++)
-            {
-                for (int j = 0; j < Layers[i].chunksCache.Count; j++)
-                {
-                    var chunk = Layers[i].chunksCache.ElementAt(j).Value;
-                    var x = chunk.GridPosX;
-                    var y = chunk.GridPosY;
-                    if (x >= min.x && x <= max.x && y >= min.y && y <= max.y)
-                    {
-                        chunk.Load();
-                    }
-                    else
-                    {
-                        chunk.Unload();
-                    }
-                }
-            }*/
-
-            /* for (int i = 0; i < Layers.Count; i++)
-             {
-                 for (int j = 0; j < Layers[i].chunksCache.Count; j++)
-                 {
-                     var chunk = Layers[i].chunksCache.ElementAt(j).Value;
-                     var x = chunk.GridPosX;
-                     var y = chunk.GridPosY;
-                     if (x >= min.x && x <= max.x && y >= min.y && y <= max.y)
-                     {
-                         chunk.Load();
-                     }
-                     else
-                     {
-                         chunk.Unload();
-                     }
-                 }
-             }*/
-
-            //Profiler.EndSample();
         }
-
-
 
         private void Update()
         {
@@ -578,6 +540,7 @@ namespace AdvancedTilemap
                 }
             }
         }
+
 
         #endregion
 

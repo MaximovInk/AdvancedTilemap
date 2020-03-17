@@ -1,5 +1,6 @@
 ﻿using AdvancedTilemap.Liquid;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -20,6 +21,8 @@ namespace AdvancedTilemap
         public Color TintColor { get => tintColor; set { tintColor = value; UpdateRenderer(color: true); } }
         public string Tag { get { return _tag; } set { _tag = value; UpdateChunksFlags(); } }
         public float ZOrder;
+
+        public bool TrimInvoke;
 
         [HideInInspector, SerializeField]
         private LayerMask layerMask;
@@ -49,6 +52,9 @@ namespace AdvancedTilemap
         public int MaxGridY { get; private set; }
 
         public Dictionary<uint, Chunk> chunksCache = new Dictionary<uint, Chunk>();
+
+        [HideInInspector,SerializeField]
+        private int childCount;
 
         private void Awake()
         {
@@ -103,6 +109,17 @@ namespace AdvancedTilemap
             foreach (var chunk in chunksCache)
             {
                 chunk.Value.RefreshAll(immediate);
+            }
+        }
+
+        public void UpdateMesh(bool immediate = false)
+        {
+            foreach (var chunk in chunksCache)
+            {
+                if (immediate)
+                    chunk.Value.UpdateMeshImmediate();
+                else
+                    chunk.Value.UpdateMesh();
             }
         }
 
@@ -177,7 +194,7 @@ namespace AdvancedTilemap
 
         public Chunk GetOrCreateChunk(int gx, int gy,bool autoCreate = true)
         {
-            if (chunksCache.Count == 0 && transform.childCount > 0)
+            if (chunksCache.Count == 0 && childCount > 0)
                 BuildChunkCache();
 
             int chunkX = (gx < 0 ? (gx + 1 - ATilemap.CHUNK_SIZE) : gx) / ATilemap.CHUNK_SIZE;
@@ -206,6 +223,8 @@ namespace AdvancedTilemap
 
         private void Update()
         {
+            childCount = transform.childCount;
+
             if (!Application.isPlaying)
                 return;
 
@@ -216,8 +235,13 @@ namespace AdvancedTilemap
                     chunk.Value.gameObject.SetActive(chunk.Value.Loaded);
                 }
             }
-        }
 
+            if (TrimInvoke)
+            {
+                Trim();
+                TrimInvoke = false;
+            }
+        }
 
         #region liquid_physics
         
@@ -268,24 +292,15 @@ namespace AdvancedTilemap
 
         public void SimulateLiquid(Vector2Int min, Vector2Int max)
         {
-            Parallel.For(min.x,max.x,(int x)=> {
-                for (int y = min.y; y < max.y; ++y)
-                {
-                    //for (int x = min.x; x < max.x; ++x)
-                    //{
-                        SimulateCell(x, y);
-                    //}
-                }
-            });
-            /*for (int y = min.y; y < max.y; ++y)
+            Parallel.For(min.x, max.x, (int x) =>
             {
-                for (int x = min.x; x < max.x; ++x)
+                for (int y = min.y; y < max.y; ++y)
                 {
                     SimulateCell(x, y);
                 }
-            }*/
-
-            Parallel.For(min.x, max.x, (int x) => {
+            });
+            Parallel.For(min.x, max.x, (int x) =>
+            {
                 for (int y = min.y; y < max.y; ++y)
                 {
                     if (GetLiquid(x, y) < LiquidChunk.MIN_VALUE)
@@ -294,18 +309,6 @@ namespace AdvancedTilemap
                     }
                 }
             });
-
-            /*for (int y = min.y,i = 0; y < max.y; ++y)
-            {
-                for (int x = min.x; x < max.x; ++x,i++)
-                {
-                    if (GetLiquid(x, y) < LiquidChunk.MIN_VALUE)
-                    {
-                        SetSettled(x, y, false);
-                    }
-                }
-            }*/
-
         }
 
         private bool IsEmpty(int x, int y)
@@ -493,6 +496,7 @@ namespace AdvancedTilemap
              }*/
 
         }
+
 
         #endregion
     }

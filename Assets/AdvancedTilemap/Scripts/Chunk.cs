@@ -34,7 +34,6 @@ namespace AdvancedTilemap
         [HideInInspector, SerializeField]
         private Color32[] colors;
 
-        private bool isDirty = false;
         private bool meshRebuild = false;
         private bool colliderRebuild = false;
 
@@ -76,12 +75,12 @@ namespace AdvancedTilemap
                     //create new liquid chunk
                     var go = new GameObject();
                     go.transform.SetParent(transform);
-                    go.transform.localPosition = new Vector3(0,0,0.05f);
+                    go.transform.localPosition = new Vector3(0, 0, 0.05f);
                     go.transform.localScale = Vector3.one;
                     go.transform.localRotation = Quaternion.identity;
 
                     liquidChunk = go.AddComponent<LiquidChunk>();
-                    liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE,this);
+                    liquidChunk.Init(ATilemap.CHUNK_SIZE, ATilemap.CHUNK_SIZE, this);
                 }
                 liquidChunk.SetMaterial(Layer.LiquidMaterial);
             }
@@ -176,52 +175,33 @@ namespace AdvancedTilemap
             if (polygonCollider2D == null && Layer.ColliderEnabled)
             {
                 polygonCollider2D = gameObject.GetComponent<PolygonCollider2D>();
-                if(polygonCollider2D == null)
+                if (polygonCollider2D == null)
                     polygonCollider2D = gameObject.AddComponent<PolygonCollider2D>();
                 colliderRebuild = true;
             }
         }
 
-        public void UpdateMesh()
+        public bool GetSettled(int x, int y)
         {
-            if (meshRebuild)
-                GenerateMesh();
-            if (colliderRebuild || meshRebuild)
-                GenerateCollider();
-            meshData.ApplyToMesh();
+            return liquidChunk.GetSettled(x, y);
         }
 
-        /*public byte GetSettleCount(int x, int y)
+        public void SetSettled(int x, int y, bool value)
         {
-            return liquidChunk.GetSettleCount(x,y);
-        }
-
-        public void SetSettleCount(int x, int y,byte value)
-        {
-            liquidChunk.SetSettleCount(x, y,value);
-        }*/
-
-        public bool GetSettled(int x ,int y)
-        {
-            return liquidChunk.GetSettled(x,y);
-        }
-
-        public void SetSettled(int x, int y,bool value)
-        {
-            liquidChunk.SetSettled(x,y,value);
+            liquidChunk.SetSettled(x, y, value);
         }
 
         public float GetLiquid(int gx, int gy)
         {
-            return liquidChunk.GetLiquid(gx,gy);
+            return liquidChunk.GetLiquid(gx, gy);
         }
-        public void SetLiquid(int gx, int gy,float value)
+        public void SetLiquid(int gx, int gy, float value)
         {
-            liquidChunk.SetLiquid(gx, gy,value);
+            liquidChunk.SetLiquid(gx, gy, value);
         }
-        public void AddLiquid(int gx, int gy,float value)
+        public void AddLiquid(int gx, int gy, float value)
         {
-            liquidChunk.AddLiquid(gx, gy,value);
+            liquidChunk.AddLiquid(gx, gy, value);
         }
 
         public byte GetBitmask(int gx, int gy)
@@ -257,7 +237,6 @@ namespace AdvancedTilemap
 
             if (tiles[index] == tileIdx)
             {
-                isDirty = true;
                 return;
             }
 
@@ -265,12 +244,10 @@ namespace AdvancedTilemap
             {
                 tiles[index] = tileIdx;
                 meshRebuild = true;
-                isDirty = true;
                 return;
             }
 
             colliderRebuild = true;
-            isDirty = true;
 
             tiles[index] = tileIdx;
             var tile = Layer.Tileset.GetTile(tileIdx);
@@ -279,19 +256,22 @@ namespace AdvancedTilemap
 
         public void Erase(int gx, int gy)
         {
-            isDirty = true;
-
-            meshRebuild = true;
-
-            colliderRebuild = true;
+            bool changed = tiles[gx + gy * ATilemap.CHUNK_SIZE] != 0;
 
             tiles[gx + gy * ATilemap.CHUNK_SIZE] = 0;
+
+
+            meshRebuild = meshRebuild || changed;
+
+            colliderRebuild = colliderRebuild || changed;
         }
 
         public void SetColor(int gx, int gy, Color32 color)
         {
+            bool changed = !colors[gx + gy * ATilemap.CHUNK_SIZE].Equals(color);
+
             colors[gx + gy * ATilemap.CHUNK_SIZE] = color;
-            meshRebuild = true;
+            meshRebuild = meshRebuild || changed;
         }
 
         public Color32 GetColor(int gx, int gy)
@@ -302,19 +282,11 @@ namespace AdvancedTilemap
         public void Load()
         {
             Loaded = true;
-            //gameObject.SetActive(true);
-            /*meshRenderer.enabled = true;
-            if (Layer.LiquidEnabled)
-                liquidChunk.gameObject.SetActive(true);*/
         }
 
         public void Unload()
         {
             Loaded = false;
-           // gameObject.SetActive(false);
-            /*meshRenderer.enabled = false;
-            if (Layer.LiquidEnabled)
-                liquidChunk.gameObject.SetActive(false);*/
         }
 
         #endregion
@@ -551,10 +523,10 @@ namespace AdvancedTilemap
 
         private void OnDrawGizmos()
         {
-            Handles.color = new Color(1,0,0,0.25f);
-            Handles.DrawLine(transform.position, new Vector3(transform.position.x + ATilemap.CHUNK_SIZE, transform.position.y ));
+            Handles.color = new Color(1, 0, 0, 0.25f);
+            Handles.DrawLine(transform.position, new Vector3(transform.position.x + ATilemap.CHUNK_SIZE, transform.position.y));
             Handles.DrawLine(new Vector3(transform.position.x + ATilemap.CHUNK_SIZE, transform.position.y), new Vector3(transform.position.x + ATilemap.CHUNK_SIZE, transform.position.y + ATilemap.CHUNK_SIZE));
-            Handles.DrawLine(transform.position, new Vector3(transform.position.x , transform.position.y + ATilemap.CHUNK_SIZE));
+            Handles.DrawLine(transform.position, new Vector3(transform.position.x, transform.position.y + ATilemap.CHUNK_SIZE));
             Handles.DrawLine(new Vector3(transform.position.x, transform.position.y + ATilemap.CHUNK_SIZE), new Vector3(transform.position.x + ATilemap.CHUNK_SIZE, transform.position.y + ATilemap.CHUNK_SIZE));
         }
 
@@ -578,9 +550,9 @@ namespace AdvancedTilemap
                 }
                 meshRebuild = true;
             }
-            if(meshFilter == null)
+            if (meshFilter == null)
                 meshFilter = GetComponent<MeshFilter>();
-            if(meshRenderer == null)
+            if (meshRenderer == null)
                 meshRenderer = GetComponent<MeshRenderer>();
 
             /* if (lightChunk == null)
@@ -600,15 +572,29 @@ namespace AdvancedTilemap
             UpdateColliderComponent();
         }
 
+        public void UpdateMeshImmediate()
+        {
+            meshRebuild = colliderRebuild = true;
+            UpdateMesh();
+        }
+
+        public void UpdateMesh()
+        {
+            if (meshRebuild)
+            {
+                GenerateMesh();
+
+                meshData.ApplyToMesh();
+            }
+
+            if (colliderRebuild)
+                GenerateCollider();
+
+        }
+
         private void Update()
         {
-            if (!meshRenderer.enabled)
-                return;
-
-            if (isDirty || meshRebuild || colliderRebuild)
-            {
-                UpdateMesh();
-            }
+            UpdateMesh();
         }
 
         #endregion
