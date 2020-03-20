@@ -14,6 +14,7 @@ Futures:
 - [x] Single tiles
 - [ ] Multi blocks
 - [x] Overlap blocks (like starbound)
+- [x] Undo/Redo (WIP)
 - [ ] Prefab tiles
 - [ ] Brush tools (Fill,Line,Rectangle,Circle,Custom)
 - [x] Variation tiles
