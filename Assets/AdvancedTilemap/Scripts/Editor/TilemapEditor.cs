@@ -31,9 +31,8 @@ namespace AdvancedTilemap
         public static int eraseSize = 1;
 
         private ReorderableList layersList;
-        private float startHeight;
 
-        public int selectedLayer = -1;
+        public int selectedLayer = 0;
 
         private void OnEnable()
         {
@@ -47,11 +46,7 @@ namespace AdvancedTilemap
 
             layersList.onAddCallback += AddItem;
             layersList.onRemoveCallback += RemoveItem;
-
-            startHeight = layersList.elementHeight;
-
             layersList.onReorderCallback += (index) => { tilemap.CalculateLayersOrder(); tilemap.RefreshAll(true); CalculateIndexes(); };
-
         }
 
         private void CalculateIndexes()
@@ -66,7 +61,6 @@ namespace AdvancedTilemap
         {
             GUI.Label(rect, "Layers");
         }
-
         private void DrawElement(Rect rect, int index, bool active, bool focused)
         {
             EditorGUI.LabelField(new Rect(rect.x + 10, rect.y, rect.width * 0.3f, 15), "idx:" + index + ")" + tilemap.Layers[index].name);
@@ -82,7 +76,6 @@ namespace AdvancedTilemap
             CalculateIndexes();
             EditorUtility.SetDirty(target);
         }
-
         private void RemoveItem(ReorderableList list)
         {
             DestroyImmediate(tilemap.Layers[list.index]);
@@ -101,7 +94,7 @@ namespace AdvancedTilemap
         }
 
         private bool shiftBefore;
-
+        private bool mouseUpBefore;
         private Vector2Int LastMousePos;
 
         private void DrawByErase(int xMin, int yMin, int xMax, int yMax)
@@ -173,8 +166,27 @@ namespace AdvancedTilemap
                 return;
 
 
+            Handles.BeginGUI();
+
+            if (tilemap.UndoEnabled)
+            {
+                if (GUI.Button(new Rect(5, 5, 50, 25), "Undo"))
+                {
+                    tilemap.Undo();
+                    tilemap.RefreshAll(true);
+                }
+
+                if (GUI.Button(new Rect(60, 5, 50, 25), "Redo"))
+                {
+                    tilemap.Redo();
+                    tilemap.RefreshAll(true);
+                }
+            }
+
+            Handles.EndGUI();
 
             Event e = Event.current;
+
             int controlID = GUIUtility.GetControlID(FocusType.Passive);
             HandleUtility.AddDefaultControl(controlID);
 
@@ -184,6 +196,11 @@ namespace AdvancedTilemap
             {
                 case EventType.MouseUp:
                     GUIUtility.hotControl = 0;
+                    if (tilemap.IsRecordingCommand)
+                    {
+                        tilemap.EndRecordCommand();
+                    }
+                    mouseUpBefore = true;
                     e.Use();
                     break;
             }
@@ -220,6 +237,13 @@ namespace AdvancedTilemap
 
             if ((e.type == EventType.MouseDrag || e.type == EventType.MouseDown) && e.button == 0)
             {
+                if (mouseUpBefore && !tilemap.IsRecordingCommand)
+                {
+                    tilemap.BeginRecordCommand();
+
+                    mouseUpBefore = false;
+                }
+
                 GUIUtility.hotControl = controlID;
 
                 Vector2 localPos = tilemap.transform.InverseTransformPoint(mousePosition);
@@ -231,9 +255,6 @@ namespace AdvancedTilemap
                 {
                     int eraseMin = eraseSize / 2;
                     int eraseMax = eraseSize - eraseMin;
-
-                    //DrawByErase(gridX - eraseMin, gridY - eraseMin, gridX + eraseMax, gridY + eraseMax);
-
                     BresenhamLine(LastMousePos.x, LastMousePos.y,gridX, gridY,eraseMin,eraseMax,false);
                 }
                 else if (e.control)
@@ -245,8 +266,6 @@ namespace AdvancedTilemap
 
                     int brushMin = brushSize / 2;
                     int brushMax = brushSize - brushMin;
-
-                    //DrawByBrush(gridX - brushMin, gridY - brushMin, gridX + brushMax, gridY + brushMax);
                     BresenhamLine(LastMousePos.x, LastMousePos.y, gridX, gridY, brushMin, brushMax);
                 }
 
@@ -260,8 +279,6 @@ namespace AdvancedTilemap
 
             }
         }
-
-
 
         private Vector2 scrollPos;
 
@@ -290,7 +307,7 @@ namespace AdvancedTilemap
                 serializedObject.ApplyModifiedProperties();
             }
 
-            var tempLayer = selectedLayer + 1;
+            var tempLayer = selectedLayer+1;
 
             var layersNames = new string[] { "none" }.Concat(tilemap.Layers.Select(n => n.name)).ToArray();
 
@@ -303,23 +320,19 @@ namespace AdvancedTilemap
                 tilemap.ClearAll();
             }
 
-            tilemap.LiquidStepsDuration = EditorGUILayout.FloatField("Liquid steps duration", tilemap.LiquidStepsDuration);
+            tilemap.LiquidStepsDuration         = EditorGUILayout.FloatField("Liquid steps duration", tilemap.LiquidStepsDuration);
+            tilemap.ZBlockOffset                = EditorGUILayout.FloatField("Z block types offset", tilemap.ZBlockOffset);
+            tilemap.SortingOrder                = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
+            tilemap.ChunkLoadingOffset          = EditorGUILayout.IntField("Chunk loading offset", tilemap.ChunkLoadingOffset);
+            tilemap.ChunkLoadingDuration        = EditorGUILayout.FloatField("Chunk loading rate", tilemap.ChunkLoadingDuration);
+            tilemap.DisplayChunksInHierarchy    = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
+            tilemap.AutoTrim                    = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
+            tilemap.UndoEnabled                 = EditorGUILayout.Toggle("Undo enabled", tilemap.UndoEnabled);
+            tilemap.LiquidMinColor              = EditorGUILayout.ColorField("Liquid min color:", tilemap.LiquidMinColor);
+            tilemap.LiquidMaxColor              = EditorGUILayout.ColorField("Liquid max color:", tilemap.LiquidMaxColor);
+            tempLayer                           = EditorGUILayout.Popup("Selected layer:", tempLayer, layersNames);
 
-            tilemap.ZBlockOffset = EditorGUILayout.FloatField("Z block types offset", tilemap.ZBlockOffset);
-
-            tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
-
-            tilemap.chunkLoadingOffset = EditorGUILayout.IntField("Chunk loading offset", tilemap.chunkLoadingOffset);
-            tilemap.ChunkLoadingDuration = EditorGUILayout.FloatField("Chunk loading rate", tilemap.ChunkLoadingDuration);
-            tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
-            tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
-
-            tilemap.LiquidMinColor = EditorGUILayout.ColorField("Liquid min color:", tilemap.LiquidMinColor);
-            tilemap.LiquidMaxColor = EditorGUILayout.ColorField("Liquid max color:", tilemap.LiquidMaxColor);
-
-            tempLayer = EditorGUILayout.Popup("Selected layer:", tempLayer, layersNames);
-
-            selectedLayer = tempLayer - 1;
+            selectedLayer = tempLayer-1;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
@@ -342,7 +355,7 @@ namespace AdvancedTilemap
                     showHelp = EditorGUILayout.Foldout(showHelp, "Help");
                     if (showHelp)
                     {
-                        GUILayout.Label("RMB - place pixel \nRMB+Shift - erase pixel \nRMB+Control - pick color");
+                        GUILayout.Label("RMB - place tile \nRMB+Shift - erase tile \nRMB+Control - pick color");
                     }
 
                     GUILayout.Label("Paint:");
@@ -399,7 +412,6 @@ namespace AdvancedTilemap
                 tilemap.Layers[selectedLayer].ColliderEnabled = EditorGUILayout.Toggle("Collider enabled:", tilemap.Layers[selectedLayer].ColliderEnabled);
                 tilemap.Layers[selectedLayer].LiquidEnabled = EditorGUILayout.Toggle("Liquid enabled:", tilemap.Layers[selectedLayer].LiquidEnabled);
                 tilemap.Layers[selectedLayer].Tag = EditorGUILayout.TagField("Tag:", tilemap.Layers[selectedLayer].Tag);
-
 
             }
 

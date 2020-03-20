@@ -14,9 +14,10 @@
                 "RenderType" = "Transparent"
         }
            
-        Lighting Off
+        //Lighting Off
         //Blend Zero Zero
-        Blend DstColor SrcColor
+        //Blend DstColor SrcColor
+        Blend One One
 
         CGPROGRAM
          #pragma surface surf Lambert alpha
@@ -38,7 +39,7 @@
 
         void surf (Input IN, inout SurfaceOutput  o)
         {
-            fixed4 c = tex2D (_MainTex, IN.uv_MainTex).rgba;
+            fixed4 c = tex2D (_MainTex, IN.uv_MainTex).rgba*IN.color;
             fixed3 rgb = c.rgb*_Color.rgb;
             o.Albedo = lerp(fixed3(0,0,0), rgb, _Intensity);
             o.Alpha = (c.r*c.g*c.b)*_Color.a;

@@ -13,18 +13,14 @@ namespace AdvancedTilemap
         public Layer Layer;
 
         public int GridPosX;
-
         public int GridPosY;
 
         [HideInInspector, SerializeField]
         private MeshData meshData;
-
         [HideInInspector, SerializeField]
         private MeshFilter meshFilter;
-
         [HideInInspector, SerializeField]
         private MeshRenderer meshRenderer;
-
         [HideInInspector, SerializeField]
         private byte[] tiles;
         [HideInInspector, SerializeField]
@@ -46,6 +42,25 @@ namespace AdvancedTilemap
         public bool Loaded = false;
 
         #region public_methods
+
+        public void UpdateMeshImmediate()
+        {
+            meshRebuild = colliderRebuild = true;
+            UpdateMesh();
+        }
+        public void UpdateMesh()
+        {
+            if (meshRebuild)
+            {
+                GenerateMesh();
+
+                meshData.ApplyToMesh();
+            }
+
+            if (colliderRebuild)
+                GenerateCollider();
+
+        }
 
         public bool IsVisible()
         {
@@ -101,7 +116,6 @@ namespace AdvancedTilemap
             polygonCollider2D.sharedMaterial = Layer.PhysicsMaterial2D;
             polygonCollider2D.isTrigger = Layer.IsTrigger;
         }
-
         public void UpdateFlags()
         {
             if (Layer.Tilemap.DisplayChunksInHierarchy)
@@ -124,7 +138,6 @@ namespace AdvancedTilemap
             if (immediate)
                 UpdateMesh();
         }
-
         public void UpdateRenderer(bool material = false, bool color = false, bool texture = false)
         {
             if (material)
@@ -185,7 +198,6 @@ namespace AdvancedTilemap
         {
             return liquidChunk.GetSettled(x, y);
         }
-
         public void SetSettled(int x, int y, bool value)
         {
             liquidChunk.SetSettled(x, y, value);
@@ -208,7 +220,6 @@ namespace AdvancedTilemap
         {
             return bitmasks[gx + gy * ATilemap.CHUNK_SIZE];
         }
-
         public void SetBitmask(int gx, int gy, byte bitmask)
         {
             bitmasks[gx + gy * ATilemap.CHUNK_SIZE] = bitmask;
@@ -220,7 +231,6 @@ namespace AdvancedTilemap
             variations[gx + gy * ATilemap.CHUNK_SIZE] = variation;
             meshRebuild = true;
         }
-
         public byte GetVariation(int gx, int gy)
         {
             return variations[gx + gy * ATilemap.CHUNK_SIZE];
@@ -230,7 +240,6 @@ namespace AdvancedTilemap
         {
             return tiles[gx + gy * ATilemap.CHUNK_SIZE];
         }
-
         public void SetTile(int gx, int gy, byte tileIdx = 1)
         {
             var index = gx + gy * ATilemap.CHUNK_SIZE;
@@ -253,13 +262,11 @@ namespace AdvancedTilemap
             var tile = Layer.Tileset.GetTile(tileIdx);
             AddBlock(gx, gy, tile, colors[gx + gy * ATilemap.CHUNK_SIZE]);
         }
-
         public void Erase(int gx, int gy)
         {
             bool changed = tiles[gx + gy * ATilemap.CHUNK_SIZE] != 0;
 
             tiles[gx + gy * ATilemap.CHUNK_SIZE] = 0;
-
 
             meshRebuild = meshRebuild || changed;
 
@@ -273,7 +280,6 @@ namespace AdvancedTilemap
             colors[gx + gy * ATilemap.CHUNK_SIZE] = color;
             meshRebuild = meshRebuild || changed;
         }
-
         public Color32 GetColor(int gx, int gy)
         {
             return colors[gx + gy * ATilemap.CHUNK_SIZE];
@@ -283,7 +289,6 @@ namespace AdvancedTilemap
         {
             Loaded = true;
         }
-
         public void Unload()
         {
             Loaded = false;
@@ -313,31 +318,6 @@ namespace AdvancedTilemap
             }
         }
 
-        private void AddBlock(int gx, int gy, Tile tile, Color32 color)
-        {
-            switch (tile.Type)
-            {
-                /*case BlockType.Single:
-                    AddSingleBlock(gx, gy, tile);
-                    break;*/
-                case BlockType.Overlap:
-                    AddOverlapBlock(gx, gy, tile, tile.BlendOverlap, color);
-                    break;
-                /* case BlockType.Multi:
-                     break;
-                 case BlockType.Slope:
-                     break;*/
-                default:
-                    AddSingleBlock(gx, gy, tile, color);
-                    break;
-            }
-        }
-
-        private void AddSingleBlock(int gx, int gy, Tile tile, Color32 color)
-        {
-            meshData.AddSquare(tile.GetTexPos(), Layer.Tileset.TileTexUnit, gx, gy, gx + 1, gy + 1, tile.OverlapDepth * Layer.Tilemap.ZBlockOffset + Layer.ZOrder, 0, 0, 1, 1, color);
-        }
-
         public Bounds GetBounds()
         {
             Bounds bounds = meshFilter.sharedMesh ? meshFilter.sharedMesh.bounds : default;
@@ -361,6 +341,29 @@ namespace AdvancedTilemap
             return bounds;
         }
 
+        private void AddBlock(int gx, int gy, Tile tile, Color32 color)
+        {
+            switch (tile.Type)
+            {
+                /*case BlockType.Single:
+                    AddSingleBlock(gx, gy, tile);
+                    break;*/
+                case BlockType.Overlap:
+                    AddOverlapBlock(gx, gy, tile, tile.BlendOverlap, color);
+                    break;
+                /* case BlockType.Multi:
+                     break;
+                 case BlockType.Slope:
+                     break;*/
+                default:
+                    AddSingleBlock(gx, gy, tile, color);
+                    break;
+            }
+        }
+        private void AddSingleBlock(int gx, int gy, Tile tile, Color32 color)
+        {
+            meshData.AddSquare(tile.GetTexPos(), Layer.Tileset.TileTexUnit, gx, gy, gx + 1, gy + 1, tile.OverlapDepth * Layer.Tilemap.ZBlockOffset + Layer.ZOrder, 0, 0, 1, 1, color);
+        }
         /* bitmask map:
         * 
         1  | 2  |  4
@@ -571,27 +574,7 @@ namespace AdvancedTilemap
             OnValidate();
             UpdateColliderComponent();
         }
-
-        public void UpdateMeshImmediate()
-        {
-            meshRebuild = colliderRebuild = true;
-            UpdateMesh();
-        }
-
-        public void UpdateMesh()
-        {
-            if (meshRebuild)
-            {
-                GenerateMesh();
-
-                meshData.ApplyToMesh();
-            }
-
-            if (colliderRebuild)
-                GenerateCollider();
-
-        }
-
+       
         private void Update()
         {
             UpdateMesh();
@@ -619,7 +602,6 @@ namespace AdvancedTilemap
                 polygonCollider2D.SetPath(p, paths[p].ToArray());
             }
         }
-
         List<List<Vector2>> FindPaths(List<ColliderSegment> segments)
         {
             List<List<Vector2>> output = new List<List<Vector2>>();
@@ -656,7 +638,6 @@ namespace AdvancedTilemap
             }
             return output;
         }
-
         private List<ColliderSegment> GetSegments()
         {
             List<ColliderSegment> segments = new List<ColliderSegment>();
@@ -693,7 +674,6 @@ namespace AdvancedTilemap
 
             return segments;
         }
-
         private struct ColliderSegment
         {
             public Vector2 Point1;

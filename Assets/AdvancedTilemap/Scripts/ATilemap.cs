@@ -6,9 +6,33 @@ using UnityEngine;
 
 namespace AdvancedTilemap
 {
-    public delegate void ChunkLoaded(int x, int y,int layer);
-    public delegate void ChunkUnloaded(int x, int y,int layer);
-    public delegate void TileDataChanged(int x, int y, int idx, int layer);
+    [Serializable]
+    public class Command
+    {
+        [Serializable]
+        public class TileData
+        {
+            public byte LastTile;
+            public byte NewTile;
+            public Vector2Int Position = Vector2Int.zero;
+            public int Layer;
+        }
+        public List<TileData> TileChanges = new List<TileData>();
+
+        public bool IsEmpty()
+        {
+            if (TileChanges == null)
+                return true;
+
+            for (int i = 0; i < TileChanges.Count; i++)
+            {
+                if (TileChanges[i].LastTile != TileChanges[i].NewTile)
+                    return false;
+            }
+
+            return true;
+        }
+    }
 
     [ExecuteAlways]
     public class ATilemap : MonoBehaviour
@@ -16,41 +40,134 @@ namespace AdvancedTilemap
         public const int CHUNK_SIZE = 32;
         public const int MIN_LIQUID_Y = -100;
 
-        public bool AutoTrim = true;
-
         public bool DisplayChunksInHierarchy { get { return displayChunksHierarchy; } set { displayChunksHierarchy = value; UpdateChunksFlags(); } }
         public int SortingOrder { get { return sortingOrder; } set { sortingOrder = value; UpdateRenderer(); } }
+        public bool UndoEnabled { get { return undoEnabled; } set { if (value != undoEnabled) ClearUndoStack();  undoEnabled = value; } }
         public float LiquidStepsDuration = 0.1f;
         public float ChunkLoadingDuration = 0.5f;
-
+        public bool AutoTrim = true;
+        public float ZBlockOffset = 0.1f;
+        public int ChunkLoadingOffset = 2;
         public List<Layer> Layers = new List<Layer>();
 
         [SerializeField]
         private bool displayChunksHierarchy = true;
         [SerializeField]
         private int sortingOrder;
-
-        public float ZBlockOffset = 0.1f;
-
-        public int chunkLoadingOffset = 2;
+        [SerializeField]
+        private float loadTimer = 0;
+        [SerializeField]
+        private float liquidTimer = 0;
+        [SerializeField]
+        private bool undoEnabled;
 
         public Color LiquidMinColor;
         public Color LiquidMaxColor;
-
-        private float loadTimer = 0;
-        private float liquidTimer = 0;
 
         private SpriteRenderer previewTextureBrush;
 
         #region events
 
-        public event TileDataChanged OnTileDataChanged;
-        public event ChunkLoaded OnChunkLoaded;
-        public event ChunkUnloaded OnChunkUnloaded;
+        #endregion
+
+        #region Commands
+        public bool IsRecordingCommand { get; private set; }
+
+        [SerializeField]
+        public Stack<Command> undoStack = new Stack<Command>();
+        [SerializeField]
+        public Stack<Command> redoStack = new Stack<Command>();
+        [SerializeField]
+        private Command currentRecordingCommand;
+
+        private bool CheckUndoEnabled()
+        {
+            if (!UndoEnabled) 
+            {
+                Debug.LogError("Undo disabled");
+            }
+            return UndoEnabled;
+        }
 
         #endregion
 
         #region public methods
+
+        public void ClearUndoStack()
+        {
+            undoStack.Clear();
+            redoStack.Clear();
+            currentRecordingCommand = null;
+            IsRecordingCommand = false;
+        }
+        public void BeginRecordCommand()
+        {
+            if (!UndoEnabled) return;
+
+            if (IsRecordingCommand)
+            {
+                Debug.LogError("End recording command before begin new");
+                return;
+            }
+
+            currentRecordingCommand = new Command();
+
+            IsRecordingCommand = true;
+        }
+        public void EndRecordCommand()
+        {
+            if (!CheckUndoEnabled()) return;
+
+            if (!IsRecordingCommand)
+            {
+                Debug.LogError("Start recording command before ending");
+                return;
+            }
+
+            IsRecordingCommand = false;
+            if (currentRecordingCommand == null || currentRecordingCommand.IsEmpty())
+                return;
+
+            undoStack.Push(currentRecordingCommand);
+            redoStack.Clear();
+        }
+        public void Undo()
+        {
+            if (!CheckUndoEnabled() || undoStack.Count==0) return;
+
+            var command = undoStack.Pop();
+
+            if (command == null)
+                return;
+
+            for (int i = 0; i < command.TileChanges.Count; i++)
+            {
+                var tileChange = command.TileChanges[i];
+                if (tileChange.LastTile == 0)
+                    Erase(tileChange.Position.x, tileChange.Position.y, tileChange.Layer);
+                else
+                    SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.LastTile, tileChange.Layer);
+            }
+
+            redoStack.Push(command);
+        }
+        public void Redo()
+        {
+            if (!CheckUndoEnabled() || redoStack.Count == 0) return;
+
+            var command = redoStack.Pop();
+
+            if (command == null)
+                return;
+
+            for (int i = 0; i < command.TileChanges.Count; i++)
+            {
+                var tileChange = command.TileChanges[i];
+                SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.NewTile, tileChange.Layer);
+            }
+
+            undoStack.Push(command);
+        }
 
         public void GenPreviewTextureBrush(int sizeX =1,int sizeY = 1)
         {
@@ -75,14 +192,12 @@ namespace AdvancedTilemap
             previewTextureBrush.transform.localScale = new Vector3(sizeX,sizeY,1);
 
         }
-
         public void SetActivePreviewBrush(bool value)
         {
             if (previewTextureBrush == null)
                 return;
             previewTextureBrush.gameObject.SetActive(value);
         }
-
         public bool UpdatePreviewBrushPos(Vector2 position)
         {
             if (previewTextureBrush == null)
@@ -103,7 +218,6 @@ namespace AdvancedTilemap
                 Layers[i].TrimInvoke = true;
             }
         }
-
         public void ClearAll()
         {
             for (int i = 0; i < Layers.Count; i++)
@@ -161,7 +275,6 @@ namespace AdvancedTilemap
 
             chunk.SetLiquid(chunkGridX, chunkGridY,value);
         }
-
         public void AddLiquid(int gx, int gy, float value, int layer)
         {
             if (!Layers[layer].LiquidEnabled)
@@ -182,7 +295,6 @@ namespace AdvancedTilemap
 
             chunk.AddLiquid(chunkGridX, chunkGridY,value);
         }
-
         public float GetLiquid(int gx, int gy, int layer)
         {
             if (!Layers[layer].LiquidEnabled)
@@ -220,6 +332,34 @@ namespace AdvancedTilemap
 
             var genVariation = chunk.GetTile(chunkGridX, chunkGridY) != idx;
 
+            if (UndoEnabled && IsRecordingCommand)
+            {
+                if (currentRecordingCommand == null)
+                    currentRecordingCommand = new Command();
+
+                var oldID = chunk.GetTile(chunkGridX, chunkGridY);
+
+                var newID = idx;
+
+                var match = currentRecordingCommand.TileChanges.Find(n => n != null && n.Layer == layer && n.Position.x == gx && n.Position.y == gy);
+
+                if (match == null)
+                {
+                    match = new Command.TileData()
+                    {
+                        Position = new Vector2Int(gx, gy),
+                        LastTile = oldID,
+                        NewTile = idx,
+                        Layer = layer
+                    };
+                    currentRecordingCommand.TileChanges.Add(match);
+                }
+                else
+                {
+                    match.NewTile = idx;
+                }
+            }
+
             chunk.SetTile(chunkGridX, chunkGridY, idx);
            
             if (Layers[layer].Tileset.GetTile(idx).Type == BlockType.Overlap)
@@ -233,7 +373,6 @@ namespace AdvancedTilemap
 
              Layers[layer].TrimInvoke = true;
         }
-
         public byte GetTile(int gx, int gy, int layer)
         {
             Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
@@ -247,7 +386,6 @@ namespace AdvancedTilemap
 
             return chunk.GetTile(chunkGridX, chunkGridY);
         }
-
         public void Erase(int gx, int gy, int layer)
         {
             Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
@@ -260,6 +398,32 @@ namespace AdvancedTilemap
 
             if (chunk.GetTile(chunkGridX, chunkGridY) == 0)
                 return;
+
+            if (UndoEnabled && IsRecordingCommand)
+            {
+                if (currentRecordingCommand == null)
+                    currentRecordingCommand = new Command();
+
+                var oldID = chunk.GetTile(chunkGridX, chunkGridY);
+
+                var match = currentRecordingCommand.TileChanges.Find(n => n != null && n.Layer == layer && n.Position.x == gx && n.Position.y == gy);
+
+                if (match == null)
+                {
+                    match = new Command.TileData()
+                    {
+                        Position = new Vector2Int(gx, gy),
+                        LastTile = oldID,
+                        NewTile = 0,
+                        Layer = layer
+                    };
+                    currentRecordingCommand.TileChanges.Add(match);
+                }
+                else
+                {
+                    match.NewTile = 0;
+                }
+            }
 
             chunk.Erase(chunkGridX, chunkGridY);
 
@@ -281,7 +445,6 @@ namespace AdvancedTilemap
 
             chunk.SetVariation(chunkGridX, chunkGridY, variation);
         }
-       
         public byte GetVariation(int gx, int gy, int layer)
         {
             Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy);
@@ -292,7 +455,6 @@ namespace AdvancedTilemap
 
             return chunk.GetVariation(chunkGridX, chunkGridY);
         }
-
         public void GenVariation(int gx, int gy, int layer)
         {
             var tile = Layers[layer].Tileset.GetTile(GetTile(gx, gy,layer));
@@ -312,7 +474,6 @@ namespace AdvancedTilemap
             if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
             chunk.SetBitmask(chunkGridX, chunkGridY, bitmask);
         }
-
         public byte GetBitmask(int gx, int gy, int layer)
         {
             Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
@@ -324,7 +485,6 @@ namespace AdvancedTilemap
             if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
             return chunk.GetBitmask(chunkGridX, chunkGridY);
         }
-
         public byte CalculateBitmask(int gx, int gy, int layer)
         {
             var tileIdx = GetTile(gx, gy,layer);
@@ -369,7 +529,6 @@ namespace AdvancedTilemap
 
             return bitmask;
         }
-
         public void UpdateBitmask(int gx, int gy, int layer)
         {
             var oldBitmask = GetBitmask(gx, gy,layer);
@@ -391,7 +550,6 @@ namespace AdvancedTilemap
             if (gy < 0) chunkGridY = CHUNK_SIZE - 1 - chunkGridY;
             chunk.SetColor(chunkGridX, chunkGridY, color);
         }
-
         public Color32 GetColor(int gx, int gy, int layer)
         {
             Chunk chunk = Layers[layer].GetOrCreateChunk(gx, gy,false);
@@ -419,6 +577,11 @@ namespace AdvancedTilemap
 
         #region private methods
 
+        private void Start()
+        {
+            ClearUndoStack();
+        }
+
         private void UpdateChunksFlags()
         {
             for (int i = 0; i < Layers.Count; i++)
@@ -426,7 +589,6 @@ namespace AdvancedTilemap
                 Layers[i].UpdateChunksFlags();
             }
         }
-        
         public void RefreshAll(bool immediate = false)
         {
             for (int i = 0; i < Layers.Count; i++)
@@ -434,7 +596,6 @@ namespace AdvancedTilemap
                 Layers[i].RefreshAll(immediate);
             }
         }
-
         private void UpdateRenderer(bool material = false, bool color = false, bool texture = false)
         {
             for (int i = 0; i < Layers.Count; i++)
@@ -472,7 +633,6 @@ namespace AdvancedTilemap
                 }
             }
         }
-
         public void LoadAllChunks()
         {
             for (int i = 0; i < Layers.Count; i++)
@@ -486,7 +646,6 @@ namespace AdvancedTilemap
                 }
             }
         }
-
         public void LoadChunks(Vector2Int min, Vector2Int max)
         {
             Parallel.For(0, Layers.Count, (int i) => {
@@ -515,8 +674,8 @@ namespace AdvancedTilemap
 
                 if (loadTimer > ChunkLoadingDuration)
                 {
-                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
-                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
+                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * ChunkLoadingOffset, CHUNK_SIZE * ChunkLoadingOffset));
+                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * ChunkLoadingOffset, CHUNK_SIZE * ChunkLoadingOffset));
                     LoadChunks(min, max);
                     loadTimer -= ChunkLoadingDuration;
                 }
@@ -527,8 +686,8 @@ namespace AdvancedTilemap
                 {
                     liquidTimer -= LiquidStepsDuration;
 
-                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
-                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * chunkLoadingOffset, CHUNK_SIZE * chunkLoadingOffset));
+                    var min = Utilites.GetGridPosition(Utilites.BoundsMin(Camera.main) - new Vector2(CHUNK_SIZE * ChunkLoadingOffset, CHUNK_SIZE * ChunkLoadingOffset));
+                    var max = Utilites.GetGridPosition(Utilites.BoundsMax(Camera.main) + new Vector2(CHUNK_SIZE * ChunkLoadingOffset, CHUNK_SIZE * ChunkLoadingOffset));
 
                     for (int i = 0; i < Layers.Count; i++)
                     {
@@ -540,7 +699,6 @@ namespace AdvancedTilemap
                 }
             }
         }
-
 
         #endregion
 

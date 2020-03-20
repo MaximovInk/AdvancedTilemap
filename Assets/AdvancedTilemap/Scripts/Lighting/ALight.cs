@@ -11,6 +11,8 @@ namespace AdvancedTilemap.Lighting
         public Material MeshMaterial;
         public Material MaskMaterial;
 
+        public bool Static;
+
         public Color OverlayColor = Color.white;
 
         private MeshFilter meshFilter;
@@ -84,6 +86,9 @@ namespace AdvancedTilemap.Lighting
 
         public void CreateLight()
         {
+            if (Static)
+                return;
+
             CalculatePoints();
             GenerateMesh();
             ApplyData();

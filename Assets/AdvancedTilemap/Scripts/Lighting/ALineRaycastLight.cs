@@ -9,14 +9,21 @@ namespace AdvancedTilemap.Lighting
         public float Angle;
         public float LineDistance;
 
+        public bool IsVertical = false;
+
 		protected override void CalculatePoints()
         {
+            if (IsVertical)
+            { 
+                
+            }
+
             var steps = Mathf.RoundToInt(Size * Resolution);
             var stepSize = (Size/steps);
 
             points = new List<Vector2>();
 
-            float angle = transform.eulerAngles.z - Angle;
+            float angle = Angle + (IsVertical ? 90 : 0);
             var dir = AngleToDirection(angle, true);
 
             var hit = Physics2D.Raycast(transform.position, dir, LineDistance, ObstaclesMask);
@@ -36,23 +43,26 @@ namespace AdvancedTilemap.Lighting
 
             for (int i = 1; i <= steps; i++)
             {
-               
-                hit = Physics2D.Raycast(transform.position + new Vector3(i * stepSize + stepSize, 0, 0), dir, LineDistance, ObstaclesMask);
+                var offset = IsVertical ? new Vector3(0, i * stepSize + stepSize, 0) : new Vector3(i * stepSize + stepSize, 0, 0);
+                var point1 = IsVertical ? new Vector2(0, i * stepSize + stepSize) : new Vector2(i*stepSize+stepSize,0);
+                var point2 = IsVertical ? new Vector3(0, i * stepSize) : new Vector3(i * stepSize, 0);
+
+                hit = Physics2D.Raycast(transform.position + offset, dir, LineDistance, ObstaclesMask);
 
                 if (hit)
                 {
                     point = transform.InverseTransformPoint(hit.point);
-                    point = OffsetDirection(new Vector3(i*stepSize,0), point, hit.distance, LineDistance); 
+                    point = OffsetDirection(point2, point, hit.distance, LineDistance); 
                 }
                 else
                 {
-                    point = dir * LineDistance + new Vector2(i * stepSize + stepSize, 0);
+                    point = dir * LineDistance + point1;
                 }
 
-                points.Add(new Vector2(i * stepSize + stepSize, 0));
+                points.Add(point1);
                 points.Add(point);
 
-                points.Add(new Vector2(i * stepSize + stepSize, 0));
+                points.Add(point1);
                 points.Add(point);
             }
 
