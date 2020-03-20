@@ -6,7 +6,7 @@ namespace AdvancedTilemap.Lighting
     [RequireComponent(typeof(Camera))]
     public class LightCamera : MonoBehaviour
     {
-        [SerializeField, HideInInspector]
+        [SerializeField]
         private Camera cam;
         public Camera RenderCamera;
         public Color Darkness = Color.black;
@@ -14,9 +14,11 @@ namespace AdvancedTilemap.Lighting
         public Vector2 Offset;
         [SerializeField, HideInInspector]
         private Vector2 resolution;
-        [SerializeField, HideInInspector]
+        [SerializeField]
         private RenderTexture RenderTexture;
         public Material RenderTextureMaterial;
+
+        public LayerMask LightingMask;
 
         private void OnValidate()
         {
@@ -26,12 +28,29 @@ namespace AdvancedTilemap.Lighting
 
         private void OnEnable()
         {
-            resolution = new Vector2(Screen.width, Screen.height);
-
+            if (RenderCamera == null)
+            {
+                RenderCamera = new GameObject().AddComponent<Camera>();
+                RenderCamera.clearFlags = CameraClearFlags.Color;
+                RenderCamera.backgroundColor = Color.black;
+                RenderCamera.nearClipPlane = 0f;
+                RenderCamera.transform.SetParent(transform);
+            }
+            if (Quad == null)
+            {
+                Quad = GameObject.CreatePrimitive(PrimitiveType.Quad).GetComponent<Transform>();
+                Quad.transform.SetParent(transform);
+            }
             if (cam == null)
+            {
                 cam = GetComponent<Camera>();
-            if (Quad == null || RenderCamera == null)
-                return;
+                cam.nearClipPlane = 0f;
+                cam.tag = "MainCamera";
+            }
+
+            ValidateView();
+
+            resolution = new Vector2(Screen.width, Screen.height);
 
             UpdateLightView();
         }
@@ -41,8 +60,23 @@ namespace AdvancedTilemap.Lighting
             UpdateLightView();
         }
 
+        private void ValidateView()
+        {
+            cam.cullingMask &= ~LightingMask;
+            RenderCamera.orthographic = true;
+            RenderCamera.cullingMask = LightingMask;
+            cam.orthographic = true;
+            Quad.transform.localPosition = Vector3.zero;
+            RenderCamera.transform.localPosition = Vector3.zero;
+        }
+
         public void UpdateLightView()
         {
+            if (RenderCamera == null || Quad== null || RenderTextureMaterial == null)
+                return;
+
+            ValidateView();
+
             resolution.x = Screen.width;
             resolution.y = Screen.height;
 

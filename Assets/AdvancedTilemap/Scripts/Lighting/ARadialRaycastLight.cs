@@ -50,15 +50,10 @@ namespace AdvancedTilemap.Lighting
                     triangles[i * 3 + 2] = i + 2;
                 }
             }
-
-            //ApplyData();
         }
 
         protected override void CalculatePoints()
         {
-            if (MaskMaterial == null)
-                MaskMaterial = MeshMaterial;
-
             int steps = Mathf.RoundToInt(Angle * Resolution);
             float stepSize = Angle / steps;
 

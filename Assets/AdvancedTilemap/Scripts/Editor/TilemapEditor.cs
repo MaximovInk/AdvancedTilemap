@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Linq;
 using UnityEditorInternal;
+using AdvancedTilemap.Lighting;
 
 namespace AdvancedTilemap
 {
@@ -15,6 +16,59 @@ namespace AdvancedTilemap
     [CustomEditor(typeof(ATilemap))]
     public class TilemapEditor : Editor
     {
+        private static Vector3 ScreenViewPos()
+        {
+            if (SceneView.sceneViews.Count == 0)
+                return Vector3.zero;
+
+            var sceneView = (SceneView.sceneViews[0] as SceneView);
+
+            Camera sceneCam = sceneView.camera;
+            Vector3 spawnPos = sceneCam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 10f));
+            return spawnPos;
+        }
+
+        [MenuItem("GameObject/AdvancedTilemap/Tilemap", priority = 10)]
+        public static void CreateTilemap()
+        {
+            var go = new GameObject();
+            go.AddComponent<ATilemap>();
+            go.name = "Advanced Tilemap";
+            go.transform.position = ScreenViewPos();
+
+            Selection.activeObject = go;
+        }
+        [MenuItem("GameObject/AdvancedTilemap/Radial light(Raycast)", priority = 10)]
+        public static void CreateRadialRaycastLight()
+        {
+            var go = new GameObject();
+            go.AddComponent<ARadialRaycastLight>();
+            go.name = "Radial light(Raycast)";
+            go.transform.position = ScreenViewPos();
+
+            Selection.activeObject = go;
+        }
+        [MenuItem("GameObject/AdvancedTilemap/Line light(Raycast)", priority = 10)]
+        public static void CreateLineRaycastLight()
+        {
+            var go = new GameObject();
+            go.AddComponent<ALineRaycastLight>();
+            go.name = "Line light(Raycast)";
+            go.transform.position = ScreenViewPos();
+
+            Selection.activeObject = go;
+        }
+        [MenuItem("GameObject/AdvancedTilemap/LightCamera", priority = 10)]
+        public static void CreateLightCamera()
+        {
+            var go = new GameObject();
+            go.AddComponent<LightCamera>();
+            go.name = "LightCamera";
+            go.transform.position = ScreenViewPos();
+
+            Selection.activeObject = go;
+        }
+
         public static bool mainBox = true;
         public static bool rendererBox = true;
         public static bool lightingBox = true;

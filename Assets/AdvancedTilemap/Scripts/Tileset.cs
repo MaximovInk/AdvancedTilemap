@@ -19,7 +19,7 @@ namespace AdvancedTilemap
         public bool OverlapDepthIsIndex = true;
         public int OverlapDepth;
 
-     
+        public GameObject Prefab;
 
         public Tileset tileset;
 
