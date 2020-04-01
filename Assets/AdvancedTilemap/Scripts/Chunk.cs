@@ -2,6 +2,8 @@
 using UnityEditor;
 using UnityEngine;
 using AdvancedTilemap.Liquid;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace AdvancedTilemap
 {
@@ -32,6 +34,7 @@ namespace AdvancedTilemap
 
         private bool meshRebuild = false;
         private bool colliderRebuild = false;
+        private bool applyMesh = false;
 
         private MaterialPropertyBlock prop;
 
@@ -53,13 +56,16 @@ namespace AdvancedTilemap
             if (meshRebuild)
             {
                 GenerateMesh();
-
-                meshData.ApplyToMesh();
             }
 
             if (colliderRebuild)
                 GenerateCollider();
 
+            if (applyMesh)
+            {
+                meshData.ApplyToMesh();
+                applyMesh = false;
+            }
         }
 
         public bool IsVisible()
@@ -249,28 +255,27 @@ namespace AdvancedTilemap
                 return;
             }
 
-            if (tiles[index] != 0)
-            {
-                tiles[index] = tileIdx;
-                meshRebuild = true;
-                return;
-            }
 
             colliderRebuild = true;
 
             tiles[index] = tileIdx;
-            var tile = Layer.Tileset.GetTile(tileIdx);
-            AddBlock(gx, gy, tile, colors[gx + gy * ATilemap.CHUNK_SIZE]);
+
+            meshRebuild = true;
+
         }
         public void Erase(int gx, int gy)
         {
-            bool changed = tiles[gx + gy * ATilemap.CHUNK_SIZE] != 0;
+            var index = gx + gy * ATilemap.CHUNK_SIZE;
+            if (tiles[index] == 0)
+            {
+                return;
+            }
 
             tiles[gx + gy * ATilemap.CHUNK_SIZE] = 0;
 
-            meshRebuild = meshRebuild || changed;
+            meshRebuild = true;
 
-            colliderRebuild = colliderRebuild || changed;
+            colliderRebuild = true;
         }
 
         public void SetColor(int gx, int gy, Color32 color)
@@ -300,22 +305,27 @@ namespace AdvancedTilemap
 
         private void GenerateMesh()
         {
-
             meshRebuild = false;
-            meshData.Clear();
-
-            for (int i = 0; i < tiles.Length; i++)
+            Thread thread = new Thread(() =>
             {
-                if (tiles[i] == 0)
-                    continue;
+                meshData.Clear();
 
-                var gx = i % ATilemap.CHUNK_SIZE;
-                var gy = i / ATilemap.CHUNK_SIZE;
+                for (int i = 0; i < tiles.Length; i++)
+                {
+                    if (tiles[i] == 0)
+                        continue;
 
-                var tile = Layer.Tileset.GetTile(tiles[i]);
+                    var gx = i % ATilemap.CHUNK_SIZE;
+                    var gy = i / ATilemap.CHUNK_SIZE;
 
-                AddBlock(gx, gy, tile, GetColor(gx, gy));
-            }
+                    var tile = Layer.Tileset.GetTile(tiles[i]);
+
+                    AddBlock(gx, gy, tile, GetColor(gx, gy));
+                }
+                applyMesh = true;
+            });
+            thread.Start();
+
         }
 
         public Bounds GetBounds()
@@ -345,16 +355,9 @@ namespace AdvancedTilemap
         {
             switch (tile.Type)
             {
-                /*case BlockType.Single:
-                    AddSingleBlock(gx, gy, tile);
-                    break;*/
                 case BlockType.Overlap:
                     AddOverlapBlock(gx, gy, tile, tile.BlendOverlap, color);
                     break;
-                /* case BlockType.Multi:
-                     break;
-                 case BlockType.Slope:
-                     break;*/
                 default:
                     AddSingleBlock(gx, gy, tile, color);
                     break;
@@ -558,11 +561,6 @@ namespace AdvancedTilemap
             if (meshRenderer == null)
                 meshRenderer = GetComponent<MeshRenderer>();
 
-            /* if (lightChunk == null)
-                 lightChunk = GetComponentInChildren<LightChunk>();*/
-
-
-
             if (!Application.isPlaying && !meshRenderer.enabled)
             {
                 meshRenderer.enabled = true;
@@ -574,7 +572,7 @@ namespace AdvancedTilemap
             OnValidate();
             UpdateColliderComponent();
         }
-       
+
         private void Update()
         {
             UpdateMesh();

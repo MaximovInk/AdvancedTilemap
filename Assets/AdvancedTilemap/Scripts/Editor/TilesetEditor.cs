@@ -41,6 +41,7 @@ namespace AdvancedTilemap
             EditorGUI.PropertyField(rect5, property.FindPropertyRelative("BlendOverlap"));
             EditorGUI.PropertyField(rect6, property.FindPropertyRelative("OverlapDepthIsIndex"));
             EditorGUI.PropertyField(rect7, property.FindPropertyRelative("OverlapDepth"));
+            
 
             var tileset = property.FindPropertyRelative("tileset").objectReferenceValue as Tileset;
             var tile = tileset.GetTile(name.stringValue);
@@ -141,6 +142,9 @@ namespace AdvancedTilemap
                 foldout = false;
             }
 
+
+
+            if(tileset.Texture != null)
             GUI.DrawTextureWithTexCoords(
                               new Rect(rect.x + rect.width*0.3f, rect.y,30,30),
                               tileset.Texture ,
@@ -175,6 +179,7 @@ namespace AdvancedTilemap
             tileset.Texture = EditorGUILayout.ObjectField("Texture", tileset.Texture, typeof(Texture2D), false) as Texture2D;
 
             tileset.TileSize = EditorGUILayout.Vector2IntField("Tile size(px):", tileset.TileSize);
+            EditorGUILayout.Vector2Field("Texture units:", tileset.TileTexUnit);
 
             tilesList.DoLayoutList();
 

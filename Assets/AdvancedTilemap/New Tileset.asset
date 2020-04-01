@@ -13,33 +13,18 @@ MonoBehaviour:
   m_Name: New Tileset
   m_EditorClassIdentifier: 
   PPU: 8
-  Texture: {fileID: 2800000, guid: 505d765302d015040a307f96c8788e71, type: 3}
+  texture: {fileID: 2800000, guid: 505d765302d015040a307f96c8788e71, type: 3}
   tiles:
   - Name: Tile
     Type: 1
     VariationsCount: 1
     Position: {x: 0, y: 0}
-    Size: {x: 3, y: 2}
+    Size: {x: 2, y: 3}
     BlendOverlap: 1
     OverlapDepthIsIndex: 1
     OverlapDepth: 0
     tileset: {fileID: 11400000}
-  - Name: Tile
-    Type: 1
-    VariationsCount: 0
-    Position: {x: 2, y: 0}
-    Size: {x: 2, y: 3}
-    BlendOverlap: 1
-    OverlapDepthIsIndex: 1
-    OverlapDepth: 1
-    tileset: {fileID: 11400000}
-  - Name: Tile
-    Type: 0
-    VariationsCount: 0
-    Position: {x: 0, y: 0}
-    Size: {x: 0, y: 0}
-    BlendOverlap: 1
-    OverlapDepthIsIndex: 1
-    OverlapDepth: 2
-    tileset: {fileID: 11400000}
   TileSize: {x: 8, y: 8}
+  TileTexUnitX: 0.03125
+  TileTexUnitY: 0.03125
+  TileTexUnit: {x: 0.03125, y: 0.03125}

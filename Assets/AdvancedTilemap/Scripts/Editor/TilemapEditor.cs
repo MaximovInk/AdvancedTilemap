@@ -325,7 +325,7 @@ namespace AdvancedTilemap
 
                 LastMousePos = new Vector2Int(gridX, gridY);
 
-                tilemap.Layers[selectedLayer].UpdateMesh();
+                //tilemap.Layers[selectedLayer].UpdateMesh();
 
                 EditorUtility.SetDirty(tilemap);
 

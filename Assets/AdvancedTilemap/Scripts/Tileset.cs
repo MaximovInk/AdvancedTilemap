@@ -19,8 +19,6 @@ namespace AdvancedTilemap
         public bool OverlapDepthIsIndex = true;
         public int OverlapDepth;
 
-        public GameObject Prefab;
-
         public Tileset tileset;
 
         public Vector2 GetTexPos(int variation = 0)
@@ -50,20 +48,24 @@ namespace AdvancedTilemap
             var pos = new Vector2((Position.x) * tileset.TileTexUnitX, Position.y * tileset.TileTexUnitY);
             var size = new Vector2(Size.x * VariationsCount * tileset.TileTexUnitX, Size.y*tileset.TileTexUnitY);
 
-            return new Rect(new Vector2(pos.x,pos.y),new Vector2(size.x,size.y));
+            return new Rect(pos, size);
         }
 
         public Rect GetTexPreview()
         {
-            var pos = new Vector2((Position.x) * tileset.TileTexUnitX, Position.y * tileset.TileTexUnitY);
-            var unitX = tileset.TileTexUnitX;
-            var unitY = tileset.TileTexUnitY;
+            var pos 
+                = new Vector2((Position.x) * tileset.TileTexUnitX, Position.y * tileset.TileTexUnitY);
+
+            var rect = Rect.zero;
 
             if (Type == BlockType.Overlap)
             {
-                return new Rect(new Vector2(pos.x,pos.y),new  Vector2(unitX*2f,unitY*2f));
+                rect = new Rect(new Vector2(pos.x,pos.y),new  Vector2(tileset.TileTexUnitX * 2f, tileset.TileTexUnitY * 2f));
             }
-            return new Rect(pos, new Vector2(unitX,unitY));
+            rect = new Rect(pos, new Vector2(tileset.TileTexUnitX, tileset.TileTexUnitY));
+
+           
+            return rect;
         }
     }
 
@@ -81,18 +83,33 @@ namespace AdvancedTilemap
         public int PPU = 8;
         public int ZLenght => tiles.Max(n=>n.OverlapDepth);
 
-        public Texture2D Texture;
+        public Texture2D Texture { get => texture; set { texture = value; UpdateValues(); } }
+        [SerializeField,HideInInspector]
+        private Texture2D texture;
 
         public List<Tile> tiles = new List<Tile>();
 
         public Vector2Int TileSize;
 
-        public float TileTexUnitX => (float)TileSize.x / Texture.width;
-        public float TileTexUnitY => (float)TileSize.y / Texture.height;
+        public float TileTexUnitX = 0;
+        public float TileTexUnitY = 0;
 
-        public Vector2 TileTexUnit => new Vector2(
-            (float)TileSize.x / Texture.width, 
-            (float)TileSize.y / Texture.height);
+        public Vector2 TileTexUnit = Vector2.zero;
+
+        public void UpdateValues()
+        {
+            if (texture == null)
+            {
+                TileTexUnitX = 0;
+                TileTexUnitY = 0;
+            }
+            else
+            {
+                TileTexUnitX = (float)TileSize.x / Texture.width;
+                TileTexUnitY = (float)TileSize.y / Texture.height;
+            }
+            TileTexUnit = new Vector2(TileTexUnitY,TileTexUnitY);
+        }
 
 
         public Tile GetTile(int index)

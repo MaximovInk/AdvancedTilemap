@@ -25,32 +25,32 @@ namespace AdvancedTilemap
 
         public void AddSquare(Vector2 texturePos, Vector2 tileUnit, float vX0, float vY0, float vX1, float vY1, float z, float uvMinX,float uvMinY, float uvMaxX, float uvMaxY, Color32 color)
         {
-            triangles.Add(vertices.Count);
-            triangles.Add(vertices.Count + 1);
-            triangles.Add(vertices.Count + 2);
-            triangles.Add(vertices.Count);
-            triangles.Add(vertices.Count + 2);
-            triangles.Add(vertices.Count + 3);
+            lock (mesh)
+            {
+                triangles.Add(vertices.Count);
+                triangles.Add(vertices.Count + 1);
+                triangles.Add(vertices.Count + 2);
+                triangles.Add(vertices.Count);
+                triangles.Add(vertices.Count + 2);
+                triangles.Add(vertices.Count + 3);
+                vertices.Add(new Vector3(vX0, vY0, z));
+                vertices.Add(new Vector3(vX0, vY1, z));
+                vertices.Add(new Vector3(vX1, vY1, z));
+                vertices.Add(new Vector3(vX1, vY0, z));
+                uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMinX + PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMinY + PP_OFFSET));
+                uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMinX + PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMaxY - PP_OFFSET));
+                uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMaxX - PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMaxY - PP_OFFSET));
+                uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMaxX - PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMinY + PP_OFFSET));
+                colors.Add(color);
+                colors.Add(color);
+                colors.Add(color);
+                colors.Add(color);
+            }
 
-            vertices.Add(new Vector3(vX0, vY0, z));
-            vertices.Add(new Vector3(vX0, vY1, z));
-            vertices.Add(new Vector3(vX1, vY1, z));
-            vertices.Add(new Vector3(vX1, vY0, z));
-
-            uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMinX + PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMinY + PP_OFFSET));
-            uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMinX + PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMaxY - PP_OFFSET));
-            uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMaxX - PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMaxY - PP_OFFSET));
-            uv.Add(new Vector2(tileUnit.x * texturePos.x + tileUnit.x * uvMaxX - PP_OFFSET, tileUnit.y * texturePos.y + tileUnit.y * uvMinY + PP_OFFSET));
-
-            colors.Add(color);
-            colors.Add(color);
-            colors.Add(color);
-            colors.Add(color);
         }
 
         public void Clear()
         {
-            Mesh.Clear();
             triangles.Clear();
             vertices.Clear();
             uv.Clear();
@@ -59,12 +59,17 @@ namespace AdvancedTilemap
 
         public void ApplyToMesh()
         {
-            Mesh.vertices = vertices.ToArray();
-            Mesh.triangles = triangles.ToArray();
-            Mesh.uv = uv.ToArray();
-            Mesh.colors32 = colors.ToArray();
-            Mesh.RecalculateNormals();
-            Mesh.RecalculateTangents();
+            lock (mesh)
+            {
+                Mesh.Clear();
+                Mesh.vertices = vertices.ToArray();
+                Mesh.triangles = triangles.ToArray();
+                Mesh.uv = uv.ToArray();
+                Mesh.colors32 = colors.ToArray();
+                Mesh.RecalculateNormals();
+                Mesh.RecalculateTangents();
+            }
+            
         }
 
         public Mesh GetMesh()
