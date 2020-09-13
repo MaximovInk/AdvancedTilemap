@@ -3,7 +3,7 @@ Advanced tilemap system for Unity as a Starbound or Terraria
 
 Trello : https://trello.com/b/vjc93JAf/advancedtilemap
 
-Futures:
+Features:
 - [x] Infinity map
 - [x] Chunk loading
 - [x] Multi threading
