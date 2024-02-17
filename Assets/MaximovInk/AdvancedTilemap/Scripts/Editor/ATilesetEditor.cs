@@ -1,10 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using UnityEditorInternal;
-using System.Reflection;
-using System;
 
 namespace MaximovInk.AdvancedTilemap
 {

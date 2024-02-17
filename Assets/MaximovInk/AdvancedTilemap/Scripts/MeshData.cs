@@ -51,10 +51,10 @@ namespace MaximovInk.AdvancedTilemap
             if (quadUnit == Vector2.zero)
                 quadUnit = Vector2.one;
 
-            vertices.Add(new Vector3(data.vX0*  quadUnit.x - GAP_FIX, data.vY0*  quadUnit.y - GAP_FIX, data.z));
-            vertices.Add(new Vector3(data.vX0 * quadUnit.x - GAP_FIX, data.vY1*  quadUnit.y + GAP_FIX, data.z));
-            vertices.Add(new Vector3(data.vX1 * quadUnit.x + GAP_FIX, data.vY1 * quadUnit.y + GAP_FIX, data.z));
-            vertices.Add(new Vector3(data.vX1 * quadUnit.x + GAP_FIX, data.vY0 * quadUnit.y - GAP_FIX, data.z));
+            vertices.Add(new Vector3(data.vX0*  quadUnit.x, data.vY0*  quadUnit.y, data.z));
+            vertices.Add(new Vector3(data.vX0 * quadUnit.x, data.vY1*  quadUnit.y, data.z));
+            vertices.Add(new Vector3(data.vX1 * quadUnit.x, data.vY1 * quadUnit.y, data.z));
+            vertices.Add(new Vector3(data.vX1 * quadUnit.x, data.vY0 * quadUnit.y, data.z));
 
             var uvOffset = GAP_FIX * tileUV.Size.x;
 

@@ -36,21 +36,21 @@ namespace MaximovInk.AdvancedTilemap
             data.Layer = layer;
             data.Event = Event.current;
 
-            GUILayout.BeginVertical("helpBox");
 
+            GUILayout.BeginVertical("helpBox");
 
             GUILayout.Label($"{layer.name}");
 
-
-
             layer.Tileset = (ATileset)EditorGUILayout.ObjectField("Tileset", layer.Tileset, typeof(ATileset), false);
             layer.Material = (Material)EditorGUILayout.ObjectField("Material", layer.Material, typeof(Material), false);
-            layer.gameObject.layer = EditorGUILayout.LayerField("Layer:", layer.gameObject.layer);
-            layer.gameObject.tag = EditorGUILayout.TagField("Layer:", layer.gameObject.tag);
+            layer.LayerMask = EditorGUILayout.LayerField("Layer:", layer.LayerMask);
+            layer.Tag = EditorGUILayout.TagField("Layer:", layer.gameObject.tag);
 
+            if (data.selectedTile == 0 && layer.Tileset != null && layer.Tileset.TilesCount > 0)
+                data.selectedTile = 1;
 
             data.SelectedToolbar =
-                GUILayout.Toolbar(data.SelectedToolbar, new string[] { "Paint", "Map", "Renderer", "Liquid" });
+                GUILayout.Toolbar(data.SelectedToolbar, new string[] { "All", "Paint", "Map", "Renderer", "Liquid", "Collision" });
 
             if (data.LastSelectedToolbar != data.SelectedToolbar && data.SelectedToolbar == 0)
             {
@@ -73,15 +73,25 @@ namespace MaximovInk.AdvancedTilemap
             {
                 case 0:
                     DrawPaintBox(ref data);
+                    DrawMapBox(ref data);
+                    DrawRendererBox(ref data);
+                    DrawLiquidBox(ref data);
+                    DrawColliderBox(ref data);
                     break;
                 case 1:
-                    DrawMapBox(ref data);
+                    DrawPaintBox(ref data);
                     break;
                 case 2:
-                    DrawRendererBox(ref data);
+                    DrawMapBox(ref data);
                     break;
                 case 3:
+                    DrawRendererBox(ref data);
+                    break;
+                case 4:
                     DrawLiquidBox(ref data);
+                    break;
+                case 5:
+                    DrawColliderBox(ref data);
                     break;
             }
 
@@ -162,7 +172,7 @@ namespace MaximovInk.AdvancedTilemap
             if (!(data.selectedTile > 0 && data.selectedTile < layer.Tileset.TilesCount+1))
                 return repaint;
 
-            if (data.SelectedToolbar == 0)
+            if (data.SelectedToolbar == 0 || data.SelectedToolbar == 1)
             {
                 Event e = Event.current;
                 data.Event = e;
@@ -324,7 +334,6 @@ namespace MaximovInk.AdvancedTilemap
                 layer.LiquidMaterial = (Material)EditorGUILayout.ObjectField("Material", layer.LiquidMaterial, typeof(Material), false);
                 layer.MinLiquidColor = EditorGUILayout.ColorField("Min Liquid color:", layer.MinLiquidColor);
                 layer.MaxLiquidColor = EditorGUILayout.ColorField("Max Liquid color:", layer.MaxLiquidColor);
-                layer.LiquidStep_ms = EditorGUILayout.FloatField("Liquid step ms:", layer.LiquidStep_ms);
             }
         }
 
@@ -345,8 +354,7 @@ namespace MaximovInk.AdvancedTilemap
             data.UVTransform._flipHorizontal = EditorGUILayout.Toggle("flipHorizontal", data.UVTransform._flipHorizontal);
             if (EditorGUI.EndChangeCheck())
                 GenPreviewTextureBrush(ref data);
-
-            layer.IsUndoEnabled = EditorGUILayout.Toggle("UndoEnabled", layer.IsUndoEnabled);
+            
         }
 
         private static void DrawMapBox(ref ALayerEditorData data)
@@ -359,8 +367,6 @@ namespace MaximovInk.AdvancedTilemap
                 layer.Clear();
                 layer.EndRecordCommand();
             }
-            layer.AutoTrim = EditorGUILayout.Toggle("Auto trim:", layer.AutoTrim);
-            layer.ColliderEnabled = EditorGUILayout.Toggle("Collider enabled", layer.ColliderEnabled);
             layer.UpdateVariationsOnRefresh = EditorGUILayout.Toggle("Update variations on refresh", layer.UpdateVariationsOnRefresh);
             layer.ShowChunkBounds = EditorGUILayout.Toggle("Show chunk bounds", layer.ShowChunkBounds);
         }
@@ -377,6 +383,14 @@ namespace MaximovInk.AdvancedTilemap
             layer.TintColor = EditorGUILayout.ColorField("Tint Color:", layer.TintColor);
         }
 
+        private static void DrawColliderBox(ref ALayerEditorData data)
+        {
+            var layer = data.Layer;
+            GUILayout.Label("Collision:");
+            layer.ColliderEnabled = EditorGUILayout.Toggle("Collider enabled", layer.ColliderEnabled);
+            layer.PhysicsMaterial2D = EditorGUILayout.ObjectField("Name:", layer.PhysicsMaterial2D, typeof(PhysicsMaterial2D), false) as PhysicsMaterial2D;
+            layer.IsTrigger = EditorGUILayout.Toggle("Is trigger:", layer.IsTrigger);
+        }
 
         private static void BeginChangeCheck() => EditorGUI.BeginChangeCheck();
 

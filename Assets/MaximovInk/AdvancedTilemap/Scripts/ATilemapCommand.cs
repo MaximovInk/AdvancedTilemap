@@ -25,6 +25,7 @@ namespace MaximovInk.AdvancedTilemap
         }
     }
 
+    [System.Serializable]
     public class TilemapCommandContainer
     {
         public Stack<ATilemapCommand> undoCommands = new Stack<ATilemapCommand>();

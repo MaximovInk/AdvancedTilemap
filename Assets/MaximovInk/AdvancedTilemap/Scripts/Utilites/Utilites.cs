@@ -157,36 +157,6 @@ namespace MaximovInk.AdvancedTilemap
             return new Vector2Int(GetGridX(layer, localPos), GetGridY(layer, localPos));
         }
 
-        public static List<ATile> GenerateSimpleTiles(ATileset tileset, int UVInTilesX, int UVInTilesY)
-        {
-            var tiles = new List<ATile>();
-
-            var texture = tileset.Texture;
-
-            if (texture == null) return tiles;
-
-            var width = texture.width / (tileset.TileSize.x * UVInTilesX);
-            var height = texture.height / (tileset.TileSize.y * UVInTilesY);
-
-            Debug.Log($"{texture.width} / ({tileset.TileSize.x} * {UVInTilesX}) = {texture.width / (tileset.TileSize.x * UVInTilesX)}");
-
-            for (var ix = 0; ix <= width; ix++)
-            {
-                for (var iy = 0; iy < height; iy++)
-                {
-                    var tile = new ATile();
-                    var uv = new ATileUV();
-                    uv.Min = new Vector2Int(ix, iy) * tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
-                    uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
-
-                    tile.SetUV(uv);
-                    tiles.Add(tile);
-                }
-            }
-
-            return tiles;
-        }
-
         private static ATileDriver[] _drivers;
 
         public static ATileDriver[] GetAllDriversOfProject()

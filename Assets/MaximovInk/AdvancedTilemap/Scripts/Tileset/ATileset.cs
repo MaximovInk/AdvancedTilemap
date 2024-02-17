@@ -41,6 +41,13 @@ namespace MaximovInk.AdvancedTilemap
 
         private ATileDriver _tileDriver;
 
+        public ushort AddTile()
+        {
+            _tiles.Add(TileDriver.GenerateTile(this));
+            UpdateIDs();
+            return _tiles[^1].ID;
+        }
+
         public ushort AddTile(ATile tile)
         {
             _tiles.Add(tile);

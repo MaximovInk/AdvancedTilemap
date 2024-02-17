@@ -20,12 +20,12 @@ namespace MaximovInk.AdvancedTilemap
             return spawnPos;
         }
 
-        [MenuItem("GameObject/Advanced Tilemap Editor",priority =10)]
+        [MenuItem("GameObject/AdvancedTilemap", priority =10)]
         public static void CreateTilemap()
         {
             var go = new GameObject();
             go.AddComponent<ATilemap>();
-            go.name = "Tilemap";
+            go.name = "AdvancedTilemap";
             go.transform.position = ScreenViewPos();
             Selection.activeObject = go;
         }
@@ -42,7 +42,6 @@ namespace MaximovInk.AdvancedTilemap
             layers = serializedObject.FindProperty("layers");
             list = new ReorderableList(serializedObject, layers, true, true, true, true);
 
-            //list.drawElementCallback = DrawListItemsCallback;
             list.drawHeaderCallback = DrawHeaderCallback;
             list.onAddCallback = AddCallback;
             list.onReorderCallbackWithDetails = ReorderCallback;
@@ -51,7 +50,6 @@ namespace MaximovInk.AdvancedTilemap
             list.onSelectCallback = SelectCallback;
 
             ALayerGUI.Enable(ref _data);
-
         }
 
         private void OnDisable()
@@ -71,13 +69,12 @@ namespace MaximovInk.AdvancedTilemap
         {
             var textRect = new Rect(rect.x + 10, rect.y, rect.width - 80, rect.height);
             var text1Rect = new Rect(rect.x + rect.width - 70, rect.y, 30, rect.height);
+           
             var text2Rect = new Rect(rect.x + rect.width - 40, rect.y, 40, rect.height);
+            var pos = tilemap.layers[index].transform.position;
 
             GUI.Label(textRect, tilemap.layers[index].gameObject.name);
-            GUI.Label(text1Rect, "Z:");
-            var pos = tilemap.layers[index].transform.position;
-            pos.z = EditorGUI.FloatField(text2Rect, pos.z);
-            tilemap.layers[index].transform.position = pos;
+            GUI.Label(text1Rect, $"Z: {pos.z}");
         }
 
         private void RemoveCallback(ReorderableList list)
@@ -111,6 +108,23 @@ namespace MaximovInk.AdvancedTilemap
             if (tilemap.layers == null) tilemap.layers = new List<ALayer>();
 
             list.DoLayoutList();
+
+            GUILayout.BeginVertical();
+
+            GUILayout.Label("Tilemap parameters:");
+
+            tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
+            tilemap.UndoEnabled = EditorGUILayout.Toggle("Undo/Redo recording:", tilemap.UndoEnabled);
+            tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
+            tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
+
+            if(GUILayout.Button("Refresh all layers"))
+            {
+                tilemap.Refresh(true);
+            }
+
+            GUILayout.EndVertical();
+
             serializedObject.ApplyModifiedProperties();
 
             if (layerSelected > -1 && layerSelected < tilemap.layers.Count)

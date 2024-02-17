@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using static MaximovInk.Bitmask;
 
 namespace MaximovInk.AdvancedTilemap
@@ -102,11 +101,7 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        public override List<ATile> GenerateTiles(ATileset tileset)
-        {
-            return Utilites.GenerateSimpleTiles(tileset, UVInTilesX, UVInTilesY);
-        }
-
+#if UNITY_EDITOR
         public override bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0)
         {
             var uv = tile.GetUV(variationID);
@@ -132,13 +127,20 @@ namespace MaximovInk.AdvancedTilemap
             var tile2Rect = new Rect(rect.x + viewTileUnit + 10, rect.y, viewTileUnit, viewTileUnit);
             GUI.DrawTextureWithTexCoords(tile2Rect, tileset.Texture, new Rect(uvMin + new Vector2(uvUnit.x, 0), uvUnit));
 
+            if (GUI.Button(tile2Rect, "", GUIStyle.none))
+                return true;
+
             var tile3Rect = new Rect(rect.x + viewTileUnit * 2 + 20, rect.y, viewTileUnit, viewTileUnit);
             GUI.DrawTextureWithTexCoords(tile3Rect, tileset.Texture, new Rect(uvMin + new Vector2(uvUnit.x * 2, 0), uvUnit));
+
+            if (GUI.Button(tile3Rect, "", GUIStyle.none))
+                return true;
 
             GUILayout.Space(20);
 
             return false;
         }
+#endif
     }
 
 }

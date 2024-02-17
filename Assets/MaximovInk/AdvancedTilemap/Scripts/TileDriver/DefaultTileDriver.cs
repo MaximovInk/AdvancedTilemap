@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -27,11 +26,8 @@ namespace MaximovInk.AdvancedTilemap
             });
         }
 
-        public override List<ATile> GenerateTiles(ATileset tileset)
-        {
-            return Utilites.GenerateSimpleTiles(tileset, UVInTilesX, UVInTilesY);
-        }
 
+#if UNITY_EDITOR
         public override bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0)
         {
             var uv = tile.GetUV(variationID);
@@ -54,5 +50,6 @@ namespace MaximovInk.AdvancedTilemap
 
             return false;
         }
+#endif
     }
 }

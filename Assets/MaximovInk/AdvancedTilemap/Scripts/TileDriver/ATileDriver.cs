@@ -11,17 +11,42 @@ namespace MaximovInk.AdvancedTilemap
 
         public abstract void SetTile(ATileDriverData data);
 
-        public abstract List<ATile> GenerateTiles(ATileset tileset);
-
-        public abstract bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0);
-
-        public virtual void SelectTile(ATileUV uv, ATile tile, int variationID = 0)
+        public virtual ATile GenerateTile(ATileset tileset)
         {
-            var uvSize = uv.Max - uv.Min;
+            var tile = new ATile();
+            var uv = new ATileUV();
+            uv.Min = tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+            uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
 
-            uv.Min -= new Vector2(0, (UVInTilesY-1) * uvSize.y);
-            uv.Max += new Vector2((UVInTilesX-1) * uvSize.x, 0);
-            tile.SetUV(uv, variationID);
+            return tile;
+        }
+
+        public virtual List<ATile> GenerateTiles(ATileset tileset)
+        {
+            var tiles = new List<ATile>();
+
+            var texture = tileset.Texture;
+
+            if (texture == null) return tiles;
+
+            var width = texture.width / (tileset.TileSize.x * UVInTilesX);
+            var height = texture.height / (tileset.TileSize.y * UVInTilesY);
+
+            for (var ix = 0; ix <= width; ix++)
+            {
+                for (var iy = 0; iy < height; iy++)
+                {
+                    var tile = new ATile();
+                    var uv = new ATileUV();
+                    uv.Min = new Vector2Int(ix, iy) * tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+                    uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+
+                    tile.SetUV(uv);
+                    tiles.Add(tile);
+                }
+            }
+
+            return tiles;
         }
 
         public static bool IsEquals(ATileDriver a, ATileDriver b)
@@ -32,7 +57,17 @@ namespace MaximovInk.AdvancedTilemap
             return aTileDriver == bTileDriver;
         }
 
-        //TOOD:REMOVE
+#if UNITY_EDITOR
+        public virtual void SelectTile(ATileUV uv, ATile tile, int variationID = 0)
+        {
+            var uvSize = uv.Max - uv.Min;
+
+            uv.Min -= new Vector2(0, (UVInTilesY - 1) * uvSize.y);
+            uv.Max += new Vector2((UVInTilesX - 1) * uvSize.x, 0);
+            tile.SetUV(uv, variationID);
+            Debug.Log(uv);
+
+        }
 
         protected Rect[,] UVRects;
         protected Rect[,] GUIViewRects;
@@ -81,22 +116,24 @@ namespace MaximovInk.AdvancedTilemap
         {
             var uv = tile.GetUV(variationID);
             var uvMin = uv.Min;
-            var uvMax = uv.Max;
             var uvSize = uv.Max - uvMin;
 
-            if (UVRects == null || UVRects.Length != UVInTilesX * UVInTilesY)
-                UVRects = GenUVRects(uvMin, uvSize);
+            UVRects = GenUVRects(uvMin, uvSize);
+
             if (GUIViewRects == null || GUIViewRects.Length != UVInTilesX * UVInTilesY)
             {
                 if (rect.x != 0 && rect.y != 0)
                     GUIViewRects = GenGUITileUnit(rect, size, new Vector2(10, 10));
                 else
                 {
-                    
+
                     return true;
                 }
             }
             return false;
         }
+
+        public abstract bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0);
+#endif
     }
 }

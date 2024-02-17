@@ -82,11 +82,8 @@ namespace MaximovInk.AdvancedTilemap
 
             if (GUILayout.Button("Add tile"))
             {
-                var newTile = new ATile();
-                var id = tileset.AddTile(newTile);
-
+                var id = tileset.AddTile();
                 tileset.UpdateIDs();
-
                 editorData.SelectedTile = id;
             }
 

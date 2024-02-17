@@ -85,7 +85,7 @@ namespace MaximovInk.AdvancedTilemap
     public class AChunk : MonoBehaviour
     {
         public const int CHUNK_SIZE = 32;
-        public ALayer layer;
+        public ALayer Layer;
         [FormerlySerializedAs("meshData")] [HideInInspector,SerializeField]
         private MeshData _meshData;
 
@@ -110,15 +110,15 @@ namespace MaximovInk.AdvancedTilemap
 
         private void OnDrawGizmos()
         {
-            if (layer == null) layer = GetComponentInParent<ALayer>();
+            if (Layer == null) Layer = GetComponentInParent<ALayer>();
 
-            if (layer.Tileset == null) return;
+            if (Layer.Tileset == null) return;
 
-            if (!layer.ShowChunkBounds) return;
+            if (!Layer.ShowChunkBounds) return;
 
             Gizmos.color = Color.blue;
             var min = transform.position;
-            var max = min + (Vector3)layer.Tileset.GetTileUnit() * CHUNK_SIZE;
+            var max = min + (Vector3)Layer.Tileset.GetTileUnit() * CHUNK_SIZE;
 
             Gizmos.DrawLine(min, new Vector3(min.x,max.y));
             Gizmos.DrawLine(new Vector3(min.x, max.y), max);
@@ -138,15 +138,15 @@ namespace MaximovInk.AdvancedTilemap
             CheckRenderer();
             CheckValidate();
             UpdateRenderer();
-            ColliderEnabledChange(layer.ColliderEnabled);
+            ColliderEnabledChange(Layer.ColliderEnabled);
             UpdateLiquidState();
         }
 
         private void CheckValidate()
         {
-            if (layer?.Tileset != null)
+            if (Layer?.Tileset != null)
             {
-                var tileUnit = layer.Tileset.GetTileUnit();
+                var tileUnit = Layer.Tileset.GetTileUnit();
                 transform.localPosition = new Vector3(GridX * tileUnit.x, GridY * tileUnit.y);
             }
 
@@ -156,9 +156,9 @@ namespace MaximovInk.AdvancedTilemap
                 meshFilter.sharedMesh = _meshData.GetMesh();
             }
 
-            if (layer == null)
+            if (Layer == null)
             {
-                layer = GetComponentInParent<ALayer>();
+                Layer = GetComponentInParent<ALayer>();
             }
 
             if (_data == null)
@@ -205,7 +205,7 @@ namespace MaximovInk.AdvancedTilemap
             if (immediate)
             {
                 _data.IsDirty = true;
-                if (layer.UpdateVariationsOnRefresh)
+                if (Layer.UpdateVariationsOnRefresh)
                     GenerateVariations();
             }
             Update();
@@ -235,7 +235,7 @@ namespace MaximovInk.AdvancedTilemap
                 if (_data.data[i] == 0)
                     continue;
 
-                if (_data.data[i] > layer.Tileset.TilesCount)
+                if (_data.data[i] > Layer.Tileset.TilesCount)
                     EraseTile(i % CHUNK_SIZE, i / CHUNK_SIZE);
             }
         }
@@ -244,26 +244,25 @@ namespace MaximovInk.AdvancedTilemap
         {
             CheckRenderer();
 
-            if (layer == null) return;
+            if (Layer == null) return;
 
-            meshRenderer.sharedMaterial = layer.Material;
+            meshRenderer.sharedMaterial = Layer.Material;
 
             if (materialProperty == null)
                 materialProperty = new MaterialPropertyBlock();
 
             meshRenderer.GetPropertyBlock(materialProperty);
 
-            if (layer.Tileset?.Texture == null)
+            if (Layer.Tileset?.Texture == null)
                 return;
 
 
-            materialProperty.SetTexture("_MainTex", layer.Tileset.Texture);
-            materialProperty.SetColor("_Color", layer.TintColor);
+            materialProperty.SetTexture("_MainTex", Layer.Tileset.Texture);
+            materialProperty.SetColor("_Color", Layer.TintColor);
 
             meshRenderer.SetPropertyBlock(materialProperty);
 
-            //meshRenderer.sharedMaterial.SetTexture("_MainTex", layer.Tileset.Texture);
-
+            meshRenderer.sortingOrder = Layer.Tilemap.SortingOrder;
         }
 
         public void ValidateVariations()
@@ -272,7 +271,7 @@ namespace MaximovInk.AdvancedTilemap
             {
                 if (_data.data[i] == 0) continue;
 
-                var tile = layer.Tileset.GetTile(_data.data[i]);
+                var tile = Layer.Tileset.GetTile(_data.data[i]);
 
                 _data.variations[i] = tile.ValidateVariationID(_data.variations[i]);
             }
@@ -284,7 +283,7 @@ namespace MaximovInk.AdvancedTilemap
             {
                 if (_data.data[i] == 0) continue;
 
-                _data.variations[i] = layer.Tileset.GetTile(_data.data[i]).GenVariation();
+                _data.variations[i] = Layer.Tileset.GetTile(_data.data[i]).GenVariation();
             }
         }
 
@@ -314,8 +313,8 @@ namespace MaximovInk.AdvancedTilemap
 
             _persistenceData = new AChunkPersistenceData()
             {
-                Layer = layer,
-                Material =  layer.Material,
+                Layer = Layer,
+                Material =  Layer.Material,
                 Position = new Vector2Int(GridX,GridY)
 
             };
@@ -350,7 +349,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool SetTile(int x, int y, ushort tileID,UVTransform transform = default)
         {
-            var variation = layer.Tileset.GetTile(tileID).GenVariation();
+            var variation = Layer.Tileset.GetTile(tileID).GenVariation();
             int idx = x + y * CHUNK_SIZE;
 
             if (_data.data[idx] == tileID && _data.transforms[idx] == transform)
@@ -367,11 +366,11 @@ namespace MaximovInk.AdvancedTilemap
             _data.data[idx] = tileID;
 
             _data.collision[idx] 
-                = (tileID > 0) && !layer.Tileset.GetTile(tileID).ColliderDisabled;
+                = (tileID > 0) && !Layer.Tileset.GetTile(tileID).ColliderDisabled;
 
             _data.transforms[idx] = transform;
 
-            _data.variations[idx] = layer.Tileset.GetTile(tileID).GenVariation();
+            _data.variations[idx] = Layer.Tileset.GetTile(tileID).GenVariation();
 
             colliderIsDirty = true;
             _data.IsDirty = true;
@@ -447,12 +446,21 @@ namespace MaximovInk.AdvancedTilemap
                 _data.variations[idx] = 0; return;
             }
 
-            _data.variations[idx] = layer.Tileset.GetTile(tileID).GenVariation();
+            _data.variations[idx] = Layer.Tileset.GetTile(tileID).GenVariation();
         }
 
         #endregion
 
         #region Collider
+
+        public void UpdateColliderProperties()
+        {
+            if (_collider2D == null)
+                return;
+
+            _collider2D.sharedMaterial = Layer.PhysicsMaterial2D;
+            _collider2D.isTrigger = Layer.IsTrigger;
+        }
 
         public void ColliderEnabledChange(bool active)
         {
@@ -496,7 +504,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private List<List<Vector2>> ScaleToTiles(List<List<Vector2>> input)
         {
-            var scale = (Vector2)layer.Tileset.TileSize / (Vector2)layer.Tileset.PixelPerUnit;
+            var scale = (Vector2)Layer.Tileset.TileSize / (Vector2)Layer.Tileset.PixelPerUnit;
 
             for (int i = 0; i < input.Count; i++)
             {
@@ -652,7 +660,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void UpdateLiquidState()
         {
-            if (layer.LiquidEnabled)
+            if (Layer.LiquidEnabled)
             {
                 liquidChunk = GetComponentInChildren<ALiquidChunk>();
                 if(liquidChunk == null)
@@ -666,13 +674,29 @@ namespace MaximovInk.AdvancedTilemap
                     liquidChunk = go.AddComponent<ALiquidChunk>();
                     liquidChunk.Init(CHUNK_SIZE, CHUNK_SIZE, this);
                 }
-                liquidChunk.SetMaterial(layer.LiquidMaterial);
+                liquidChunk.SetMaterial(Layer.LiquidMaterial);
             }
             else if (liquidChunk != null)
             {
                DestroyImmediate(liquidChunk.gameObject);
             }
         }
+
+        public void UpdateFlags()
+        {
+            if (Layer.Tilemap.DisplayChunksInHierarchy)
+            {
+                gameObject.hideFlags &= ~HideFlags.HideInHierarchy;
+            }
+            else
+            {
+                gameObject.hideFlags |= HideFlags.HideInHierarchy;
+            }
+
+            tag = Layer.Tag;
+            gameObject.layer = Layer.LayerMask;
+        }
+
 
         #endregion
     }

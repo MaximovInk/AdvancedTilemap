@@ -10,6 +10,11 @@ namespace MaximovInk.AdvancedTilemap
         public Vector2 RightBottom;
         public Vector2 LeftBottom;
 
+        public override string ToString()
+        {
+            return $"{LeftBottom.x} {LeftBottom.y} {RightTop.x} {RightTop.y}";
+        }
+
         public Vector2 Min
         {
             get => LeftBottom;

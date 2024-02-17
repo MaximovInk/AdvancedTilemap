@@ -125,13 +125,13 @@ namespace MaximovInk.AdvancedTilemap
                     int iy = i / AChunk.CHUNK_SIZE;
                     float value = Mathf.Clamp01(data[i]);
 
-                    var topLiquid = chunk.layer.GetLiquid(ix + chunk.GridX, iy + 1 + chunk.GridY);
+                    var topLiquid = chunk.Layer.GetLiquid(ix + chunk.GridX, iy + 1 + chunk.GridY);
 
                     var liquidLerp = Mathf.Lerp(data[i], topLiquid, 0.5f);
 
                     meshData.AddSquare(new MeshDataParameters
                     {
-                        color = Color.Lerp(chunk.layer.MinLiquidColor, chunk.layer.MaxLiquidColor, liquidLerp/4f),
+                        color = Color.Lerp(chunk.Layer.MinLiquidColor, chunk.Layer.MaxLiquidColor, liquidLerp/4f),
                         uv = ATileUV.Identity,
                         vX0 = ix,
                         vX1 = ix+1,

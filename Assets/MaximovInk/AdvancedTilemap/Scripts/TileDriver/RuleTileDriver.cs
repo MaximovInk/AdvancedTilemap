@@ -1,17 +1,11 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using static MaximovInk.Bitmask;
 
 namespace MaximovInk.AdvancedTilemap
 {
   
     public class RuleTileDriver : ATileDriver
-    { /*
-            1 | 2 | 4
-            8 | t | 16
-            32| 64| 128
-
-            */
+    { 
 
         public RuleTileDriver()
         {
@@ -19,11 +13,7 @@ namespace MaximovInk.AdvancedTilemap
             UVInTilesY = 5;
         }
 
-        public override List<ATile> GenerateTiles(ATileset tileset)
-        {
-            return Utilites.GenerateSimpleTiles(tileset, UVInTilesX, UVInTilesY);
-        }
-
+#if UNITY_EDITOR
         public override bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0)
         {
             var width = 150;
@@ -38,16 +28,23 @@ namespace MaximovInk.AdvancedTilemap
                 return false;
             }
 
+            var selRect = rect;
+
             for (int ix = 0; ix < UVInTilesX; ix++)
             {
                 for (int iy = 0; iy < UVInTilesY; iy++)
                 {
-                    GUI.DrawTextureWithTexCoords(GUIViewRects[ix, iy], tileset.Texture, UVRects[ix, iy]);
+                    var guiRect = GUIViewRects[ix, iy];
+                    var uvRect = UVRects[ix, iy];
+
+                    selRect.max = new Vector2(Mathf.Max(selRect.max.x, guiRect.max.x), Mathf.Max(selRect.max.y, guiRect.max.y));
+
+                    GUI.DrawTextureWithTexCoords(guiRect, tileset.Texture, uvRect);
                 }
             }
 
-            GUI.color = new Color(1, 1, 1, 0.5f);
-            if (GUI.Button(GUIViewRects[0, 0], "*"))
+            GUI.color = new Color(1, 1, 1, 0.2f);
+            if (GUI.Button(selRect, "*"))
                 return true;
             GUI.color = Color.white;
 
@@ -55,7 +52,7 @@ namespace MaximovInk.AdvancedTilemap
 
             return false;
         }
-
+#endif
         private bool Exist(byte position) => HasBit(tempBitmask, position);
 
         private byte tempBitmask;
