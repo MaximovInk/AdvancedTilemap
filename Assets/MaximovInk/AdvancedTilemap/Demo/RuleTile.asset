@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d20c118403e0263409ef90c4025e8752, type: 3}
+  m_Name: RuleTile
+  m_EditorClassIdentifier: 
+  Texture: {fileID: 2800000, guid: 8288b6218c1c55d4e9b696cb2568968d, type: 3}
+  TileSize: {x: 8, y: 8}
+  PixelPerUnit: {x: 16, y: 16}
+  _tiles:
+  - ID: 1
+    Variations:
+    - LeftTop: {x: 0, y: 1}
+      RightTop: {x: 1, y: 1}
+      RightBottom: {x: 1, y: 0}
+      LeftBottom: {x: 0, y: 0}
+    Probabilites:
+    - 1
+    RandomVariations: 0
+    ParameterContainer:
+      parameters: []
+    ColliderDisabled: 0
+    _tileDriverID: Rule tile
+  - ID: 2
+    Variations:
+    - LeftTop: {x: 1, y: 1}
+      RightTop: {x: 2, y: 1}
+      RightBottom: {x: 2, y: 0}
+      LeftBottom: {x: 1, y: 0}
+    Probabilites: []
+    RandomVariations: 0
+    ParameterContainer:
+      parameters: []
+    ColliderDisabled: 0
+    _tileDriverID: Rule tile

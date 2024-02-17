@@ -45,16 +45,16 @@ MonoBehaviour:
   - ID: 3
     Variations:
     - LeftTop: {x: 0, y: 1}
-      RightTop: {x: 1, y: 1}
-      RightBottom: {x: 1, y: 0}
-      LeftBottom: {x: 0, y: 0}
+      RightTop: {x: 0.75, y: 1}
+      RightBottom: {x: 0.75, y: 0.75}
+      LeftBottom: {x: 0, y: 0.75}
     Probabilites:
     - 1
     RandomVariations: 0
     ParameterContainer:
       parameters: []
     ColliderDisabled: 0
-    _tileDriverID: Starbound alike
+    _tileDriverID: Horizontal Pipe
   - ID: 4
     Variations:
     - LeftTop: {x: 0, y: 1}

@@ -1,16 +1,19 @@
-﻿using UnityEngine;
-
-namespace MaximovInk.AdvancedTilemap
+﻿namespace MaximovInk.AdvancedTilemap
 {
     public class DummyMeshJob : IChunkProcessorJob
     {
-        public string Name => "DummyMeshProcessorJob";
+        public string Name => "DummyMeshProcessor";
         public bool IsRunning { get; protected set; }
         public bool IsValid => true;
+
+        private AChunkProcessorData _input;
+
 
         public void Generate(AChunkProcessorData input)
         {
             IsRunning = true;
+
+            _input = input;
 
             input.MeshData.Clear();
 
@@ -59,14 +62,13 @@ namespace MaximovInk.AdvancedTilemap
                 });
             }
 
-            input.MeshData.ApplyData();
 
             IsRunning = false;
         }
 
         public void WaitComplete()
         {
-            while (IsRunning){}
+            _input.MeshData.ApplyData();
         }
     }
 }

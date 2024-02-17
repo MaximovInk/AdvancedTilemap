@@ -1,17 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using Debug = UnityEngine.Debug;
 
 namespace MaximovInk.AdvancedTilemap
 {
-    public struct AChunkProcessorData
-    {
-        public MeshData MeshData;
-        public AChunkData ChunkData;
-        public AChunkPersistenceData ChunkPersistenceData;
-    }
-
     public class ChunkProcessor 
     {
+        private const float MAX_SAVE_GEN_TIME = 0.5f;
+
         public bool IsRunning => _processors.Any(n => n.IsRunning);
 
         private readonly List<IChunkProcessorJob> _processors = new();

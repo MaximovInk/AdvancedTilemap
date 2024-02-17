@@ -6,6 +6,14 @@ namespace MaximovInk.AdvancedTilemap
     [ExecuteAlways]
     public class ALayer : MonoBehaviour
     {
+        public bool IsActive { get => gameObject.activeSelf; set
+            {
+                if (value == gameObject.activeSelf) return;
+
+                gameObject.SetActive(value);
+            }
+        }
+
         public bool ColliderEnabled { get => _colliderEnabled; set { _colliderEnabled = value; UpdateCollider(); } }
         public Material LiquidMaterial { get => _liquidMaterial; set {
                 bool changed = _liquidMaterial != value;
@@ -211,8 +219,10 @@ namespace MaximovInk.AdvancedTilemap
                     {
                         match.NewTileData = newID;
                     }
-                }
 
+                    if (newID == 0)
+                        TrimInvoke = true;
+                }
             }
 
             if (chunk.SetTile(coords.x, coords.y, tileID, data)) {
@@ -314,7 +324,8 @@ namespace MaximovInk.AdvancedTilemap
 
             var coords = ConvertCoordinatesToChunk(x, y);
 
-            chunk.SetBitmask(coords.x, coords.y, bitmask);
+            if(chunk.GetBitmask(coords.x, coords.y) != bitmask)
+                chunk.SetBitmask(coords.x, coords.y, bitmask);
         }
 
         public byte GetBitmask(int x, int y)
@@ -330,11 +341,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void UpdateBitmask(int x, int y)
         {
-            var oldBitmask = GetBitmask(x, y);
-            var newBitmask = CalculateBitmask(x, y);
-
-            if (oldBitmask != newBitmask)
-                SetBitmask(x, y, newBitmask);
+            SetBitmask(x, y, CalculateBitmask(x, y));
         }
 
         public void UpdateNeighborsBitmask(int x, int y)
@@ -499,7 +506,7 @@ namespace MaximovInk.AdvancedTilemap
                 chunk.Value.ColliderEnabledChange(_colliderEnabled);
 
                 if (_colliderEnabled)
-                    chunk.Value.GenerateCollider(immediate);
+                    chunk.Value.MakeDirty();
             }
         }
 

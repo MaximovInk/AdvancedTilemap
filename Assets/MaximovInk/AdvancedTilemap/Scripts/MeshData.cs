@@ -32,7 +32,7 @@ namespace MaximovInk.AdvancedTilemap
         [HideInInspector, SerializeField]
         private List<Color32> colors = new List<Color32>();
 
-        private const float GAP_FIX = 0.05f;
+        private const float GAP_FIX = 0.00625f;
 
         public void AddSquare(MeshDataParameters data)
         {
@@ -56,7 +56,7 @@ namespace MaximovInk.AdvancedTilemap
             vertices.Add(new Vector3(data.vX1 * quadUnit.x, data.vY1 * quadUnit.y, data.z));
             vertices.Add(new Vector3(data.vX1 * quadUnit.x, data.vY0 * quadUnit.y, data.z));
 
-            var uvOffset = GAP_FIX * tileUV.Size.x;
+            var uvOffset = GAP_FIX;
 
             uv.Add(new Vector2(tileUV.LeftBottom.x + uvOffset,     tileUV.LeftBottom.y + uvOffset));
             uv.Add(new Vector2(tileUV.LeftTop.x + uvOffset,        tileUV.LeftTop.y - uvOffset));

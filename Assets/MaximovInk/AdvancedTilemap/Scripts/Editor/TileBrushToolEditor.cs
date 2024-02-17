@@ -71,7 +71,6 @@ namespace MaximovInk.AdvancedTilemap
                 }
 
                 lastMousePos = gridPos;
-                layer.Refresh();
                 EditorUtility.SetDirty(data.Layer);
             }
             if (data.Event.type == EventType.MouseUp && data.Event.button == 0)
