@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d20c118403e0263409ef90c4025e8752, type: 3}
-  m_Name: TilesetGround
+  m_Name: TilesetMain
   m_EditorClassIdentifier: 
-  Texture: {fileID: 2800000, guid: dc2919421d305fa41a3153b8a9129ed8, type: 3}
+  Texture: {fileID: 2800000, guid: eb5f7840fff1a3e4f8fdc9336157fded, type: 3}
   TileSize: {x: 8, y: 8}
   PixelPerUnit: {x: 16, y: 16}
   _tiles:
   - ID: 1
     Variations:
-    - LeftTop: {x: 0, y: 1}
-      RightTop: {x: 0.5, y: 1}
+    - LeftTop: {x: 0, y: 0.75}
+      RightTop: {x: 0.5, y: 0.75}
       RightBottom: {x: 0.5, y: 0}
       LeftBottom: {x: 0, y: 0}
     Probabilites:
@@ -28,10 +28,11 @@ MonoBehaviour:
     ParameterContainer:
       parameters: []
     ColliderDisabled: 0
+    _tileDriverID: Starbound alike
   - ID: 2
     Variations:
-    - LeftTop: {x: 0.5, y: 1}
-      RightTop: {x: 1, y: 1}
+    - LeftTop: {x: 0.5, y: 0.75}
+      RightTop: {x: 1, y: 0.75}
       RightBottom: {x: 1, y: 0}
       LeftBottom: {x: 0.5, y: 0}
     Probabilites:
@@ -40,15 +41,30 @@ MonoBehaviour:
     ParameterContainer:
       parameters: []
     ColliderDisabled: 0
+    _tileDriverID: Starbound alike
   - ID: 3
     Variations:
-    - LeftTop: {x: 1, y: 1}
-      RightTop: {x: 1.5, y: 1}
-      RightBottom: {x: 1.5, y: 0}
-      LeftBottom: {x: 1, y: 0}
-    Probabilites: []
+    - LeftTop: {x: 0, y: 1}
+      RightTop: {x: 1, y: 1}
+      RightBottom: {x: 1, y: 0}
+      LeftBottom: {x: 0, y: 0}
+    Probabilites:
+    - 1
     RandomVariations: 0
     ParameterContainer:
       parameters: []
     ColliderDisabled: 0
-  _tileDriverID: Starbound alike
+    _tileDriverID: Starbound alike
+  - ID: 4
+    Variations:
+    - LeftTop: {x: 0, y: 1}
+      RightTop: {x: 0.75, y: 1}
+      RightBottom: {x: 0.75, y: 0.75}
+      LeftBottom: {x: 0, y: 0.75}
+    Probabilites:
+    - 1
+    RandomVariations: 0
+    ParameterContainer:
+      parameters: []
+    ColliderDisabled: 0
+    _tileDriverID: Horizontal Pipe

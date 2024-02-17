@@ -29,21 +29,9 @@ namespace MaximovInk.AdvancedTilemap
         [SerializeField]
         private List<ATile> _tiles = new List<ATile>();
 
-        public ATileDriver TileDriver
+        public ushort AddTile(ATileDriver tileDriver)
         {
-            get { return _tileDriver ??= Utilites.GetTileDriverInstance(_tileDriverID); }
-        }
-
-        public string TileDriverID => _tileDriverID;
-
-        [SerializeField]
-        private string _tileDriverID;
-
-        private ATileDriver _tileDriver;
-
-        public ushort AddTile()
-        {
-            _tiles.Add(TileDriver.GenerateTile(this));
+            _tiles.Add(tileDriver.GenerateTile(this));
             UpdateIDs();
             return _tiles[^1].ID;
         }
@@ -99,21 +87,7 @@ namespace MaximovInk.AdvancedTilemap
 
             return new Vector2((float)TileSize.x / PixelPerUnit.x, (float)TileSize.y / PixelPerUnit.y);
         }
-
-        public void SetTileDriver(ATileDriver tileDriver)
-        {
-            var aTileDriver = tileDriver is null ? string.Empty : tileDriver.Name;
-
-            if (aTileDriver == _tileDriverID)
-            {
-                _tileDriver = tileDriver;
-                return;
-            }
-
-            _tileDriver = tileDriver;
-            _tileDriverID = aTileDriver;
-        }
-
+        
         public void ClearTiles()
         {
             _tiles.Clear();

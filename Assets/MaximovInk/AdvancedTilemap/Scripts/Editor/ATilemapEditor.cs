@@ -37,6 +37,8 @@ namespace MaximovInk.AdvancedTilemap
 
         private ALayerEditorData _data;
 
+        private bool _invokePreviewRegen = false;
+
         private void OnEnable()
         {
             layers = serializedObject.FindProperty("layers");
@@ -63,6 +65,7 @@ namespace MaximovInk.AdvancedTilemap
 
             layerSelected = list.index;
 
+            _invokePreviewRegen = true;
         }
 
         private void DrawElementCallback(Rect rect, int index, bool isActive, bool isFocused)
@@ -144,6 +147,11 @@ namespace MaximovInk.AdvancedTilemap
 
             ALayerGUI.SceneGUI(layer, ref _data);
 
+            if (_invokePreviewRegen)
+            {
+                _invokePreviewRegen = false;
+                ALayerGUI.GenPreviewTextureBrush(ref _data);
+            }
         }
     }
 }

@@ -1,9 +1,5 @@
-﻿using MaximovInk.AdvancedTilemap;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -20,6 +16,27 @@ namespace MaximovInk.AdvancedTilemap
         public static void UpdateTileDrivers()
         {
             tileDrivers = Utilites.GetAllDriversOfProject();
+        }
+
+        private static ATileDriver TileDriverPopup(ref ATilesetEditorData editorData)
+        {
+            var tileDriverID = editorData.TileDriverID;
+            var foundTileDriver = tileDrivers.FirstOrDefault(n => n.Name == tileDriverID);
+            if (foundTileDriver is not null)
+            {
+                editorData.TileDriverIndex = Array.IndexOf(tileDrivers, foundTileDriver);
+            }
+
+            var prevIndex = editorData.TileDriverIndex;
+            editorData.TileDriverIndex =
+                EditorGUILayout.Popup(Mathf.Clamp(editorData.TileDriverIndex, 0, tileDrivers.Length), tileDrivers.Select(n => n.Name).ToArray());
+            if (prevIndex != editorData.TileDriverIndex || foundTileDriver is null)
+            {
+                foundTileDriver = tileDrivers[editorData.TileDriverIndex];
+                editorData.TileDriverID = foundTileDriver.Name;
+            }
+
+            return foundTileDriver;
         }
 
         public static bool DrawGUI(ATileset tileset, ref ATilesetEditorData editorData)
@@ -62,27 +79,28 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             GUILayout.BeginHorizontal();
+
+            var tileDriver = TileDriverPopup(ref editorData);
+
+            if(tileDriver is null)
             {
-                var fromTileset = tileDrivers.FirstOrDefault(n=>n.Name == tileset.TileDriverID);
+                Debug.LogError($"TileDriver is null! ID:({editorData.TileDriverID}) Idx:({editorData.TileDriverIndex})");
 
-                if (fromTileset != null)
-                    editorData.TileDriverID = Array.IndexOf(tileDrivers, fromTileset);
+                GUILayout.EndHorizontal();
 
-                editorData.TileDriverID = EditorGUILayout.Popup(Mathf.Clamp(editorData.TileDriverID, 0, tileDrivers.Length), tileDrivers.Select(n => n.Name).ToArray());
+                return _isDirty;
+            }
 
                 if (GUILayout.Button("Generate tiles"))
                 {
-                    var driver = tileDrivers[editorData.TileDriverID];
-                    tileset.SetTileDriver(driver);
-                    tileset.SetTiles(driver.GenerateTiles(tileset));
-
+                    tileset.SetTiles(tileDriver.GenerateTiles(tileset));
                     _isDirty = true;
                 }
-            }
+            
 
             if (GUILayout.Button("Add tile"))
             {
-                var id = tileset.AddTile();
+                var id = tileset.AddTile(tileDriver);
                 tileset.UpdateIDs();
                 editorData.SelectedTile = id;
             }
@@ -90,30 +108,30 @@ namespace MaximovInk.AdvancedTilemap
             GUILayout.EndHorizontal();
 
             GUI.color = Color.red;
-            if (GUILayout.Button("Clear"))
+
+          
+
+            if (editorData.InvokeClearAll)
             {
-                tileset.ClearTiles();
-                editorData.SelectedTile = 0;
+                GUILayout.Label("CLEAR ALL Tiles?");
+
+                if (GUILayout.Button("Clear"))
+                {
+                    tileset.ClearTiles();
+                    editorData.SelectedTile = 0;
+
+                    editorData.InvokeClearAll = false;
+                }
             }
+            else
+            {
+                if (GUILayout.Button("Clear"))
+                {
+                    editorData.InvokeClearAll = true;
+                }
+            }
+
             GUI.color = Color.white;
-
-            if (tileset.TileDriver is null)
-            {
-                var driver = tileDrivers[editorData.TileDriverID];
-                tileset.SetTileDriver(driver);
-            }
-
-            if (tileset.TileDriver is null)
-            {
-                Debug.Log("TileDriver == null");
-
-                return _isDirty;
-            }
-
-            if (!ATileDriver.IsEquals(tileset.TileDriver, tileDrivers[editorData.TileDriverID]))
-            {
-                tileset.SetTileDriver(tileDrivers[editorData.TileDriverID]);
-            }
 
             if (!(editorData.SelectedTile > 0 && editorData.SelectedTile < tileset.TilesCount+1)) return _isDirty;
 
@@ -126,7 +144,6 @@ namespace MaximovInk.AdvancedTilemap
             return _isDirty;
         }
 
-        //showSelectedTile
         private static void DrawTileEditor(ATileset tileset, ATile tile, ref ATilesetEditorData data)
         {
             BeginChangeCheck();
@@ -189,7 +206,7 @@ namespace MaximovInk.AdvancedTilemap
             data.SelectedTileScroll =
                 GUILayout.BeginScrollView(data.SelectedTileScroll, GUIStyle.none, GUI.skin.horizontalScrollbar);
 
-            data.TilesWidth = (Screen.width - 150) / (tileset.TileDriver.UVInTilesX * 50);
+            data.TilesWidth = (Screen.width - 150) / (tile.TileDriver.UVInTilesX * 50);
             data.TilesWidth = (int)(data.TilesWidth * 0.5f);
 
             var beginH = true;
@@ -206,10 +223,10 @@ namespace MaximovInk.AdvancedTilemap
                 tilesCounter++;
 
                 GUILayout.BeginVertical();
-                if (tileset.TileDriver.DrawTileGUIPreview(tileset, tile, (byte)i))
+                if (tile.TileDriver.DrawTileGUIPreview(tileset, tile, (byte)i))
                 {
                     int index = i;
-                    ATilesetSelector.Init(tileset, uv => { tileset.TileDriver.SelectTile(uv, tile, index); });
+                    ATilesetSelector.Init(tileset, uv => { tile.TileDriver.SelectTile(uv, tile, index); });
                 }
 
                 GUI.color = Color.red;
@@ -247,6 +264,8 @@ namespace MaximovInk.AdvancedTilemap
 
         private static void DrawTileEditorVariables(ATile tile, ref ATilesetEditorData data)
         {
+            GUILayout.Label($"TileDriver: {tile.TileDriver.Name}");
+
             tile.ColliderDisabled = !EditorGUILayout.Toggle("Collider enabled", !tile.ColliderDisabled);
             tile.RandomVariations = EditorGUILayout.Toggle("variations enabled:", tile.RandomVariations);
         }

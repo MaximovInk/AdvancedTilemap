@@ -17,6 +17,18 @@ namespace MaximovInk.AdvancedTilemap
         public bool ColliderDisabled;
         public static ushort EMPTY = 0;
 
+        public ATileDriver TileDriver
+        {
+            get { return _cachedTileDriver ??= Utilites.GetTileDriverInstance(_tileDriverID); }
+        }
+        private ATileDriver _cachedTileDriver;
+        public string TileDriverID => _tileDriverID;
+
+        [SerializeField]
+        private string _tileDriverID;
+
+
+
         public void SetUV(ATileUV uv,int id = 0)
         {
             Variations[id] = uv;
@@ -81,10 +93,12 @@ namespace MaximovInk.AdvancedTilemap
             Probabilites.Add(1);
         }
 
-        public ATile()
+        public ATile(string tileDriverID)
         {
             Variations.Add(ATileUV.Identity);
             ParameterContainer = new ParameterContainer();
+
+            _tileDriverID = tileDriverID;
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace MaximovInk.AdvancedTilemap
 {
+    
     public class PaintPreview : MonoBehaviour
     {
         private MeshFilter meshFilter;
@@ -9,19 +10,10 @@ namespace MaximovInk.AdvancedTilemap
         private MeshData meshData;
         private MaterialPropertyBlock materialProperty;
 
-        private void Awake()
+        public void Validate()
         {
-            var others = FindObjectsByType<PaintPreview>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            foreach (var other in others)
-            {
-                if (other != this)
-                    DestroyImmediate(other);
-            }
-
-            gameObject.hideFlags = HideFlags.HideAndDontSave;
+            gameObject.hideFlags = HideFlags.HideInHierarchy;
         }
-
 
         public void SetMaterial(Material material, Texture2D texture)
         {
@@ -53,7 +45,7 @@ namespace MaximovInk.AdvancedTilemap
 
         {
             if (tileDriverData.tileset == null) return;
-            if (tileDriverData.tileset.TileDriver == null) return;
+            if (tileDriverData.tile.TileDriver == null) return;
 
             CheckInit();
             meshData.Clear();
@@ -122,7 +114,7 @@ namespace MaximovInk.AdvancedTilemap
                     if (ix > x && iy > y && ix < maxX - 1 && iy < maxY - 1)
                         driverData.bitmask = 255;
 
-                    tileDriverData.tileset.TileDriver.SetTile(driverData);
+                    tileDriverData.tile.TileDriver.SetTile(driverData);
                 }
             }
 

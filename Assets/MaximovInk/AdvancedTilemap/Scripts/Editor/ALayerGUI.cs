@@ -306,6 +306,8 @@ namespace MaximovInk.AdvancedTilemap
                 var go = new GameObject();
                 go.name = "_PreviewPaintBrush";
                 data.PreviewTextureBrush = go.AddComponent<PaintPreview>();
+
+                data.PreviewTextureBrush.Validate();
             }
 
             var isShift = data.Event.shift;

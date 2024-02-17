@@ -23,8 +23,6 @@ namespace MaximovInk.AdvancedTilemap
 
             var tiles = input.ChunkData.data;
 
-            var tileDriver = input.ChunkPersistenceData.Layer.Tileset.TileDriver;
-
             var tileset = input.ChunkPersistenceData.Layer.Tileset;
 
             for (int i = 0; i < input.ChunkData.ArraySize; i++)
@@ -35,11 +33,11 @@ namespace MaximovInk.AdvancedTilemap
                 var gx = i % AChunk.CHUNK_SIZE;
                 var gy = i / AChunk.CHUNK_SIZE;
 
-
                 var id = tiles[i];
 
-
                 var tile = tileset.GetTile(id);
+
+                var tileDriver = tile.TileDriver;
 
                 var bitmask = input.ChunkData.bitmaskData[i];
                 var variation = input.ChunkData.variations[i];

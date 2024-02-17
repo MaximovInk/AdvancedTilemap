@@ -13,10 +13,11 @@ namespace MaximovInk.AdvancedTilemap
 
         public virtual ATile GenerateTile(ATileset tileset)
         {
-            var tile = new ATile();
+            var tile = new ATile(Name);
             var uv = new ATileUV();
             uv.Min = tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
             uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+            tile.SetUV(uv);
 
             return tile;
         }
@@ -36,7 +37,7 @@ namespace MaximovInk.AdvancedTilemap
             {
                 for (var iy = 0; iy < height; iy++)
                 {
-                    var tile = new ATile();
+                    var tile = new ATile(Name);
                     var uv = new ATileUV();
                     uv.Min = new Vector2Int(ix, iy) * tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
                     uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
@@ -65,7 +66,6 @@ namespace MaximovInk.AdvancedTilemap
             uv.Min -= new Vector2(0, (UVInTilesY - 1) * uvSize.y);
             uv.Max += new Vector2((UVInTilesX - 1) * uvSize.x, 0);
             tile.SetUV(uv, variationID);
-            Debug.Log(uv);
 
         }
 
