@@ -1,25 +1,30 @@
 # AdvancedTilemap
 Advanced tilemap system for Unity as a Starbound or Terraria
 
-Trello : https://trello.com/b/vjc93JAf/advancedtilemap
-
 Features:
 - [x] Infinity map
 - [x] Chunk loading
 - [x] Multi threading
-- [x] Raycast lighting
+- [x] Tile colors
+- [x] Brush tools (Fill,Line,Rectangle,Circle,Custom)
 - [x] Layers
-- [x] Liquid physics (like starbound)
+- [x] Powerful liquid physics (like starbound)
 - [x] Collider generation
-- [x] Single tiles
-- [ ] Multi blocks
-- [x] Overlap blocks (like starbound)
 - [x] Undo/Redo (WIP)
-- [ ] Prefab tiles
-- [ ] Brush tools (Fill,Line,Rectangle,Circle,Custom)
 - [x] Variation tiles
 - [x] Bitmasking
+- [x] AutoTrim
 - [x] Tilesets
+  - [x] Tile types
+  - [x] Default
+  - [x] Rule tiles
+  - [x] Rule tiles aka Starbound
+  - [x] Horizontal pipe
+  - [ ] Vertical pipe
+  - [ ] Slopes aka Starbound
+
+- [ ] Prefab tiles
+- [ ] Multi blocks
 
 # Screenshots:
 ## Rule tiles same as Starbound
