@@ -1,0 +1,840 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace MaximovInk.AdvancedTilemap
+{
+    [ExecuteAlways]
+    public class ALayer : MonoBehaviour
+    {
+        public ATilemap Tilemap;
+
+        public ATileset Tileset;
+
+        public bool ColliderEnabled { get => colliderEnabled; set { colliderEnabled = value; UpdateCollider(); } }
+        public Material LiquidMaterial { get => liquidMaterial; set {
+                bool changed = liquidMaterial != value;
+                liquidMaterial = value;
+                if (changed) UpdateLiquidState();
+            } }
+        public Material Material { get => material; set { material = value; UpdateRenderer(); } }
+        public Color TintColor { get => tintColor; set { tintColor = value; UpdateRenderer(); } }
+        public Color MinLiquidColor = Color.white;
+        public Color MaxLiquidColor = Color.white;
+        public bool IsUndoEnabled { get => isUndoEnabled; set {
+                isUndoEnabled = value; UpdateUndoStack(); } }
+        public bool LiquidEnabled { get =>liquidEnabled; set {
+                bool changed = liquidEnabled != value;
+                liquidEnabled = value;
+                if (changed)
+                    UpdateLiquidState();
+            } }
+        public bool AutoTrim { get => autoTrim; set
+            {
+                if(value != autoTrim && autoTrim) TrimInvoke = true;
+                autoTrim = value;
+            }
+        }
+
+       
+
+        [SerializeField, HideInInspector]
+        private Material material;
+        [SerializeField,HideInInspector]
+        private bool colliderEnabled;
+        [HideInInspector, SerializeField]
+        private Color tintColor = Color.white;
+        [HideInInspector, SerializeField]
+        private bool isUndoEnabled;
+        [HideInInspector, SerializeField]
+        private bool autoTrim = true;
+        [HideInInspector, SerializeField]
+        private bool liquidEnabled;
+        [HideInInspector, SerializeField]
+        private Material liquidMaterial;
+
+        public float LiquidStep_ms;
+
+        private Dictionary<uint, AChunk> chunksCache = new Dictionary<uint, AChunk>();
+
+        public bool ShowChunkBounds = false;
+        public bool UpdateVariationsOnRefresh = true;
+        [HideInInspector]
+        public bool TrimInvoke;
+        [HideInInspector]
+        public bool ChunkCacheDirty;
+
+        public int MinGridX { get; private set; }
+        public int MinGridY { get; private set; }
+        public int MaxGridX { get; private set; }
+        public int MaxGridY { get; private set; }
+
+        public void CalculateBounds()
+        {
+            MinGridX = 0; MinGridY = 0; MaxGridX = 0; MaxGridY = 0;
+            Bounds bounds = new Bounds();
+
+            foreach (var chunk in chunksCache)
+            {
+                Bounds chunkbounds = chunk.Value.GetBounds();
+                Vector2 min = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkbounds.min));
+                Vector2 max = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkbounds.max));
+                bounds.Encapsulate(min + Vector2.one * 0.5f);
+                bounds.Encapsulate(max - Vector2.one * 0.5f);
+            }
+
+            MinGridX = Utilites.GetGridX(this, bounds.min);
+            MinGridY = Utilites.GetGridY(this, bounds.min);
+            MaxGridX = Utilites.GetGridX(this, bounds.max);
+            MaxGridY = Utilites.GetGridY(this, bounds.max);
+        }
+
+        #region Undo
+
+        public TilemapCommandContainer tilemapCommands;
+
+        private ATilemapCommand currentRecording;
+
+        private void UpdateUndoStack()
+        {
+            if (isUndoEnabled && tilemapCommands == null)
+                tilemapCommands = new TilemapCommandContainer();
+            if (!isUndoEnabled && tilemapCommands != null)
+            {
+                ClearUndoStack();
+                tilemapCommands = null;
+            }
+        }
+
+        private void ClearUndoStack()
+        {
+            tilemapCommands.undoCommands.Clear();
+            tilemapCommands.redoCommands.Clear();
+            currentRecording = null;
+        }
+
+        public void BeginRecordingCommand()
+        {
+            if (!isUndoEnabled)
+                return;
+
+            currentRecording = new ATilemapCommand();
+        }
+
+        public void EndRecordCommand()
+        {
+            if (!isUndoEnabled) return;
+            
+            if(currentRecording == null)
+            {
+                Debug.LogError("Need start command to finish recording");
+                return;
+            }
+
+            if (currentRecording.isEmpty()) 
+                return;
+
+            tilemapCommands.undoCommands.Push(currentRecording);
+            tilemapCommands.redoCommands.Clear();
+
+            currentRecording = null;
+        }
+
+        public void Undo()
+        {
+            if (!isUndoEnabled) return;
+
+            if (currentRecording != null) return;
+
+            if (tilemapCommands.undoCommands.Count == 0) return;
+
+            var command = tilemapCommands.undoCommands.Pop();
+
+            if (command == null)
+                return;
+
+            for (int i = 0; i < command.tileChanges.Count; i++)
+            {
+                var tileChange = command.tileChanges[i];
+                if (tileChange.OldTileData == 0)
+                    EraseTile(tileChange.Position.x, tileChange.Position.y);
+                else
+                    SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.OldTileData);
+            }
+
+            tilemapCommands.redoCommands.Push(command);
+        }
+
+        public void Redo()
+        {
+            if (!isUndoEnabled) return;
+
+            if (currentRecording != null) return;
+
+            if (tilemapCommands.redoCommands.Count == 0) return;
+
+            var command = tilemapCommands.redoCommands.Pop();
+
+            if (command == null)
+                return;
+
+            for (int i = 0; i < command.tileChanges.Count; i++)
+            {
+                var tileChange = command.tileChanges[i];
+
+                if(tileChange.NewTileData == 0) 
+                    EraseTile(tileChange.Position.x, tileChange.Position.y);
+                else
+                    SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.NewTileData);
+            }
+
+            tilemapCommands.undoCommands.Push(command);
+        }
+
+        #endregion
+
+        #region BaseData
+
+        public void SetTile(int x, int y, ushort tileID, UVTransform data = default)
+        {
+            var chunk = GetOrCreateChunk(x, y);
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            if (isUndoEnabled && currentRecording != null)
+            {
+                var oldID = chunk.GetTile(coords.x, coords.y);
+                var newID = tileID;
+
+                if(oldID != newID)
+                {
+                    var match = currentRecording.tileChanges.Find(n => n != null && n.Position.x == x && n.Position.y == y);
+
+                    if (match == null)
+                    {
+                        currentRecording.tileChanges.Add(new ATilemapCommand.TileData() {
+                            Position = new Vector2Int(x,y),
+                            OldTileData = oldID,
+                            NewTileData = newID
+                        });
+                    }else
+                    {
+                        match.NewTileData = newID;
+                    }
+                }
+
+            }
+
+            if (chunk.SetTile(coords.x, coords.y, tileID, data)) {
+                UpdateBitmask(x, y);
+                UpdateNeighborsBitmask(x, y);
+            }
+        }
+
+        public ushort GetTile(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y,false);
+
+            if (chunk == null)
+                return 0;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            return chunk.GetTile(coords.x, coords.y);
+        }
+
+        public void EraseTile(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            if (chunk == null) return;
+
+            if (isUndoEnabled && currentRecording != null)
+            {
+                var oldID = chunk.GetTile(coords.x, coords.y);
+                var newID = 0;
+
+                if (oldID != newID)
+                {
+                    var match = currentRecording.tileChanges.Find(n => n != null && n.Position.x == x && n.Position.y == y);
+
+                    if (match == null)
+                    {
+                        currentRecording.tileChanges.Add(new ATilemapCommand.TileData()
+                        {
+                            Position = new Vector2Int(x, y),
+                            OldTileData = oldID,
+                            NewTileData = 0
+                        });
+                    }
+                    else
+                    {
+                        match.NewTileData = 0;
+                    }
+                }
+            }
+
+            if(chunk.EraseTile(coords.x, coords.y))
+            {
+
+                UpdateBitmask(x, y);
+                UpdateNeighborsBitmask(x, y);
+
+                if (AutoTrim)
+                    TrimInvoke = true;
+            }
+
+        }
+
+        public void SetColor(int x,int y ,Color32 color)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null) return;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            chunk.SetColor(coords.x, coords.y, color);
+        }
+
+        public Color32 GetColor(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y,false);
+
+            if (chunk == null)
+                return Color.white;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            return chunk.GetColor(coords.x, coords.y);
+        }
+
+        #endregion
+
+        #region Bitmask
+
+        public void SetBitmask(int x, int y, byte bitmask)
+        {
+            var chunk = GetOrCreateChunk(x, y,false);
+
+            if (chunk == null)
+                return;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            chunk.SetBitmask(coords.x, coords.y, bitmask);
+        }
+
+        public byte GetBitmask(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y,false);
+
+            if (chunk == null) return 0;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            return chunk.GetBitmask(coords.x, coords.y);
+        }
+
+        public void UpdateBitmask(int x, int y)
+        {
+            var oldBitmask = GetBitmask(x, y);
+            var newBitmask = CalculateBitmask(x, y);
+
+            if (oldBitmask != newBitmask)
+                SetBitmask(x, y, newBitmask);
+        }
+
+        public void UpdateNeighborsBitmask(int x, int y)
+        {
+            for (int ix = x - 1; ix < x + 2; ix++)
+            {
+                for (int iy = y - 1; iy < y + 2; iy++)
+                {
+                    if (ix == x && iy == y)
+                        continue;
+
+                    UpdateBitmask(ix, iy);
+                }
+            }
+        }
+
+        public byte CalculateBitmask(int x, int y)
+        {
+            var tileID = GetTile(x, y);
+
+            if (tileID == 0)
+                return 0;
+
+            byte bitmask = 0;
+
+            if (GetTile(x - 1, y + 1) == tileID)
+                bitmask |= 1;
+
+            if (GetTile(x, y + 1) == tileID)
+                bitmask |= 2;
+
+            if (GetTile(x + 1, y + 1) == tileID)
+                bitmask |= 4;
+
+            if (GetTile(x - 1, y) == tileID)
+                bitmask |= 8;
+
+            if (GetTile(x + 1, y) == tileID)
+                bitmask |= 16;
+
+            if (GetTile(x - 1, y - 1) == tileID)
+                bitmask |= 32;
+
+            if (GetTile(x, y - 1) == tileID)
+                bitmask |= 64;
+
+            if (GetTile(x + 1, y - 1) == tileID)
+                bitmask |= 128;
+
+
+            return bitmask;
+        }
+
+        #endregion
+
+        #region Main
+
+        public void Refresh(bool immediate = false)
+        {
+            Update();
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.Refresh(immediate);
+            }
+        }
+
+        private AChunk GetOrCreateChunk(int x, int y, bool autoCreate = true)
+        {
+            int chunkX = (x < 0 ? (x + 1 - AChunk.CHUNK_SIZE) : x) / AChunk.CHUNK_SIZE;
+            int chunkY = (y < 0 ? (y + 1 - AChunk.CHUNK_SIZE) : y) / AChunk.CHUNK_SIZE;
+            uint key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
+
+            AChunk chunk;
+
+            chunksCache.TryGetValue(key, out chunk);
+
+            if (chunk == null && autoCreate)
+            {
+                var go = new GameObject();
+                go.transform.SetParent(transform);
+                go.transform.localPosition = new Vector3(chunkX * AChunk.CHUNK_SIZE, chunkY * AChunk.CHUNK_SIZE);
+
+                chunk = go.AddComponent<AChunk>();
+                chunk.layer = this;
+                chunk.GridX = chunkX * AChunk.CHUNK_SIZE;
+                chunk.GridY = chunkY * AChunk.CHUNK_SIZE;
+                chunk.Init();
+
+                chunksCache[key] = chunk;
+            }
+
+            return chunk;
+        }
+
+        public void Trim()
+        {
+            foreach (var chunk in chunksCache)
+            {
+                if (chunk.Value.IsEmpty())
+                {
+                    DestroyImmediate(chunk.Value.gameObject);
+                }
+            }
+            BuildChunkCache();
+            CalculateBounds();
+        }
+
+        private void BuildChunkCache()
+        {
+            chunksCache.Clear();
+            for (int i = 0; i < transform.childCount; ++i)
+            {
+                AChunk chunk = transform.GetChild(i).GetComponent<AChunk>();
+                if (chunk)
+                {
+                    int chunkX = (chunk.GridX < 0 ? (chunk.GridX + 1 - AChunk.CHUNK_SIZE) : chunk.GridX) / AChunk.CHUNK_SIZE;
+                    int chunkY = (chunk.GridY < 0 ? (chunk.GridY + 1 - AChunk.CHUNK_SIZE) : chunk.GridY) / AChunk.CHUNK_SIZE;
+                    uint key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
+                    chunksCache[key] = chunk;
+                    chunk.UpdateRenderer();
+                }
+            }
+        }
+
+        public void Clear()
+        {
+            if (isUndoEnabled)
+            {
+                CalculateBounds();
+                for (int ix = MinGridX; ix < MaxGridX; ix++)
+                {
+                    for (int iy = MinGridY; iy < MaxGridY; iy++)
+                    {
+                        EraseTile(ix, iy);
+                    }
+                }
+
+                return;
+            }
+
+            foreach (var chunk in chunksCache)
+            {
+                DestroyImmediate(chunk.Value.gameObject);
+            }
+            chunksCache.Clear();
+        }
+
+        private Vector2Int ConvertCoordinatesToChunk(int x, int y)
+        {
+            int cx = (x < 0 ? -x - 1 : x) % AChunk.CHUNK_SIZE;
+            int cy = (y < 0 ? -y - 1 : y) % AChunk.CHUNK_SIZE;
+            if (x < 0) cx = AChunk.CHUNK_SIZE - 1 - cx;
+            if (y < 0) cy = AChunk.CHUNK_SIZE - 1 - cy;
+
+            return new Vector2Int(cx, cy);
+        }
+
+        public void UpdateCollider(bool immediate = false)
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.ColliderEnabledChange(colliderEnabled);
+
+                if (colliderEnabled)
+                    chunk.Value.GenerateCollider(immediate);
+            }
+        }
+
+        public void UpdateRenderer()
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.UpdateRenderer();
+            }
+        }
+
+        private void OnValidate()
+        {
+            BuildChunkCache();
+        }
+
+        private float liquidTimer = 0;
+
+        private void Update()
+        {
+            if (TrimInvoke)
+            {
+                TrimInvoke = false;
+                Trim();
+            }
+
+            if (ChunkCacheDirty)
+            {
+                ChunkCacheDirty = false;
+                BuildChunkCache();
+            }
+
+            if (Application.isPlaying)
+            {
+                if (liquidEnabled)
+                {
+                    liquidTimer += Time.deltaTime;
+                    if (liquidTimer > LiquidStep_ms)
+                    {
+                        liquidTimer = 0;
+                        SimulateLiquid();
+                    }
+                }
+            }
+
+        }
+
+        #endregion
+
+        #region Liquid
+
+        private void SimulateLiquid()
+        {
+            CalculateBounds();
+
+            var min = Utilites.GetGridPosition(this,Utilites.BoundsMin(Camera.main) - new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
+            var max = Utilites.GetGridPosition(this,Utilites.BoundsMax(Camera.main) + new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
+
+            for (int ix = min.x; ix < max.x; ix++)
+            {
+                for (int iy = min.y; iy < max.y; iy++)
+                {
+                    SimulateCell(ix,iy);
+                }
+            }
+
+            for (int ix = min.x; ix < max.x; ix++)
+            {
+                for (int iy = min.y; iy < max.y; iy++)
+                {
+                    if (GetLiquid(ix, iy) < ALiquidChunk.MIN_VALUE)
+                        SetSettled(ix, iy, false);
+                }
+            }
+        }
+
+        private bool IsEmptyLiq(int x, int y) =>
+            GetTile(x, y) == 0 && ALiquidChunk.MIN_LIQUID_Y < y;
+
+        private float CalculateVerticalFlowValue(float remainingLiquid, float destination)
+        {
+            float sum = remainingLiquid + destination;
+            float value;
+
+            if (sum <= ALiquidChunk.MAX_VALUE)
+            {
+                value = ALiquidChunk.MAX_VALUE;
+            }
+            else if (sum < 2 * ALiquidChunk.MAX_VALUE + ALiquidChunk.MAX_COMPRESSION)
+            {
+                value = (ALiquidChunk.MAX_VALUE * ALiquidChunk.MAX_VALUE + sum * ALiquidChunk.MAX_COMPRESSION) / (ALiquidChunk.MAX_VALUE + ALiquidChunk.MAX_COMPRESSION);
+            }
+            else
+            {
+                value = (sum + ALiquidChunk.MAX_COMPRESSION) / 2f;
+            }
+
+            return value;
+        }
+
+        private void SimulateCell(int x, int y)
+        {
+            if (!IsEmptyLiq(x, y))
+            {
+                if (GetLiquid(x, y) != 0)
+                    SetLiquid(x, y, 0);
+                return;
+            }
+
+            var liquidValue = GetLiquid(x, y);
+            if (liquidValue == 0) return;
+            if (GetSettled(x, y)) return;
+
+            if(liquidValue < ALiquidChunk.MIN_VALUE)
+            { SetLiquid(x, y, 0); return; }
+
+            var startValue = liquidValue;
+            var remainingValue = startValue;
+            var flow = 0f;
+
+            //bottom
+            if (IsEmptyLiq(x, y - 1))
+            {
+                var bLiquid = GetLiquid(x, y - 1);
+                flow = CalculateVerticalFlowValue(startValue, bLiquid) - bLiquid;
+                if (bLiquid > 0 && flow > ALiquidChunk.MIN_FLOW)
+                    flow *= ALiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, startValue))
+                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, startValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x, y - 1, false);
+                    AddLiquid(x, y, -flow);
+                    AddLiquid(x, y - 1, flow);
+
+                }
+            }
+            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            {
+                AddLiquid(x, y, -remainingValue);
+                return;
+            }
+
+            //left
+            if (IsEmptyLiq(x - 1, y))
+            {
+                flow = (remainingValue - GetLiquid(x - 1, y)) / 4f;
+                if (flow > ALiquidChunk.MIN_FLOW)
+                    flow *= ALiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+                    SetSettled(x - 1, y, false);
+                    AddLiquid(x, y, -flow);
+                    AddLiquid(x - 1, y, flow);
+
+                }
+            }
+            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            {
+                AddLiquid(x, y, -remainingValue);
+                return;
+            }
+
+            //right
+            if (IsEmptyLiq(x + 1, y))
+            {
+                flow = (remainingValue - GetLiquid(x + 1, y)) / 3f;
+                if (flow > ALiquidChunk.MIN_FLOW)
+                    flow *= ALiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+                    SetSettled(x + 1, y, false);
+                    AddLiquid(x, y, -flow);
+                    AddLiquid(x + 1, y, flow);
+
+                }
+            }
+            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            {
+                AddLiquid(x, y, -remainingValue);
+                return;
+            }
+
+            //top
+            if (IsEmptyLiq(x, y + 1))
+            {
+                flow = remainingValue - CalculateVerticalFlowValue(remainingValue, GetLiquid(x, y + 1));
+                if (flow > ALiquidChunk.MIN_FLOW)
+                    flow *= ALiquidChunk.FLOW_SPEED;
+
+                flow = Mathf.Max(flow, 0);
+                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+
+                if (flow != 0)
+                {
+                    remainingValue -= flow;
+
+                    SetSettled(x, y + 1, false);
+                    AddLiquid(x, y, -flow);
+                    AddLiquid(x, y + 1, flow);
+
+                }
+            }
+            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            {
+                AddLiquid(x, y, -remainingValue);
+                return;
+            }
+
+            if (startValue - remainingValue < ALiquidChunk.STABLE_FLOW)
+            {
+                SetSettled(x, y, true);
+            }
+            else
+            {
+                SetSettled(x + 1, y, false);
+
+                SetSettled(x - 1, y, false);
+
+                SetSettled(x, y + 1, false);
+
+                SetSettled(x, y - 1, false);
+            }
+        }
+
+        private void UpdateLiquidState()
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.UpdateLiquidState();
+            }
+        }
+
+        private bool GetSettled(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return false ;
+            var coords = ConvertCoordinatesToChunk(x, y);
+            return chunk.GetSettled(coords.x, coords.y);
+        }
+
+        private void SetSettled(int x, int y, bool value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+            if (chunk == null)
+                return;
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            
+            chunk.SetSettled(coords.x, coords.y, value);
+        }
+
+        public void SetLiquid(int x, int y, float value)
+        {
+            if (!LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer[" + name + "] disabled");
+                return;
+            }
+
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            if (chunk == null)
+                return;
+
+            chunk.SetLiquid(coords.x, coords.y, value);
+        }
+
+        public void AddLiquid(int x, int y, float value)
+        {
+            if (!LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer[" + name + "] disabled");
+                return;
+            }
+
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null)
+                return;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            chunk.AddLiquid(coords.x, coords.y, value);
+        }
+        public float GetLiquid(int x, int y)
+        {
+            if (!LiquidEnabled)
+            {
+                Debug.LogError("Liquid for layer[" + name + "] disabled");
+                return 0;
+            }
+
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null)
+                return 0;
+
+            var coords = ConvertCoordinatesToChunk(x, y);
+
+            return chunk.GetLiquid(coords.x, coords.y);
+        }
+
+        #endregion
+
+    }
+}
