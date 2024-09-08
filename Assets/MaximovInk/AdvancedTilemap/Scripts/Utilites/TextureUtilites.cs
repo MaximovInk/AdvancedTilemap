@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEditor;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace MaximovInk.AdvancedTilemap
 {
     public static class TextureUtilites
     {
+#if UNITY_EDITOR
         public static void OptimizeTextureImportSettings(Texture2D texture)
         {
             string assetPath = AssetDatabase.GetAssetPath(texture);
@@ -84,5 +83,6 @@ namespace MaximovInk.AdvancedTilemap
             getWidthAndHeightDelegate(importer, ref width, ref height);
         }
 
+#endif
     }
 }

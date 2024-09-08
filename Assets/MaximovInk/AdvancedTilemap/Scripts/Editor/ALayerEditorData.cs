@@ -18,5 +18,7 @@ namespace MaximovInk.AdvancedTilemap
         public Color color;
         public UVTransform UVTransform;
         public Vector2Int gridPos;
+
+        public bool RepaintInvoke;
     }
 }

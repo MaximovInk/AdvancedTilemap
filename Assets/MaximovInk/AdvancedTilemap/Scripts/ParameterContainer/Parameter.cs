@@ -4,6 +4,7 @@
     public class Parameter
     {
         public string name;
+        public bool isHidden;
 
         public ParameterType type;
 

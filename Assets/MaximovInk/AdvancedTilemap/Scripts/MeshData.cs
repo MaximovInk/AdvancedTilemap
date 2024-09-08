@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 
 namespace MaximovInk.AdvancedTilemap
@@ -17,6 +17,16 @@ namespace MaximovInk.AdvancedTilemap
         public float z;
 
         public Vector2 unit;
+
+        public void SetQuadData(float vX0, float vX1, float vY0, float vY1, Vector2 uvMin, Vector2 uvMax)
+        {
+            this.vX0 = vX0;
+            this.vX1 = vX1;
+            this.vY0 = vY0;
+            this.vY1 = vY1;
+            uv.Min = uvMin;
+            uv.Max = uvMax;
+        }
     }
     [System.Serializable]
     public class MeshData

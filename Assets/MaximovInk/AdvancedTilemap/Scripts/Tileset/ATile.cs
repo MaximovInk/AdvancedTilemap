@@ -83,6 +83,8 @@ namespace MaximovInk.AdvancedTilemap
             var newMin = lastTileUV.Min + new Vector2(uvSize.x, 0);
             var newTileUV = ATileUV.Generate(newMin, newMin + uvSize);
 
+            newTileUV.TextureSize = lastTileUV.TextureSize;
+
             if (newTileUV.Max.x > 1.05f)
             {
                 newMin = new Vector2(0, lastTileUV.Min.y - uvSize.y);

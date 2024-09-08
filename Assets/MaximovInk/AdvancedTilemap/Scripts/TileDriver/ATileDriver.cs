@@ -1,13 +1,28 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
+    [Serializable]
     public abstract class ATileDriver
     {
         public abstract string Name { get; }
-        public int UVInTilesX { get; protected set; } = 1;
-        public int UVInTilesY { get; protected set; } = 1;
+
+        public virtual int UVInTilesX
+        {
+            get;
+            protected set;
+        } = 1;
+
+        public virtual int UVInTilesY
+        {
+            get;
+            protected set;
+        } = 1;
+
+        [SerializeField, HideInInspector] protected int _uvInTilesX = 1;
+        [SerializeField, HideInInspector] protected int _uvInTilesY = 1;
 
         public abstract void SetTile(ATileDriverData data);
 
@@ -15,8 +30,11 @@ namespace MaximovInk.AdvancedTilemap
         {
             var tile = new ATile(Name);
             var uv = new ATileUV();
+           
+            uv.TextureSize = new Vector2Int(tileset.Texture.width, tileset.Texture.height);
             uv.Min = tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
             uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+           
             tile.SetUV(uv);
 
             return tile;
@@ -33,6 +51,8 @@ namespace MaximovInk.AdvancedTilemap
             var width = texture.width / (tileset.TileSize.x * UVInTilesX);
             var height = texture.height / (tileset.TileSize.y * UVInTilesY);
 
+            var texSize = new Vector2Int(width, height);
+
             for (var ix = 0; ix <= width; ix++)
             {
                 for (var iy = 0; iy < height; iy++)
@@ -41,6 +61,7 @@ namespace MaximovInk.AdvancedTilemap
                     var uv = new ATileUV();
                     uv.Min = new Vector2Int(ix, iy) * tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
                     uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+                    uv.TextureSize = texSize;
 
                     tile.SetUV(uv);
                     tiles.Add(tile);
@@ -59,7 +80,7 @@ namespace MaximovInk.AdvancedTilemap
         }
 
 #if UNITY_EDITOR
-        public virtual void SelectTile(ATileUV uv, ATile tile, int variationID = 0)
+        public virtual void SelectTile(ATileset tileset, ATileUV uv, ATile tile, int variationID = 0)
         {
             var uvSize = uv.Max - uv.Min;
 
@@ -134,6 +155,11 @@ namespace MaximovInk.AdvancedTilemap
         }
 
         public abstract bool DrawTileGUIPreview(ATileset tileset, ATile tile, byte variationID = 0);
+
+        public virtual bool HasDrawTileProperties => false;
+
+        public virtual void DrawTileProperties(ATileset tileset, ATile tile)
+        {}
 #endif
     }
 }

@@ -12,7 +12,16 @@ namespace MaximovInk.AdvancedTilemap
 
         public void Validate()
         {
-            gameObject.hideFlags = HideFlags.HideInHierarchy;
+            gameObject.hideFlags = HideFlags.HideAndDontSave;
+
+            var paints = FindObjectsByType<PaintPreview>( FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            for (int i = 0; i < paints.Length; i++)
+            {
+                if (paints[i] == this) continue;
+
+                DestroyImmediate(paints[i].gameObject);
+            }
         }
 
         public void SetMaterial(Material material, Texture2D texture)

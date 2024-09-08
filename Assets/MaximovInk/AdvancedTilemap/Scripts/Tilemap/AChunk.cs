@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
@@ -10,6 +11,9 @@ namespace MaximovInk.AdvancedTilemap
         public ALayer Layer;
         public int GridX;
         public int GridY;
+
+        public bool IsLoaded;
+        public bool CanTrim => !IsLoaded && IsEmpty();
 
         private ChunkProcessor _chunkProcessor;
 
@@ -23,6 +27,11 @@ namespace MaximovInk.AdvancedTilemap
             UpdateRenderer();
         }
 
+        private void Start()
+        {
+            _data.IsDirty = true;
+        }
+
         public void Init()
         {
             CheckRenderer();
@@ -31,6 +40,21 @@ namespace MaximovInk.AdvancedTilemap
             ColliderEnabledChange(Layer.ColliderEnabled);
             UpdateLiquidState();
             UpdateFlags();
+        }
+
+        public void UpdateFlags()
+        {
+            if (Layer.Tilemap.DisplayChunksInHierarchy)
+            {
+                gameObject.hideFlags &= ~HideFlags.HideInHierarchy;
+            }
+            else
+            {
+                gameObject.hideFlags |= HideFlags.HideInHierarchy;
+            }
+
+            tag = Layer.Tag;
+            gameObject.layer = Layer.LayerMask;
         }
 
         private void CheckValidate()

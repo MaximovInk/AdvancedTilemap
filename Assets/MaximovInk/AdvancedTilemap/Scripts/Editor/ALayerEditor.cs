@@ -21,6 +21,7 @@ namespace MaximovInk.AdvancedTilemap
             layer = (ALayer)target;
 
             _data.Layer = layer;
+            _data.PreviewScale = 0.8f;
 
             ALayerGUI.Enable(ref _data);
         }
@@ -43,6 +44,11 @@ namespace MaximovInk.AdvancedTilemap
         {
             ALayerGUI.SceneGUI(layer, ref _data);
 
+            if (_data.RepaintInvoke)
+            {
+                _data.RepaintInvoke = false;
+                Repaint();
+            }
         }
     }
 }

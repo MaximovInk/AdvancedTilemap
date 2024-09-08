@@ -25,11 +25,14 @@ namespace MaximovInk.AdvancedTilemap
         {
             if (tileset == null || tileset.Texture == null) return;
 
-            previewScaler = EditorGUILayout.Slider("Scale:", previewScaler, 0.2f, 10f);
+            previewScaler = EditorGUILayout.Slider("Scale:", previewScaler, 0.2f, 100f);
 
             scrollViewValue = GUILayout.BeginScrollView(scrollViewValue, "helpBox", GUILayout.Height(300));
 
-
+            if (GUILayout.Button("Reset scale"))
+            {
+                previewScaler = 0.8f;
+            }
 
             var aspect = (float)tileset.Texture.height / tileset.Texture.width;
 
@@ -49,7 +52,7 @@ namespace MaximovInk.AdvancedTilemap
 
             GUI.DrawTexture(rect, tileset.Texture);
 
-            for (int i = 0; i < tileset.TilesCount; i++)
+            for (int i = 1; i <= tileset.TilesCount; i++)
             {
                 var tile = tileset.GetTile(i);
 
@@ -115,6 +118,8 @@ namespace MaximovInk.AdvancedTilemap
 
         public static void SaveAsset(Object obj)
         {
+            if (obj == null) return;
+
             EditorUtility.SetDirty(obj);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

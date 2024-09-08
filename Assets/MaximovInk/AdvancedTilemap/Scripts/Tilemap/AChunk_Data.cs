@@ -1,9 +1,12 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
     public partial class AChunk
     {
+        public event Action OnTileChanged;
+
         [SerializeField, HideInInspector] private AChunkData _data;
         [SerializeField, HideInInspector] private AChunkPersistenceData _persistenceData;
 
@@ -37,6 +40,7 @@ namespace MaximovInk.AdvancedTilemap
                 if (_data.variations[idx] != variation)
                 {
                     _data.variations[idx] = variation;
+                    OnTileChanged?.Invoke();
                     _data.IsDirty = true;
                 }
 
@@ -54,6 +58,8 @@ namespace MaximovInk.AdvancedTilemap
 
             _data.IsDirty = true;
 
+            OnTileChanged?.Invoke();
+
             return true;
         }
 
@@ -65,7 +71,7 @@ namespace MaximovInk.AdvancedTilemap
             _data.collision[x + y * CHUNK_SIZE] = false;
 
             _data.IsDirty = true;
-
+            OnTileChanged?.Invoke();
             return true;
         }
 

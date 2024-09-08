@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
@@ -6,6 +7,9 @@ namespace MaximovInk.AdvancedTilemap
     [ExecuteAlways]
     public class ALayer : MonoBehaviour
     {
+        public event Action OnTileChanged;
+        public event Action OnChunkCreated;
+
         public bool IsActive { get => gameObject.activeSelf; set
             {
                 if (value == gameObject.activeSelf) return;
@@ -36,10 +40,16 @@ namespace MaximovInk.AdvancedTilemap
             } }
         public bool AutoTrim { get => Tilemap.AutoTrim; }
 
+     
         public int MinGridX { get; private set; }
         public int MinGridY { get; private set; }
         public int MaxGridX { get; private set; }
         public int MaxGridY { get; private set; }
+
+        public Bounds Bounds => _bounds;
+
+        [SerializeField,HideInInspector]
+        private Bounds _bounds;
 
         public ATilemap Tilemap;
         public ATileset Tileset;
@@ -68,21 +78,21 @@ namespace MaximovInk.AdvancedTilemap
         public void CalculateBounds()
         {
             MinGridX = 0; MinGridY = 0; MaxGridX = 0; MaxGridY = 0;
-            Bounds bounds = new Bounds();
+            _bounds = new Bounds();
 
             foreach (var chunk in chunksCache)
             {
                 Bounds chunkbounds = chunk.Value.GetBounds();
                 Vector2 min = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkbounds.min));
                 Vector2 max = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkbounds.max));
-                bounds.Encapsulate(min + Vector2.one * 0.5f);
-                bounds.Encapsulate(max - Vector2.one * 0.5f);
+                _bounds.Encapsulate(min + Vector2.one * 0.5f);
+                _bounds.Encapsulate(max - Vector2.one * 0.5f);
             }
 
-            MinGridX = Utilites.GetGridX(this, bounds.min);
-            MinGridY = Utilites.GetGridY(this, bounds.min);
-            MaxGridX = Utilites.GetGridX(this, bounds.max);
-            MaxGridY = Utilites.GetGridY(this, bounds.max);
+            MinGridX = Utilites.GetGridX(this, _bounds.min);
+            MinGridY = Utilites.GetGridY(this, _bounds.min);
+            MaxGridX = Utilites.GetGridX(this, _bounds.max);
+            MaxGridY = Utilites.GetGridY(this, _bounds.max);
         }
 
         #region Undo
@@ -197,7 +207,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             var chunk = GetOrCreateChunk(x, y);
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             if (IsUndoEnabled && currentRecording != null)
             {
@@ -238,7 +248,7 @@ namespace MaximovInk.AdvancedTilemap
             if (chunk == null)
                 return 0;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             return chunk.GetTile(coords.x, coords.y);
         }
@@ -247,7 +257,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             var chunk = GetOrCreateChunk(x, y, false);
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             if (chunk == null) return;
 
@@ -294,7 +304,7 @@ namespace MaximovInk.AdvancedTilemap
 
             if (chunk == null) return;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             chunk.SetColor(coords.x, coords.y, color);
         }
@@ -306,7 +316,7 @@ namespace MaximovInk.AdvancedTilemap
             if (chunk == null)
                 return Color.white;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             return chunk.GetColor(coords.x, coords.y);
         }
@@ -322,7 +332,7 @@ namespace MaximovInk.AdvancedTilemap
             if (chunk == null)
                 return;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             if(chunk.GetBitmask(coords.x, coords.y) != bitmask)
                 chunk.SetBitmask(coords.x, coords.y, bitmask);
@@ -334,7 +344,7 @@ namespace MaximovInk.AdvancedTilemap
 
             if (chunk == null) return 0;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             return chunk.GetBitmask(coords.x, coords.y);
         }
@@ -342,6 +352,8 @@ namespace MaximovInk.AdvancedTilemap
         public void UpdateBitmask(int x, int y)
         {
             SetBitmask(x, y, CalculateBitmask(x, y));
+
+            OnTileChanged?.Invoke();
         }
 
         public void UpdateNeighborsBitmask(int x, int y)
@@ -408,7 +420,7 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        private AChunk GetOrCreateChunk(int x, int y, bool autoCreate = true)
+        public AChunk GetOrCreateChunk(int x, int y, bool autoCreate = true)
         {
             int chunkX = (x < 0 ? (x + 1 - AChunk.CHUNK_SIZE) : x) / AChunk.CHUNK_SIZE;
             int chunkY = (y < 0 ? (y + 1 - AChunk.CHUNK_SIZE) : y) / AChunk.CHUNK_SIZE;
@@ -431,6 +443,8 @@ namespace MaximovInk.AdvancedTilemap
                 chunk.Init();
 
                 chunksCache[key] = chunk;
+
+                OnChunkCreated?.Invoke();
             }
 
             return chunk;
@@ -440,7 +454,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             foreach (var chunk in chunksCache)
             {
-                if (chunk.Value.IsEmpty())
+                if (chunk.Value.CanTrim)
                 {
                     DestroyImmediate(chunk.Value.gameObject);
                 }
@@ -489,7 +503,7 @@ namespace MaximovInk.AdvancedTilemap
             chunksCache.Clear();
         }
 
-        private Vector2Int ConvertCoordinatesToChunk(int x, int y)
+        public Vector2Int ConvertGlobalGridToChunk(int x, int y)
         {
             int cx = (x < 0 ? -x - 1 : x) % AChunk.CHUNK_SIZE;
             int cy = (y < 0 ? -y - 1 : y) % AChunk.CHUNK_SIZE;
@@ -519,6 +533,11 @@ namespace MaximovInk.AdvancedTilemap
         }
 
         private void OnValidate()
+        {
+            BuildChunkCache();
+        }
+
+        private void Awake()
         {
             BuildChunkCache();
         }
@@ -584,8 +603,8 @@ namespace MaximovInk.AdvancedTilemap
         {
             CalculateBounds();
 
-            var min = Utilites.GetGridPosition(this,Utilites.BoundsMin(Camera.main) - new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
-            var max = Utilites.GetGridPosition(this,Utilites.BoundsMax(Camera.main) + new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
+            var min = Utilites.GetGridPosition(this,Camera.main.BoundsMin() - new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
+            var max = Utilites.GetGridPosition(this,Camera.main.BoundsMax() + new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
 
             for (int ix = min.x; ix < max.x; ix++)
             {
@@ -785,7 +804,7 @@ namespace MaximovInk.AdvancedTilemap
             var chunk = GetOrCreateChunk(x, y, false);
             if (chunk == null)
                 return false ;
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
             return chunk.GetSettled(coords.x, coords.y);
         }
 
@@ -794,7 +813,7 @@ namespace MaximovInk.AdvancedTilemap
             var chunk = GetOrCreateChunk(x, y, false);
             if (chunk == null)
                 return;
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             
             chunk.SetSettled(coords.x, coords.y, value);
@@ -810,7 +829,7 @@ namespace MaximovInk.AdvancedTilemap
 
             var chunk = GetOrCreateChunk(x, y, false);
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             if (chunk == null)
                 return;
@@ -831,7 +850,7 @@ namespace MaximovInk.AdvancedTilemap
             if (chunk == null)
                 return;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             chunk.AddLiquid(coords.x, coords.y, value);
         }
@@ -848,9 +867,45 @@ namespace MaximovInk.AdvancedTilemap
             if (chunk == null)
                 return 0;
 
-            var coords = ConvertCoordinatesToChunk(x, y);
+            var coords = ConvertGlobalGridToChunk(x, y);
 
             return chunk.GetLiquid(coords.x, coords.y);
+        }
+
+        #endregion
+
+        #region Lighting
+
+        public void UpdateLightingState(bool active)
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.UpdateLightingState(active);
+            }
+        }
+
+        public void SetLight(int x, int y, byte value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            if (chunk == null)
+                return;
+
+            chunk.SetLight(coords.x, coords.y, value);
+        }
+
+        public byte GetLight(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null)
+                return 0;
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            return chunk.GetLight(coords.x, coords.y);
         }
 
         #endregion

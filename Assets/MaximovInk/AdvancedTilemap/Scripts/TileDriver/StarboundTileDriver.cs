@@ -7,15 +7,13 @@ using UnityEditor;
 
 namespace MaximovInk.AdvancedTilemap
 {
-    public class StarboundTileDriver : ATileDriver
+    public sealed class StarboundTileDriver : ATileDriver
     {
         public StarboundTileDriver()
         {
             UVInTilesX = 2;
             UVInTilesY = 3;
         }
-
-        private const float Zoffset = 0.1f;
 
         public override string Name => "Starbound alike";
 
@@ -25,7 +23,7 @@ namespace MaximovInk.AdvancedTilemap
 
             var meshDataParam = new MeshDataParameters();
 
-            meshDataParam.z = Zoffset * tile.ID;
+            meshDataParam.z = ATilemap.Z_TILE_OFFSET * tile.ID;
 
             var cellMinX = data.x;
             var cellMinY = data.y;

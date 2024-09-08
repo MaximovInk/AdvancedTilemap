@@ -92,10 +92,10 @@ namespace MaximovInk.AdvancedTilemap
 
         public static void SceneGUI(ALayer layer, ref ALayerEditorData data)
         {
-            if (data.selectedTile == 0) return;
+            if (data.selectedTile == 0) return ;
 
             OnSceneGUIUndo(layer, ref data);
-            OnSceneGUIPaint(layer, ref data);
+            data.RepaintInvoke |= OnSceneGUIPaint(layer, ref data);
         }
 
         public static void Enable(ref ALayerEditorData data)
@@ -150,7 +150,7 @@ namespace MaximovInk.AdvancedTilemap
             if (Tools.current != Tool.None)
                 return repaint;
 
-
+            data.Event = Event.current;
 
             if (layer.Tileset == null) return repaint;
 
@@ -190,6 +190,8 @@ namespace MaximovInk.AdvancedTilemap
                         break;
                 }
 
+                
+
                 Handles.BeginGUI();
 
                 var buttonStyle = new GUIStyle(GUI.skin.button);
@@ -216,6 +218,8 @@ namespace MaximovInk.AdvancedTilemap
                    (data.Tool is RectBrushToolEditor) ? selectedButtonStyle : buttonStyle))
                     data.Tool = new RectBrushToolEditor();
 
+
+                GUILayout.Label($"Tile pos: [{data.gridPos.x}:{data.gridPos.y}]");
 
                 GUILayout.EndVertical();
 
@@ -247,6 +251,8 @@ namespace MaximovInk.AdvancedTilemap
                         GenPreviewTextureBrush(ref data);
 
                     data.Tool.Update(ref data);
+
+                    repaint=true;
                 }
             }
 
@@ -263,8 +269,9 @@ namespace MaximovInk.AdvancedTilemap
             position.z = data.Layer.transform.position.z - 1;
 
             data.PreviewTextureBrush.transform.position = position;
-            if (data.brushSize > 1)
+            if (data.brushSize >= 1)
             {
+                
                 data.PreviewTextureBrush.transform.position = (Vector3)position - data.PreviewTextureBrush.transform.localScale / 2f + new Vector3(0.5f, 0.5f, 0);
             }
 

@@ -12,6 +12,7 @@ namespace MaximovInk.AdvancedTilemap
         private void OnEnable()
         {
             _tileset = (ATileset)target;
+            _data.PreviewScale = 0.8f;
         }
 
         public override void OnInspectorGUI()

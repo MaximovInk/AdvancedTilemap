@@ -16,5 +16,8 @@ namespace MaximovInk.AdvancedTilemap
         public string TileDriverID;
 
         public bool InvokeClearAll;
+
+        public bool ShowHiddenParameters;
+        public bool ShowTilesAsList;
     }
 }

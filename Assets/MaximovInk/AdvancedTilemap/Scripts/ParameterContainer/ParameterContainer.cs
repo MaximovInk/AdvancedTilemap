@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
     [System.Serializable]
     public class ParameterContainer
     {
-        public List<Parameter> parameters = new List<Parameter>();
+        public List<Parameter> parameters = new();
 
-        public void AddNewParam(Parameter param)
+        public Parameter AddNewParam(Parameter param)
         {
             parameters.Add(param);
+
+            return param;
         }
 
         public void RemoveParam(string name)

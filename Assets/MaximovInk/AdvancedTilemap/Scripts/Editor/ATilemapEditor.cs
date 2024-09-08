@@ -2,6 +2,7 @@
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -50,6 +51,8 @@ namespace MaximovInk.AdvancedTilemap
             list.onRemoveCallback = RemoveCallback;
             list.drawElementCallback = DrawElementCallback;
             list.onSelectCallback = SelectCallback;
+
+            _data.PreviewScale = 0.8f;
 
             ALayerGUI.Enable(ref _data);
         }
@@ -110,6 +113,17 @@ namespace MaximovInk.AdvancedTilemap
 
             if (tilemap.layers == null) tilemap.layers = new List<ALayer>();
 
+            for (int i = 0; i < tilemap.layers.Count; i++)
+            {
+                if (tilemap.layers[i] == null)
+                {
+                    tilemap.layers.RemoveAt(i);
+
+                    i--;
+                }
+
+            }
+
             list.DoLayoutList();
 
             GUILayout.BeginVertical();
@@ -121,7 +135,55 @@ namespace MaximovInk.AdvancedTilemap
             tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
             tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
 
-            if(GUILayout.Button("Refresh all layers"))
+            GUILayout.BeginVertical();
+
+            GUILayout.Space(20);
+
+            GUILayout.Label("Lighting");
+
+            tilemap.LightingEnabled = EditorGUILayout.Toggle("Enabled", tilemap.LightingEnabled);
+
+            if (tilemap.LightingEnabled)
+            {
+                var light = tilemap.Lighting;
+
+                light.ForegroundLayer = EditorGUILayout.ObjectField("Foreground", light.ForegroundLayer, typeof(ALayer), true) as ALayer;
+                light.BackgroundLayer = EditorGUILayout.ObjectField("Background", light.BackgroundLayer, typeof(ALayer), true) as ALayer;
+
+                if (light.ForegroundLayer == null || light.ForegroundLayer.Tilemap != tilemap)
+                    light.ForegroundLayer = null;
+                if (light.BackgroundLayer == null || light.BackgroundLayer?.Tilemap != tilemap)
+                    light.BackgroundLayer = null;
+
+                light.LightMaterial = EditorGUILayout.ObjectField("Material", light.LightMaterial, typeof(Material), true) as Material;
+
+                light.LightingMask = EditorGUILayout.LayerField("Layer", light.LightingMask);
+
+                tilemap.Lighting = light;
+            }
+
+            var loader = tilemap.ChunkLoader;
+
+            GUILayout.Space(20);
+
+            GUILayout.Label("Loader");
+
+            loader.Enabled = EditorGUILayout.Toggle("Enabled", loader.Enabled);
+
+            if (loader.Enabled)
+            {
+                loader.Target = EditorGUILayout.ObjectField("Target", loader.Target, typeof(Transform), true) as Transform;
+                loader.TargetOffset = EditorGUILayout.Vector2IntField("Offset", loader.TargetOffset);
+            }
+
+            tilemap.ChunkLoader = loader;
+
+            GUILayout.EndVertical();
+
+            GUILayout.Label("Liquid steps:");
+            tilemap.LiquidStepsDuration = EditorGUILayout.Slider(tilemap.LiquidStepsDuration, 0.001f, 1f);
+
+            if (GUILayout.Button("Refresh all layers"))
             {
                 tilemap.Refresh(true);
             }
@@ -129,6 +191,7 @@ namespace MaximovInk.AdvancedTilemap
             GUILayout.EndVertical();
 
             serializedObject.ApplyModifiedProperties();
+
 
             if (layerSelected > -1 && layerSelected < tilemap.layers.Count)
             {
@@ -151,6 +214,12 @@ namespace MaximovInk.AdvancedTilemap
             {
                 _invokePreviewRegen = false;
                 ALayerGUI.GenPreviewTextureBrush(ref _data);
+            }
+
+            if (_data.RepaintInvoke)
+            {
+                _data.RepaintInvoke = false;
+                Repaint();
             }
         }
     }

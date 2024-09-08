@@ -49,7 +49,8 @@ namespace MaximovInk.AdvancedTilemap
 
             BeginChangeCheck();
 
-            tileset.Texture = (Texture2D)EditorGUILayout.ObjectField("Texture: ", tileset.Texture, typeof(Texture2D), false);
+            tileset.Texture =
+                (Texture2D)EditorGUILayout.ObjectField("Texture: ", tileset.Texture, typeof(Texture2D), false);
 
             if (tileset.Texture != null)
             {
@@ -69,7 +70,54 @@ namespace MaximovInk.AdvancedTilemap
 
             EndChangeCheck();
 
-            EditorUtils.DrawPreviewTileset(tileset, ref editorData.SelectedTile, ref editorData.PreviewScale, ref editorData.ScrollViewValue);
+            var texSize = new Vector2Int(tileset.Texture.width, tileset.Texture.height);
+
+            for (int i = 0; i < tileset.TilesCount; i++)
+            {
+                var tileValidate = tileset.GetTile(i);
+
+                for (int tileUV = 0; tileUV < tileValidate.Variations.Count; tileUV++)
+                {
+                    var uv = tileValidate.Variations[tileUV];
+
+                    if (uv.TextureSize.x == 0 || uv.TextureSize.y == 0)
+                        uv.TextureSize = texSize;
+
+                    if (uv.TextureSize != texSize)
+                    {
+                        uv.UpdateTextureSize(texSize);
+                        _isDirty = true;
+                    }
+
+                    tileValidate.SetUV(uv, tileUV);
+                }
+            }
+
+            editorData.ShowTilesAsList = GUILayout.Toggle(editorData.ShowTilesAsList, "ShowAsList");
+
+            if (editorData.ShowTilesAsList)
+            {
+                editorData.ScrollViewValue = GUILayout.BeginScrollView(editorData.ScrollViewValue);
+                GUILayout.BeginVertical();
+
+                for (int i = 1; i <= tileset.TilesCount; i++)
+                {
+                    if (GUILayout.Button($"{tileset.GetTile(i).ID}) Tile [{tileset.GetTile(i).TileDriverID}]"))
+                    {
+                        editorData.SelectedTile = (ushort)i;
+                    }
+                }
+
+                GUILayout.EndVertical();
+                GUILayout.EndScrollView();
+            }
+            else
+            {
+                EditorUtils.DrawPreviewTileset(tileset, ref editorData.SelectedTile, ref editorData.PreviewScale,
+                    ref editorData.ScrollViewValue);
+            }
+
+           
 
             GUILayout.Space(SPACING);
 
@@ -82,34 +130,37 @@ namespace MaximovInk.AdvancedTilemap
 
             var tileDriver = TileDriverPopup(ref editorData);
 
-            if(tileDriver is null)
+            if (tileDriver is null)
             {
-                Debug.LogError($"TileDriver is null! ID:({editorData.TileDriverID}) Idx:({editorData.TileDriverIndex})");
+                Debug.LogError(
+                    $"TileDriver is null! ID:({editorData.TileDriverID}) Idx:({editorData.TileDriverIndex})");
 
                 GUILayout.EndHorizontal();
 
                 return _isDirty;
             }
 
-                if (GUILayout.Button("Generate tiles"))
-                {
-                    tileset.SetTiles(tileDriver.GenerateTiles(tileset));
-                    _isDirty = true;
-                }
-            
+            if (GUILayout.Button("Generate tiles"))
+            {
+                tileset.SetTiles(tileDriver.GenerateTiles(tileset));
+                _isDirty = true;
+            }
+
 
             if (GUILayout.Button("Add tile"))
             {
                 var id = tileset.AddTile(tileDriver);
                 tileset.UpdateIDs();
                 editorData.SelectedTile = id;
+
+                _isDirty = true;
             }
 
             GUILayout.EndHorizontal();
 
             GUI.color = Color.red;
 
-          
+
 
             if (editorData.InvokeClearAll)
             {
@@ -121,6 +172,7 @@ namespace MaximovInk.AdvancedTilemap
                     editorData.SelectedTile = 0;
 
                     editorData.InvokeClearAll = false;
+                    _isDirty = true;
                 }
             }
             else
@@ -133,7 +185,7 @@ namespace MaximovInk.AdvancedTilemap
 
             GUI.color = Color.white;
 
-            if (!(editorData.SelectedTile > 0 && editorData.SelectedTile < tileset.TilesCount+1)) return _isDirty;
+            if (!(editorData.SelectedTile > 0 && editorData.SelectedTile < tileset.TilesCount + 1)) return _isDirty;
 
             var tile = tileset.GetTile(editorData.SelectedTile);
 
@@ -141,24 +193,37 @@ namespace MaximovInk.AdvancedTilemap
 
             DrawTileEditor(tileset, tile, ref editorData);
 
+
             return _isDirty;
         }
 
         private static void DrawTileEditor(ATileset tileset, ATile tile, ref ATilesetEditorData data)
         {
-            BeginChangeCheck();
+           
             GUILayout.BeginVertical("helpBox");
             {
                 if (DrawTileEditorHeader(tileset, tile, ref data))
                 {
+                    BeginChangeCheck();
+
                     DrawTileEditorVariables(tile, ref data);
+                    if(tile.TileDriver.HasDrawTileProperties)
+                       DrawTileEditorCustom(tileset, tile);
                     DrawTileEditorParameterContainer(tile, ref data);
+
+                    EndChangeCheck();
+
                     DrawTileEditorVariations(tileset, tile, ref data);
                 }
             }
 
             GUILayout.EndVertical();
-            EndChangeCheck();
+
+        }
+
+        private static void DrawTileEditorCustom(ATileset tileset, ATile tile)
+        {
+            tile.TileDriver.DrawTileProperties(tileset, tile);
         }
 
         private static bool DrawTileEditorHeader(ATileset tileset, ATile tile, ref ATilesetEditorData data)
@@ -185,22 +250,33 @@ namespace MaximovInk.AdvancedTilemap
 
             return isDraw;
         }
+
         private static void DrawTileEditorVariations(ATileset tileset, ATile tile, ref ATilesetEditorData data)
         {
             if (tile.Variations.Count == 0)
-                tile.Variations.Add(new ATileUV());
+            {
+                tile.AddVariation();
+                _isDirty = true;
+            }
 
             while (tile.Variations.Count > tile.Probabilites.Count)
             {
                 tile.Probabilites.Add(1f);
+
+                _isDirty = true;
             }
 
             while (tile.Variations.Count < tile.Probabilites.Count)
+            {
                 tile.Probabilites.RemoveAt(tile.Probabilites.Count - 1);
+                _isDirty = true;
+            }
 
             if (GUILayout.Button("Add variation"))
             {
                 tile.AddVariation();
+
+                _isDirty = true;
             }
 
             data.SelectedTileScroll =
@@ -225,8 +301,13 @@ namespace MaximovInk.AdvancedTilemap
                 GUILayout.BeginVertical();
                 if (tile.TileDriver.DrawTileGUIPreview(tileset, tile, (byte)i))
                 {
-                    int index = i;
-                    ATilesetSelector.Init(tileset, uv => { tile.TileDriver.SelectTile(uv, tile, index); });
+                    var index = i;
+                    ATilesetSelector.Init(tileset, uv => { 
+
+                        Debug.Log($"{tile.ID} {uv.Min} {uv.Max} {i} {index}");
+                        tile.TileDriver.SelectTile(tileset, uv, tile, index);
+                        EditorUtility.SetDirty(tileset);
+                    });
                 }
 
                 GUI.color = Color.red;
@@ -234,9 +315,11 @@ namespace MaximovInk.AdvancedTilemap
                 if (tile.Variations.Count > 1)
                     if (GUILayout.Button($"{i} Remove"))
                     {
-
+                        
                         tile.Variations.RemoveAt(i);
                         i--;
+
+                        _isDirty = true;
                     }
 
                 GUI.color = Color.white;
@@ -268,6 +351,7 @@ namespace MaximovInk.AdvancedTilemap
 
             tile.ColliderDisabled = !EditorGUILayout.Toggle("Collider enabled", !tile.ColliderDisabled);
             tile.RandomVariations = EditorGUILayout.Toggle("variations enabled:", tile.RandomVariations);
+            tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID);
         }
 
         private static void DrawTileEditorParameterContainer(ATile tile, ref ATilesetEditorData data)
@@ -279,8 +363,12 @@ namespace MaximovInk.AdvancedTilemap
             GUILayout.BeginVertical("helpBox");
             GUILayout.Label("parameters:");
 
+            data.ShowHiddenParameters = GUILayout.Toggle(data.ShowHiddenParameters, "Show hidden parameters");
+
             for (int i = 0; i < parameterContainer.parameters.Count; i++)
             {
+                if (parameterContainer.parameters[i].isHidden && !data.ShowHiddenParameters) continue;
+
                 if (DrawParameter(parameterContainer.parameters[i]))
                 {
                     parameterContainer.parameters.RemoveAt(i);

@@ -37,7 +37,6 @@ namespace MaximovInk.AdvancedTilemap
 
             float scaledValue = 200 * previewScaler * position.height/(220f);
 
-
             GUILayout.Label("", GUILayout.Width(scaledValue), GUILayout.Height(aspect * scaledValue));
             var rect = GUILayoutUtility.GetLastRect();
 

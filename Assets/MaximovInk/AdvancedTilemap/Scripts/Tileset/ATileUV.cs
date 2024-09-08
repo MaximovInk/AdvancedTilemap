@@ -10,6 +10,22 @@ namespace MaximovInk.AdvancedTilemap
         public Vector2 RightBottom;
         public Vector2 LeftBottom;
 
+        public Vector2Int TextureSize;
+
+        public void UpdateTextureSize(Vector2Int newTextureSize) {
+            var xScale = (float)TextureSize.x/newTextureSize.x;
+            var yScale = (float)TextureSize.y/newTextureSize.y;
+
+            var scale = new Vector2(xScale, yScale);
+
+            LeftTop*=scale;
+            RightTop*=scale;
+            RightBottom*=scale;
+            LeftBottom*=scale;
+
+            TextureSize = newTextureSize;
+        }
+
         public override string ToString()
         {
             return $"{LeftBottom.x} {LeftBottom.y} {RightTop.x} {RightTop.y}";
@@ -38,9 +54,10 @@ namespace MaximovInk.AdvancedTilemap
                 RightBottom.x = value.x;
             }
         }
+
         public static ATileUV Generate(Vector2 min,Vector2 max)
         {
-            ATileUV uv = default(ATileUV);
+            ATileUV uv = default;
             uv.Min = min;
             uv.Max = max;
             return uv;
@@ -49,7 +66,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             get
             {
-                ATileUV uv;
+                ATileUV uv = default;
                 uv.LeftBottom = Vector2.zero;
                 uv.LeftTop = new Vector2(0f, 1f);
                 uv.RightBottom = new Vector2(1f, 0f);
