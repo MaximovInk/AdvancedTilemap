@@ -170,11 +170,23 @@ namespace MaximovInk.AdvancedTilemap
             {
                 _collider2D = gameObject.AddComponent<PolygonCollider2D>();
                 _data.IsDirty = true;
+                UpdateCollisionState();
             }
 
             if(!active && _collider2D != null)
             {
                 DestroyImmediate(_collider2D);
+            }
+
+        }
+
+        public void UpdateCollisionState()
+        {
+            _data.FillCollision(false);
+
+            for (int i = 0; i < _data.ArraySize; i++)
+            {
+                _data.collision[i] = IsCollision(_data.data[i]);
             }
         }
 

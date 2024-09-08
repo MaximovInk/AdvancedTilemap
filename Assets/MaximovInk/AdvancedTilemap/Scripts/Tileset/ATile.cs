@@ -27,8 +27,6 @@ namespace MaximovInk.AdvancedTilemap
         [SerializeField]
         private string _tileDriverID;
 
-
-
         public void SetUV(ATileUV uv,int id = 0)
         {
             Variations[id] = uv;

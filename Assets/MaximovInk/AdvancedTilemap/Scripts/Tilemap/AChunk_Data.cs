@@ -50,7 +50,7 @@ namespace MaximovInk.AdvancedTilemap
             _data.data[idx] = tileID;
 
             _data.collision[idx]
-                = (tileID > 0) && !Layer.Tileset.GetTile(tileID).ColliderDisabled;
+                = IsCollision(tileID);
 
             _data.transforms[idx] = transform;
 
@@ -73,6 +73,11 @@ namespace MaximovInk.AdvancedTilemap
             _data.IsDirty = true;
             OnTileChanged?.Invoke();
             return true;
+        }
+
+        private bool IsCollision(ushort tileID)
+        {
+            return (tileID > 0) && !Layer.Tileset.GetTile(tileID).ColliderDisabled;
         }
 
         public byte GetBitmask(int x, int y)

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using static MaximovInk.Bitmask;
 
 #if UNITY_EDITOR
