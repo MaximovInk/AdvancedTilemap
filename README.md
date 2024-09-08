@@ -23,6 +23,7 @@ Features:
 - [x] Tilesets
   - [x] Variation tiles
   - [x] Tile parameters
+  - [x] Auto finding your own TileDrivers(Types of tile with custom mesh generation) in assembly 
   - [x] Tile types
     - [x] Default
     - [x] ARule tiles (Advanced, unlimited pattern size)
