@@ -3,28 +3,36 @@ Advanced tilemap system for Unity as a Starbound or Terraria
 
 Features:
 - [x] Infinity map
-- [x] Chunk loading
-- [x] Multi threading
-- [x] Tile colors
-- [x] Brush tools (Fill,Line,Rectangle,Circle,Custom)
 - [x] Layers
+  - [x] Tint color
+  - [x] Enable/Disable liquid, lighing, collision
+- [x] Chunk loading/unloading target
+- [x] Multi threading (not using now, coming soon)
+- [x] Tile colors, rotating, flip
+- [x] Editing in editor
+  - [x] Brush tools (Fill,Line,Rectangle,Circle,Custom)
+  - [x] Brush size 
+  - [x] Tile preview (have some bugs)
+  - [x] Undo/Redo (enable toggle) + Runtime
 - [x] Powerful liquid physics (like starbound)
-- [x] Collider generation
-- [x] Undo/Redo (WIP)
-- [x] Variation tiles
+- [x] Collider generation 
+  - [x] Simple quads (optimized in one collision mesh)
+  - [x] Custom shapes
 - [x] Bitmasking
 - [x] AutoTrim
 - [x] Tilesets
+  - [x] Variation tiles
+  - [x] Tile parameters
   - [x] Tile types
-  - [x] Default
-  - [x] Rule tiles
-  - [x] Rule tiles aka Starbound
-  - [x] Horizontal pipe
-  - [ ] Vertical pipe
-  - [ ] Slopes aka Starbound
-
-- [ ] Prefab tiles
-- [ ] Multi blocks
+    - [x] Default
+    - [x] ARule tiles (Advanced, unlimited pattern size)
+    - [x] Rule tiles
+    - [x] Rule tiles aka Starbound
+    - [x] Horizontal pipe
+    - [ ] Vertical pipe
+    - [ ] Slopes aka Starbound
+    - [ ] Prefab tiles
+    - [ ] Multi blocks
 
 # Screenshots:
 ## Rule tiles same as Starbound
