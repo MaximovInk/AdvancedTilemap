@@ -48,7 +48,7 @@ namespace MaximovInk.AdvancedTilemap
                         {
                             if (data.Event.shift)
                             {
-                                layer.EraseTile(ix, iy);
+                                layer.SetTile(ix, iy,0);
                             }
                             else
                             {

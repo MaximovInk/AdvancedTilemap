@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using System.Text;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -14,39 +15,56 @@ namespace MaximovInk.AdvancedTilemap
         public static void DrawRectWithOutline(Rect rect, Color color, Color colorOutline)
         {
             Vector3[] rectVerts = {
-            new Vector3(rect.x, rect.y, 0),
-            new Vector3(rect.x + rect.width, rect.y, 0),
-            new Vector3(rect.x + rect.width, rect.y + rect.height, 0),
-            new Vector3(rect.x, rect.y + rect.height, 0) };
+            new(rect.x, rect.y, 0),
+            new(rect.x + rect.width, rect.y, 0),
+            new(rect.x + rect.width, rect.y + rect.height, 0),
+            new(rect.x, rect.y + rect.height, 0) };
             Handles.DrawSolidRectangleWithOutline(rectVerts, color, colorOutline);
         }
 
-        public static void DrawPreviewTileset(ATileset tileset, ref ushort selectedTile, ref float previewScaler, ref Vector2 scrollViewValue)
+        private const float MAX_SCALE_H = 500f;
+        private const float MIN_SCALE_H = 300f;
+
+        public const float PREVIEW_SCALE_DEFAULT = 1.6f;
+
+        public static void DrawPreviewTileset(ATileset tileset, ref ushort selectedTile, ref float previewScaler, ref Vector2 scrollViewValue, float height = 300f)
         {
             if (tileset == null || tileset.Texture == null) return;
 
             previewScaler = EditorGUILayout.Slider("Scale:", previewScaler, 0.2f, 100f);
 
-            scrollViewValue = GUILayout.BeginScrollView(scrollViewValue, "helpBox", GUILayout.Height(300));
+            var newHeight = Mathf.Clamp(height * previewScaler, MIN_SCALE_H, MAX_SCALE_H);
 
             if (GUILayout.Button("Reset scale"))
             {
-                previewScaler = 0.8f;
+                previewScaler = PREVIEW_SCALE_DEFAULT;
             }
 
+            scrollViewValue = GUILayout.BeginScrollView(scrollViewValue, false, false, GUILayout.Height(newHeight));
+
+           
             var aspect = (float)tileset.Texture.height / tileset.Texture.width;
 
-            int scaledValue = (int)(200 * previewScaler * 1.45f);
+           // int scaledValue = (int)(newHeight * previewScaler);
+
+            int scaledValue = (int)(height * previewScaler);
 
             GUILayout.Label("");
-            var rectW = GUILayoutUtility.GetLastRect();
+            var rectView = GUILayoutUtility.GetLastRect();
 
 
-            GUILayout.Label("", GUILayout.Width(scaledValue / aspect), GUILayout.Height(scaledValue));
+            var rW = scaledValue / aspect - 25f;
+            var rH = scaledValue - 25f;
+
+
+            GUILayout.Label("", GUILayout.Width(rW), GUILayout.Height(rH));
 
             var rect = GUILayoutUtility.GetLastRect();
 
-            rect.x += rectW.width / 2f - rect.width / 2f;
+            rect.x += rectView.width / 2f - rect.width / 2f;
+            //rect.y -= rectView.height / 2f - rect.height / 2f;
+            //rect.x += rect.width / 2f;
+            //rect.y = 
 
             DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1f));
 

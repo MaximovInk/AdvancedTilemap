@@ -50,6 +50,12 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
+        public bool ShowGrid
+        {
+            get => _showGrid;
+            set => _showGrid=value;
+        }
+
         public bool DisplayChunksInHierarchy
         {
             get { return displayChunksHierarchy; }
@@ -81,6 +87,8 @@ namespace MaximovInk.AdvancedTilemap
         private bool undoEnabled;
         [SerializeField]
         private bool _autoTrim;
+
+        [SerializeField] private bool _showGrid;
 
         public bool LightingEnabled
         {

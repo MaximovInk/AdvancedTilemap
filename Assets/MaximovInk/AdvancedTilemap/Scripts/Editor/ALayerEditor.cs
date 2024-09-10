@@ -21,8 +21,8 @@ namespace MaximovInk.AdvancedTilemap
             layer = (ALayer)target;
 
             _data.Layer = layer;
-            _data.PreviewScale = 0.8f;
-
+            _data.PreviewScale = EditorUtils.PREVIEW_SCALE_DEFAULT;
+                
             ALayerGUI.Enable(ref _data);
         }
 

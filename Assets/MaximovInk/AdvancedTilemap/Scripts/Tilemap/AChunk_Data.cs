@@ -32,8 +32,10 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool SetTile(int x, int y, ushort tileID, UVTransform transform = default)
         {
-            var variation = Layer.Tileset.GetTile(tileID).GenVariation();
             int idx = x + y * CHUNK_SIZE;
+
+
+            var variation = Layer.Tileset.GetTile(tileID).GenVariation();
 
             if (_data.data[idx] == tileID && _data.transforms[idx] == transform)
             {
@@ -48,12 +50,9 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             _data.data[idx] = tileID;
-
             _data.collision[idx]
                 = IsCollision(tileID);
-
             _data.transforms[idx] = transform;
-
             _data.variations[idx] = Layer.Tileset.GetTile(tileID).GenVariation();
 
             _data.IsDirty = true;
@@ -63,7 +62,7 @@ namespace MaximovInk.AdvancedTilemap
             return true;
         }
 
-        public bool EraseTile(int x, int y)
+        /*public bool EraseTile(int x, int y)
         {
             if (_data.data[x + y * CHUNK_SIZE] == 0) return false;
 
@@ -73,7 +72,7 @@ namespace MaximovInk.AdvancedTilemap
             _data.IsDirty = true;
             OnTileChanged?.Invoke();
             return true;
-        }
+        }*/
 
         private bool IsCollision(ushort tileID)
         {

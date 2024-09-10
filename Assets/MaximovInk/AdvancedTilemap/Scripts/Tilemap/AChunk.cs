@@ -7,6 +7,8 @@ namespace MaximovInk.AdvancedTilemap
     [ExecuteAlways]
     public partial class AChunk : MonoBehaviour
     {
+        public event Action GenerationJobsCompleted;
+
         public const int CHUNK_SIZE = 16;
         public ALayer Layer;
         public int GridX;
@@ -149,6 +151,11 @@ namespace MaximovInk.AdvancedTilemap
 
 
             _data.IsDirty = false;
+
+            GenerationJobsCompleted?.Invoke();
+
+            if(!Layer.TrimIfNeeded())
+                Layer.CalculateBounds();
         }
 
         #region Collider
@@ -195,9 +202,11 @@ namespace MaximovInk.AdvancedTilemap
         public Bounds GetBounds()
         {
             Bounds bounds = meshFilter.sharedMesh ? meshFilter.sharedMesh.bounds : default;
+
+            var tileUnit = Layer.Tileset.GetTileUnit();
             if (bounds == default)
             {
-                Vector3 vMinMax = Vector2.Scale(new Vector2(GridX < 0 ? CHUNK_SIZE : 0f, GridY < 0 ? CHUNK_SIZE : 0f), Vector3.one);
+                Vector3 vMinMax = Vector2.Scale(new Vector2(GridX < 0 ? CHUNK_SIZE : 0f, GridY < 0 ? CHUNK_SIZE : 0f), tileUnit);
                 bounds.SetMinMax(vMinMax, vMinMax);
             }
             for (int i = 0; i < _data.data.Length; ++i)
@@ -211,7 +220,7 @@ namespace MaximovInk.AdvancedTilemap
                 int gy = i / CHUNK_SIZE;
                 if (GridY >= 0) gy++;
 
-                Vector2 gridPos = Vector2.Scale(new Vector2(gx, gy), Vector3.one);
+                Vector2 gridPos = Vector2.Scale(new Vector2(gx, gy), tileUnit);
 
                 bounds.Encapsulate(gridPos);
             }

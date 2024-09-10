@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
     public partial class AChunk
     {
+
         [HideInInspector, SerializeField]
         private MeshData _meshData;
 
@@ -27,6 +29,8 @@ namespace MaximovInk.AdvancedTilemap
 
         private void CheckRenderer()
         {
+            if (this == null) return;
+
             if (meshFilter == null)
                 meshFilter = gameObject.GetComponent<MeshFilter>();
 
@@ -47,12 +51,14 @@ namespace MaximovInk.AdvancedTilemap
                     continue;
 
                 if (_data.data[i] > Layer.Tileset.TilesCount)
-                    EraseTile(i % CHUNK_SIZE, i / CHUNK_SIZE);
+                    SetTile(i % CHUNK_SIZE, i / CHUNK_SIZE,0);
             }
         }
 
         public void UpdateRenderer()
         {
+            if (this == null) return;
+
             CheckRenderer();
 
             if (Layer == null) return;

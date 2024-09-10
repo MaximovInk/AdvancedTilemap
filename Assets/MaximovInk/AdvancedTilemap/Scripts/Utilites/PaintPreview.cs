@@ -38,6 +38,22 @@ namespace MaximovInk.AdvancedTilemap
             meshRenderer.SetPropertyBlock(materialProperty);
         }
 
+        public void SetPosition(Vector3 position)
+        {
+            var tileUnitHalf = tileUnit / 2f;
+
+            var offset = new Vector3(
+                _maxX * tileUnitHalf.x,
+                _maxY * tileUnitHalf.y,
+                0
+                );
+
+            if (_maxX % 2 != 0) offset.x -= tileUnitHalf.x;
+            if (_maxY % 2 != 0) offset.y -= tileUnitHalf.y;
+
+            transform.position = position - offset;
+        }
+
         private void CheckInit()
         {
             if (meshData != null) return;
@@ -50,6 +66,11 @@ namespace MaximovInk.AdvancedTilemap
             meshFilter.mesh = meshData.GetMesh();
         }
 
+        private int _maxX = 1;
+        private int _maxY = 1;
+
+        private Vector2 tileUnit = Vector2.one;
+
         public void GenerateBlock(int size, ATileDriverData tileDriverData)
 
         {
@@ -61,10 +82,11 @@ namespace MaximovInk.AdvancedTilemap
 
             int x = 0;
             int y = 0;
-            int maxX = 1;
-            int maxY = 1;
 
-            if (size > 1)
+            tileUnit = tileDriverData.tileset.GetTileUnit();
+
+
+            /*if (size > 1)
             {
                 int halfSize = size / 2;
                 x = -halfSize;
@@ -76,7 +98,10 @@ namespace MaximovInk.AdvancedTilemap
                 {
                     maxX++; maxY++;
                 }
-            }
+            }*/
+
+            _maxX = size;
+            _maxY = size;
 
             tileDriverData.mesh = meshData;
 
@@ -87,9 +112,9 @@ namespace MaximovInk.AdvancedTilemap
 
             */
 
-            for (int ix = x; ix < maxX; ix++)
+            for (int ix = x; ix < _maxX; ix++)
             {
-                for (int iy = y; iy < maxY; iy++)
+                for (int iy = y; iy < _maxY; iy++)
                 {
                     var driverData = tileDriverData;
 
@@ -98,30 +123,30 @@ namespace MaximovInk.AdvancedTilemap
 
                     driverData.bitmask = 0;
 
-                    if (ix < maxX - 1)
+                    if (ix < _maxX - 1)
                         driverData.bitmask |= 16;
                     if (ix > x)
                         driverData.bitmask |= 8;
-
-
                     if (iy > y)
                         driverData.bitmask |= 64;
-
-                    if (iy < maxY - 1)
+                    if (iy < _maxY - 1)
                         driverData.bitmask |= 2;
 
-                    if (iy < maxY - 1 && ix > x)
+                    if (iy < _maxY - 1 && ix > x)
                         driverData.bitmask |= 1;
-                    if (iy < maxY - 1 && ix < maxX - 1)
+                    if (iy < _maxY - 1 && ix < _maxX - 1)
                         driverData.bitmask |= 4;
 
                     if (iy > y && ix > x)
                         driverData.bitmask |= 32;
-                    if (iy > y && ix < maxX - 1)
+                    if (iy > y && ix < _maxX - 1)
                         driverData.bitmask |= 128;
 
-                    if (ix > x && iy > y && ix < maxX - 1 && iy < maxY - 1)
+                    if (ix > x && iy > y && ix < _maxX - 1 && iy < _maxY - 1)
                         driverData.bitmask = 255;
+
+                    driverData.variation = 0;
+                    driverData.blend = true;
 
                     tileDriverData.tile.TileDriver.SetTile(driverData);
                 }

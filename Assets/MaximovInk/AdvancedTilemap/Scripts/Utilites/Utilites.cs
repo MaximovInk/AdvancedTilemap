@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
@@ -49,11 +50,12 @@ namespace MaximovInk.AdvancedTilemap
                 if (h < 0) dy2 = -1; else if (h > 0) dy2 = 1;
                 dx2 = 0;
             }
+
             var numerator = longest >> 1;
             for (var i = 0; i <= longest; i++)
             {
                 if (erase)
-                    layer.EraseTile(x, y);
+                    layer.SetTile(x, y,0);
                 else
                 {
                     layer.SetTile(x, y, ID);
@@ -201,6 +203,19 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             return _drivers.FirstOrDefault(n => n.Name == id);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int Color32ToInt(Color32 color)
+        {
+            return (color.r << 24 | color.g << 16 | color.b << 8 | color.a);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Color32 IntToColor32(int value)
+        {
+            return new Color32((byte)((value >> 24) & 0xFF), (byte)((value >> 16) & 0xFF), (byte)((value >> 8) & 0xFF), (byte)(value & 0xFF));
         }
     }
 }

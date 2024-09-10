@@ -1,13 +1,41 @@
-﻿using UnityEditor;
+﻿
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.Tilemaps;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace MaximovInk.AdvancedTilemap
 {
 
     public static class ALayerGUI
     {
+        /*public static GUIStyle RichHelpBoxStyle = new GUIStyle("helpBox")
+        {
+            richText = true
+        };
+
+        public static GUIStyle ToolbarBoxStyle = new GUIStyle()
+        {
+            normal = { textColor = Color.white },
+            richText = true,
+        };*/
+
+        public static GUIStyle[] Styles;
+
+        public static void ValidateStyles()
+        {
+            if(Styles != null && Styles.Length == 2)return;
+
+            Styles = new GUIStyle[]
+            {
+                new("helpBox")  { richText = true },
+                new()
+                {
+                    normal = { textColor = Color.white },
+                    richText = true,
+                }
+
+            };
+        }
+
         private static bool _isDirty;
 
         public static bool DrawGUI(ALayer layer, ref ALayerEditorData data)
@@ -29,10 +57,19 @@ namespace MaximovInk.AdvancedTilemap
             layer.Tileset = (ATileset)EditorGUILayout.ObjectField("Tileset", layer.Tileset, typeof(ATileset), false);
             layer.Material = (Material)EditorGUILayout.ObjectField("Material", layer.Material, typeof(Material), false);
             layer.LayerMask = EditorGUILayout.LayerField("Layer:", layer.LayerMask);
-            layer.Tag = EditorGUILayout.TagField("Layer:", layer.gameObject.tag);
+            layer.Tag = EditorGUILayout.TagField("Tag:", layer.gameObject.tag);
 
             if (data.selectedTile == 0 && layer.Tileset != null && layer.Tileset.TilesCount > 0)
                 data.selectedTile = 1;
+
+
+            if (GUILayout.Button("Refresh"))
+            {
+                layer.Refresh(true);
+            }
+
+            GUILayout.Space(20);
+
 
             data.SelectedToolbar =
                 GUILayout.Toolbar(data.SelectedToolbar, new string[] { "All", "Paint", "Map", "Renderer", "Liquid", "Collision" });
@@ -45,10 +82,6 @@ namespace MaximovInk.AdvancedTilemap
                 data.selectedTile = 0;
             }
 
-            if (GUILayout.Button("Refresh"))
-            {
-                layer.Refresh(true);
-            }
 
             GUILayout.Space(20);
 
@@ -96,10 +129,57 @@ namespace MaximovInk.AdvancedTilemap
 
             OnSceneGUIUndo(layer, ref data);
             data.RepaintInvoke |= OnSceneGUIPaint(layer, ref data);
+
+            if (layer != null || layer.Tilemap != null)
+            {
+                var lTransform = layer.transform;
+
+
+
+                var cellSize = layer.Tileset.GetTileUnit();
+
+                Handles.color = GlobalSettings.TilemapGridColor;
+
+                for (int i = layer.MinGridX; i <= layer.MaxGridX + 1; i++)
+                {
+                 Handles.DrawLine(
+                     lTransform.TransformPoint(new Vector3(i * cellSize.x, layer.MinGridY * cellSize.y)),
+                     lTransform.TransformPoint(new Vector3(i * cellSize.x, (layer.MaxGridY+1) * cellSize.y)));   
+                }
+
+                for (int i = layer.MinGridY; i <= layer.MaxGridY + 1; i++)
+                {
+                    Handles.DrawLine(
+                        lTransform.TransformPoint(new Vector3(layer.MinGridX * cellSize.x, i * cellSize.y)),
+                        lTransform.TransformPoint(new Vector3((layer.MaxGridX + 1) * cellSize.x, i * cellSize.y)));
+                }
+
+                Handles.color = Color.white;
+
+                /* for (float i = 1; i < GridWidth; i++)
+                {
+                    Gizmos.DrawLine(
+                        this.transform.TransformPoint(new Vector3(MapBounds.min.x + i * CellSize.x, MapBounds.min.y)),
+                        this.transform.TransformPoint(new Vector3(MapBounds.min.x + i * CellSize.x, MapBounds.max.y))
+                    );
+                }
+
+                // Vertical lines
+                for (float i = 1; i < GridHeight; i++)
+                {
+                    Gizmos.DrawLine(
+                        this.transform.TransformPoint(new Vector3(MapBounds.min.x, MapBounds.min.y + i * CellSize.y, 0)),
+                        this.transform.TransformPoint(new Vector3(MapBounds.max.x, MapBounds.min.y + i * CellSize.y, 0))
+                    );
+                }*/
+            }
+
         }
 
         public static void Enable(ref ALayerEditorData data)
         {
+           
+
             data.color = Color.white;
             data.selectedTile = 0;
 
@@ -143,26 +223,41 @@ namespace MaximovInk.AdvancedTilemap
 
         }
 
+        private static bool isShift;
+ 
         private static bool OnSceneGUIPaint(ALayer layer, ref ALayerEditorData data)
         {
-            bool repaint = false;
+            ValidateStyles();
 
-            if (Tools.current != Tool.None)
-                return repaint;
+            var repaint = false;
+
+            if (Tools.current != Tool.Rect && Tools.current != Tool.None)
+                return true;
+
+            if (EditorWindow.mouseOverWindow != SceneView.currentDrawingSceneView)
+            {
+                return true;
+            }
+
+            if (DragAndDrop.objectReferences.Length > 0)
+            {
+                return true;
+            }
 
             data.Event = Event.current;
 
-            if (layer.Tileset == null) return repaint;
 
+
+            if (layer.Tileset == null) return false;
             if (!(data.selectedTile > 0 && data.selectedTile < layer.Tileset.TilesCount+1))
-                return repaint;
+                return false;
 
             if (data.SelectedToolbar == 0 || data.SelectedToolbar == 1)
             {
                 Event e = Event.current;
                 data.Event = e;
 
-                var isShift = e.shift;
+                //var isShift = e.shift;
 
                 switch (e.type)
                 {
@@ -189,39 +284,45 @@ namespace MaximovInk.AdvancedTilemap
                         }
                         break;
                 }
-
-                
-
                 Handles.BeginGUI();
 
-                var buttonStyle = new GUIStyle(GUI.skin.button);
-                var selectedButtonStyle = new GUIStyle(GUI.skin.button);
-                selectedButtonStyle.normal.textColor = Color.blue;
+                var buttonStyle = new GUIStyle(GUI.skin.button)
+                {
+                    richText = true
+                };
+                var selectedButtonStyle = new GUIStyle(GUI.skin.button)
+                {
+                    normal = { textColor = new Color(0.7f,0.5f,1f,1f) },
+                    richText = true
+                };
+                //new Color(0.2f,0.1f,0.4f,0f)
 
-                if (data.Tool == null)
-                    data.Tool = new TileBrushToolEditor();
+                data.Tool ??= new TileBrushToolEditor();
 
-                GUILayout.BeginVertical(GUILayout.MaxWidth(90));
+                    GUILayout.BeginVertical(GUILayout.MaxWidth(90));
 
-                if (GUILayout.Button(
-                    "Brush",
-                    (data.Tool is TileBrushToolEditor) ? selectedButtonStyle : buttonStyle))
-                    data.Tool = new TileBrushToolEditor();
+                    if (GUILayout.Button(
+                            "<b>Brush</b>",
+                            (data.Tool is TileBrushToolEditor) ? selectedButtonStyle : buttonStyle))
+                        data.Tool = new TileBrushToolEditor();
 
-                if (GUILayout.Button(
-                    "Line",
-                    (data.Tool is LineBrushToolEditor) ? selectedButtonStyle : buttonStyle))
-                    data.Tool = new LineBrushToolEditor();
+                    if (GUILayout.Button(
+                            "<b>Line</b>",
+                            (data.Tool is LineBrushToolEditor) ? selectedButtonStyle : buttonStyle))
+                        data.Tool = new LineBrushToolEditor();
 
-                if (GUILayout.Button(
-                   "FillRect",
-                   (data.Tool is RectBrushToolEditor) ? selectedButtonStyle : buttonStyle))
-                    data.Tool = new RectBrushToolEditor();
+                    if (GUILayout.Button(
+                            "<b>FillRect</b>",
+                            (data.Tool is RectBrushToolEditor) ? selectedButtonStyle : buttonStyle))
+                        data.Tool = new RectBrushToolEditor();
 
 
-                GUILayout.Label($"Tile pos: [{data.gridPos.x}:{data.gridPos.y}]");
+                    GUILayout.Label($"<b>Tile pos: [{data.gridPos.x}:{data.gridPos.y}] </b>", Styles[1]);
+                    GUILayout.Label($"<b>Bounds Min: [{data.Layer.MinGridX};{data.Layer.MinGridY}]</b>", Styles[1]);
+                    GUILayout.Label($"<b>Bounds Max: [{data.Layer.MaxGridX};{data.Layer.MaxGridY}]</b>", Styles[1]);
 
-                GUILayout.EndVertical();
+                    GUILayout.EndVertical();
+                
 
                 Handles.EndGUI();
 
@@ -268,11 +369,13 @@ namespace MaximovInk.AdvancedTilemap
 
             position.z = data.Layer.transform.position.z - 1;
 
-            data.PreviewTextureBrush.transform.position = position;
+            //data.PreviewTextureBrush.transform.position = position;
+            data.PreviewTextureBrush.SetPosition(position);
             if (data.brushSize >= 1)
             {
                 
-                data.PreviewTextureBrush.transform.position = (Vector3)position - data.PreviewTextureBrush.transform.localScale / 2f + new Vector3(0.5f, 0.5f, 0);
+               // data.PreviewTextureBrush.transform.position = 
+                data.PreviewTextureBrush.SetPosition((Vector3)position - data.PreviewTextureBrush.transform.localScale / 2f + new Vector3(0.5f, 0.5f, 0));
             }
 
             return true;
@@ -309,7 +412,7 @@ namespace MaximovInk.AdvancedTilemap
                 tileset = data.Layer.Tileset,
                 tile = data.Layer.Tileset.GetTile(data.selectedTile),
                 tileData = data.UVTransform,
-                color = (isShift ? Color.red : (Color)data.color),
+                color = (isShift ? Color.red : (Color)data.color * data.Layer.TintColor),
                 blend = true,
                 variation = 0,
             });
@@ -339,10 +442,11 @@ namespace MaximovInk.AdvancedTilemap
             EditorGUI.BeginChangeCheck();
 
             if (layer.Tileset != null)
-                EditorUtils.DrawPreviewTileset(layer.Tileset, ref data.selectedTile, ref data.PreviewScale, ref data.TilesetScrollView);
+                EditorUtils.DrawPreviewTileset(layer.Tileset, ref data.selectedTile, ref data.PreviewScale, ref data.TilesetScrollView, 300f);
 
             data.color = EditorGUILayout.ColorField("Paint color:", data.color);
             data.brushSize = EditorGUILayout.IntSlider("Brush size:", data.brushSize, 1, 32);
+            data.brushSize = Mathf.Clamp(data.brushSize, 1, 32);
             data.UVTransform._rot90 = EditorGUILayout.Toggle("rot90", data.UVTransform._rot90);
             data.UVTransform._flipVertical = EditorGUILayout.Toggle("flipVertical", data.UVTransform._flipVertical);
             data.UVTransform._flipHorizontal = EditorGUILayout.Toggle("flipHorizontal", data.UVTransform._flipHorizontal);
@@ -375,6 +479,11 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             layer.TintColor = EditorGUILayout.ColorField("Tint Color:", layer.TintColor);
+
+            GUILayout.Label("Global editor settings");
+            GlobalSettings.TilemapGridColor = EditorGUILayout.ColorField("Grid Color", GlobalSettings.TilemapGridColor);
+
+
         }
 
         private static void DrawColliderBox(ref ALayerEditorData data)

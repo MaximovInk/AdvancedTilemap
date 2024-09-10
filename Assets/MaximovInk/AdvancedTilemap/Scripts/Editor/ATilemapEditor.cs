@@ -6,6 +6,14 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace MaximovInk.AdvancedTilemap
 {
+
+    [System.Serializable]
+    public struct ATilemapEditorData
+    {
+        public bool PropertiesFoldout;
+        public int LayerSelected;
+    }
+
     [CustomEditor(typeof(ATilemap))]
     public class ATilemapEditor : Editor
     {
@@ -22,26 +30,32 @@ namespace MaximovInk.AdvancedTilemap
         }
 
         [MenuItem("GameObject/AdvancedTilemap", priority =10)]
-        public static void CreateTilemap()
+        public static void CreateTilemap(MenuCommand menuCommand)
         {
-            var go = new GameObject();
-            go.AddComponent<ATilemap>();
-            go.name = "AdvancedTilemap";
-            go.transform.position = ScreenViewPos();
-            Selection.activeObject = go;
+            var tilemapGo = new GameObject("AdvancedTilemap");
+            tilemapGo.AddComponent<ATilemap>();
+            tilemapGo.transform.position = ScreenViewPos();
+
+            if (menuCommand.context is GameObject selectedGameObject)
+                tilemapGo.transform.SetParent(selectedGameObject.transform);
+
+            Selection.activeObject = tilemapGo;
         }
 
         private ATilemap tilemap;
         ReorderableList list;
         SerializedProperty layers;
-        private int layerSelected = -1;
+        //private int layerSelected = -1;
 
-        private ALayerEditorData _data;
+        private static ALayerEditorData _layerData;
+        private static ATilemapEditorData _tilemapData;
 
         private bool _invokePreviewRegen = false;
 
         private void OnEnable()
         {
+            tilemap = (ATilemap)target;
+
             layers = serializedObject.FindProperty("layers");
             list = new ReorderableList(serializedObject, layers, true, true, true, true);
 
@@ -52,23 +66,44 @@ namespace MaximovInk.AdvancedTilemap
             list.drawElementCallback = DrawElementCallback;
             list.onSelectCallback = SelectCallback;
 
-            _data.PreviewScale = 0.8f;
+            _layerData.PreviewScale = EditorUtils.PREVIEW_SCALE_DEFAULT;
+ 
 
-            ALayerGUI.Enable(ref _data);
+            ALayerGUI.Enable(ref _layerData);
+
+
+            _tilemapData.LayerSelected = 0;
+            if (list.count > _tilemapData.LayerSelected)
+            {
+                list.Select(_tilemapData.LayerSelected);
+                SelectLayer();
+            }
         }
 
         private void OnDisable()
         {
-            ALayerGUI.Disable(ref _data);
+            ALayerGUI.Disable(ref _layerData);
         }
 
         private void SelectCallback(ReorderableList list)
         {
-            if (layerSelected != list.index) _data.selectedTile = 0;
+            if (_tilemapData.LayerSelected != list.index) _layerData.selectedTile = 0;
 
-            layerSelected = list.index;
+            _tilemapData.LayerSelected = list.index;
 
             _invokePreviewRegen = true;
+
+            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.layers.Count) return;
+
+            SelectLayer();
+        }
+
+        private void SelectLayer()
+        {
+            var layer = tilemap.layers[_tilemapData.LayerSelected];
+
+            EditorGUIUtility.PingObject(layer);
+
         }
 
         private void DrawElementCallback(Rect rect, int index, bool isActive, bool isFocused)
@@ -105,11 +140,90 @@ namespace MaximovInk.AdvancedTilemap
             EditorGUI.LabelField(rect, "Layers");
         }
 
+        private void DrawTilemapParameters()
+        {
+            GUILayout.BeginVertical(EditorStyles.helpBox);
+
+            tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
+            tilemap.UndoEnabled = EditorGUILayout.Toggle("Undo/Redo recording:", tilemap.UndoEnabled);
+            tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
+            tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
+            GUILayout.Space(10);
+            tilemap.ShowGrid = EditorGUILayout.Toggle("Show grid", tilemap.ShowGrid);
+
+            GUILayout.BeginVertical();
+
+            GUILayout.Space(20);
+
+            tilemap.LightingEnabled = EditorGUILayout.Toggle("Lighting", tilemap.LightingEnabled);
+
+            if (tilemap.LightingEnabled)
+            {
+               GUILayout.BeginVertical(EditorStyles.helpBox);
+
+               var light = tilemap.Lighting;
+
+               light.ForegroundLayer = EditorGUILayout.ObjectField("Foreground", light.ForegroundLayer, typeof(ALayer), true) as ALayer;
+               light.BackgroundLayer = EditorGUILayout.ObjectField("Background", light.BackgroundLayer, typeof(ALayer), true) as ALayer;
+
+               if (light.ForegroundLayer == null || light.ForegroundLayer.Tilemap != tilemap)
+                   light.ForegroundLayer = null;
+               if (light.BackgroundLayer == null || light.BackgroundLayer?.Tilemap != tilemap)
+                   light.BackgroundLayer = null;
+
+               light.LightMaterial = EditorGUILayout.ObjectField("Material", light.LightMaterial, typeof(Material), true) as Material;
+
+               light.LightingMask = EditorGUILayout.LayerField("Layer", light.LightingMask);
+
+               tilemap.Lighting = light;
+
+                GUILayout.EndVertical();
+            }
+
+            var loader = tilemap.ChunkLoader;
+
+            GUILayout.Space(20);
+
+
+            loader.Enabled = EditorGUILayout.Toggle("Chunk loader", loader.Enabled);
+
+            GUILayout.BeginVertical(EditorStyles.helpBox);
+
+            if (loader.Enabled)
+            {
+                loader.Target = EditorGUILayout.ObjectField("Target", loader.Target, typeof(Transform), true) as Transform;
+                loader.TargetOffset = EditorGUILayout.Vector2IntField("Offset", loader.TargetOffset);
+
+            }
+            GUILayout.EndVertical();
+
+            tilemap.ChunkLoader = loader;
+
+            GUILayout.EndVertical();
+
+            GUILayout.Label("Liquid steps:");
+            tilemap.LiquidStepsDuration = EditorGUILayout.Slider(tilemap.LiquidStepsDuration, 0.001f, 1f);
+
+            if (GUILayout.Button("Refresh all layers"))
+            {
+                tilemap.Refresh(true);
+            }
+
+            GUILayout.EndVertical();
+        }
+
         public override void OnInspectorGUI()
         {
-            tilemap = (ATilemap)target;
-
             serializedObject.Update();
+
+            _tilemapData.PropertiesFoldout = EditorGUILayout.Foldout(_tilemapData.PropertiesFoldout, "Tilemap parameters");
+
+            if (_tilemapData.PropertiesFoldout)
+            {
+               DrawTilemapParameters();
+            }
+
+            GUILayout.Space(20);
 
             if (tilemap.layers == null) tilemap.layers = new List<ALayer>();
 
@@ -126,99 +240,39 @@ namespace MaximovInk.AdvancedTilemap
 
             list.DoLayoutList();
 
-            GUILayout.BeginVertical();
-
-            GUILayout.Label("Tilemap parameters:");
-
-            tilemap.DisplayChunksInHierarchy = EditorGUILayout.Toggle("Display chunks in hierarchy", tilemap.DisplayChunksInHierarchy);
-            tilemap.UndoEnabled = EditorGUILayout.Toggle("Undo/Redo recording:", tilemap.UndoEnabled);
-            tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
-            tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
-
-            GUILayout.BeginVertical();
-
-            GUILayout.Space(20);
-
-            GUILayout.Label("Lighting");
-
-            tilemap.LightingEnabled = EditorGUILayout.Toggle("Enabled", tilemap.LightingEnabled);
-
-            if (tilemap.LightingEnabled)
-            {
-                var light = tilemap.Lighting;
-
-                light.ForegroundLayer = EditorGUILayout.ObjectField("Foreground", light.ForegroundLayer, typeof(ALayer), true) as ALayer;
-                light.BackgroundLayer = EditorGUILayout.ObjectField("Background", light.BackgroundLayer, typeof(ALayer), true) as ALayer;
-
-                if (light.ForegroundLayer == null || light.ForegroundLayer.Tilemap != tilemap)
-                    light.ForegroundLayer = null;
-                if (light.BackgroundLayer == null || light.BackgroundLayer?.Tilemap != tilemap)
-                    light.BackgroundLayer = null;
-
-                light.LightMaterial = EditorGUILayout.ObjectField("Material", light.LightMaterial, typeof(Material), true) as Material;
-
-                light.LightingMask = EditorGUILayout.LayerField("Layer", light.LightingMask);
-
-                tilemap.Lighting = light;
-            }
-
-            var loader = tilemap.ChunkLoader;
-
-            GUILayout.Space(20);
-
-            GUILayout.Label("Loader");
-
-            loader.Enabled = EditorGUILayout.Toggle("Enabled", loader.Enabled);
-
-            if (loader.Enabled)
-            {
-                loader.Target = EditorGUILayout.ObjectField("Target", loader.Target, typeof(Transform), true) as Transform;
-                loader.TargetOffset = EditorGUILayout.Vector2IntField("Offset", loader.TargetOffset);
-            }
-
-            tilemap.ChunkLoader = loader;
-
-            GUILayout.EndVertical();
-
-            GUILayout.Label("Liquid steps:");
-            tilemap.LiquidStepsDuration = EditorGUILayout.Slider(tilemap.LiquidStepsDuration, 0.001f, 1f);
-
-            if (GUILayout.Button("Refresh all layers"))
-            {
-                tilemap.Refresh(true);
-            }
-
-            GUILayout.EndVertical();
+            GUILayout.Label("Layers");
 
             serializedObject.ApplyModifiedProperties();
 
-
-            if (layerSelected > -1 && layerSelected < tilemap.layers.Count)
+            if (_tilemapData.LayerSelected > -1 && _tilemapData.LayerSelected < tilemap.layers.Count)
             {
-                var layer = tilemap.layers[layerSelected];
+                var layer = tilemap.layers[_tilemapData.LayerSelected];
 
-               ALayerGUI.DrawGUI(layer, ref _data);
+               ALayerGUI.DrawGUI(layer, ref _layerData);
             }
         }
 
         private void OnSceneGUI()
         {
-            if (layerSelected < 0 || layerSelected >= tilemap.layers.Count) return;
-            if (_data.SelectedToolbar < 0) return;
+            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.layers.Count) return;
+            if (_layerData.SelectedToolbar < 0) return;
 
-            var layer = tilemap.layers[layerSelected];
+            var layer = tilemap.layers[_tilemapData.LayerSelected];
 
-            ALayerGUI.SceneGUI(layer, ref _data);
+            ALayerGUI.SceneGUI(layer, ref _layerData);
+
+          //  layer.DrawGizmos();
 
             if (_invokePreviewRegen)
             {
                 _invokePreviewRegen = false;
-                ALayerGUI.GenPreviewTextureBrush(ref _data);
+                ALayerGUI.GenPreviewTextureBrush(ref _layerData);
+     
             }
 
-            if (_data.RepaintInvoke)
+            if (_layerData.RepaintInvoke)
             {
-                _data.RepaintInvoke = false;
+                _layerData.RepaintInvoke = false;
                 Repaint();
             }
         }
