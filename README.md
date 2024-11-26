@@ -12,7 +12,7 @@ Features:
 - [x] Editing in editor
   - [x] Brush tools (Fill,Line,Rectangle,Circle,Custom)
   - [x] Brush size 
-  - [x] Tile preview (have some bugs)
+  - [x] Tile preview
   - [x] Undo/Redo (enable toggle) + Runtime
 - [x] Powerful liquid physics (like starbound)
 - [x] Collider generation 
