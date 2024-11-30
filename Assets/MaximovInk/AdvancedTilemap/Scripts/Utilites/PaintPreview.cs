@@ -1,5 +1,7 @@
-﻿using System.Drawing;
+﻿
 using UnityEngine;
+
+using static MaximovInk.Bitmask;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -13,15 +15,13 @@ namespace MaximovInk.AdvancedTilemap
 
         public void Validate()
         {
-           // gameObject.hideFlags = HideFlags.HideAndDontSave;
-
             var paints = FindObjectsByType<PaintPreview>( FindObjectsInactive.Include, FindObjectsSortMode.None);
 
-            for (int i = 0; i < paints.Length; i++)
+            foreach (var paint in paints)
             {
-                if (paints[i] == this) continue;
+                if (paint == this) continue;
 
-                DestroyImmediate(paints[i].gameObject);
+                DestroyImmediate(paint.gameObject);
             }
         }
 
@@ -88,6 +88,11 @@ namespace MaximovInk.AdvancedTilemap
             _driverData = data;
         }
 
+        public void SetBitmask(byte bitmask)
+        {
+            _driverData.bitmask = bitmask;
+        }
+
         public void SetTile(int x, int y, ushort tileID, UVTransform data = default)
         {
             if (_driverData.tileset == null) return;
@@ -123,8 +128,8 @@ namespace MaximovInk.AdvancedTilemap
             CheckInit();
             meshData.Clear();
 
-            int x = 0;
-            int y = 0;
+            var x = 0;
+            var y = 0;
 
             tileUnit = tileDriverData.tileset.GetTileUnit();
 
@@ -133,9 +138,9 @@ namespace MaximovInk.AdvancedTilemap
 
             tileDriverData.mesh = meshData;
 
-            for (int ix = x; ix < _maxX; ix++)
+            for (var ix = x; ix < _maxX; ix++)
             {
-                for (int iy = y; iy < _maxY; iy++)
+                for (var iy = y; iy < _maxY; iy++)
                 {
                     var driverData = tileDriverData;
 
@@ -145,26 +150,26 @@ namespace MaximovInk.AdvancedTilemap
                     driverData.bitmask = 0;
 
                     if (ix < _maxX - 1)
-                        driverData.bitmask |= 16;
+                        driverData.bitmask |= RIGHT;
                     if (ix > x)
-                        driverData.bitmask |= 8;
+                        driverData.bitmask |= LEFT;
                     if (iy > y)
-                        driverData.bitmask |= 64;
+                        driverData.bitmask |= BOTTOM;
                     if (iy < _maxY - 1)
-                        driverData.bitmask |= 2;
+                        driverData.bitmask |= TOP;
 
                     if (iy < _maxY - 1 && ix > x)
-                        driverData.bitmask |= 1;
+                        driverData.bitmask |= LEFT_TOP;
                     if (iy < _maxY - 1 && ix < _maxX - 1)
-                        driverData.bitmask |= 4;
+                        driverData.bitmask |= RIGHT_TOP;
 
                     if (iy > y && ix > x)
-                        driverData.bitmask |= 32;
+                        driverData.bitmask |= LEFT_BOTTOM;
                     if (iy > y && ix < _maxX - 1)
-                        driverData.bitmask |= 128;
+                        driverData.bitmask |= RIGHT_BOTTOM;
 
                     if (ix > x && iy > y && ix < _maxX - 1 && iy < _maxY - 1)
-                        driverData.bitmask = 255;
+                        driverData.bitmask = FILL;
 
                     driverData.variation = 0;
 

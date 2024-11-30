@@ -6,9 +6,9 @@ namespace MaximovInk.AdvancedTilemap
     [System.Serializable]
     public class TileBrushToolEditor : AToolEditor
     {
-        private Vector2Int lastMousePos;
+        private Vector2Int _lastMousePos;
 
-        private bool isDrawing;
+        private bool _isDrawing;
 
         public override void Update(ref ALayerEditorData data)
         {
@@ -20,9 +20,9 @@ namespace MaximovInk.AdvancedTilemap
 
             if (data.Event.type == EventType.MouseDown && data.Event.button == 0)
             {
-                lastMousePos = gridPos;
+                _lastMousePos = gridPos;
                 data.Layer.BeginRecordingCommand();
-                isDrawing = true;
+                _isDrawing = true;
             }
 
             if ((data.Event.type == EventType.MouseDrag || data.Event.type == EventType.MouseDown) && data.Event.button == 1)
@@ -34,7 +34,6 @@ namespace MaximovInk.AdvancedTilemap
                 {
                     data.selectedTile = layer.GetTile(gridPos.x, gridPos.y);
                     data.color = layer.GetColor(gridPos.x, gridPos.y);
-                   // ALayerGUI.GenPreviewTextureBrush(ref data);
                    data.Tool.GenPreviewTextureBrush(ref data);
                 }
                 else if (data.Event.shift)
@@ -64,22 +63,22 @@ namespace MaximovInk.AdvancedTilemap
                 }
                 else if (data.Event.shift)
                 {
-                    Utilites.DrawLine(layer, lastMousePos, gridPos, data.brushSize, 0, Color.white,data.UVTransform);
+                    Utilites.DrawLine(layer, _lastMousePos, gridPos, data.brushSize, 0, Color.white,data.UVTransform);
                 }
                 else
                 {
                     var tileID = data.selectedTile; 
-                    Utilites.DrawLine(layer, lastMousePos, gridPos, data.brushSize, tileID, data.color, data.UVTransform);
+                    Utilites.DrawLine(layer, _lastMousePos, gridPos, data.brushSize, tileID, data.color, data.UVTransform);
                 }
 
-                lastMousePos = gridPos;
+                _lastMousePos = gridPos;
                 EditorUtility.SetDirty(data.Layer);
             }
             if (data.Event.type == EventType.MouseUp && data.Event.button == 0)
             {
-                if (isDrawing)
+                if (_isDrawing)
                 {
-                    isDrawing = false;
+                    _isDrawing = false;
                     data.Layer.EndRecordCommand();
                 }
             }

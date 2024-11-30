@@ -16,6 +16,7 @@
         public const byte LEFT_BOTTOM = 32;
         public const byte BOTTOM = 64;
         public const byte RIGHT_BOTTOM = 128;
+        public const byte FILL = 255;
 
         public static bool HasBit(this byte bitmask, byte position)
         {
