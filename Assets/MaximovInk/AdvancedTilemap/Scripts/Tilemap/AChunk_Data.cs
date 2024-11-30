@@ -51,6 +51,16 @@ namespace MaximovInk.AdvancedTilemap
                 return false;
             }
 
+
+            if (tileID == 0)
+            {
+                TryRemovePrefabAt(x, y);
+            }
+            else
+            {
+                SpawnPrefabAt(Layer.Tileset.GetTile(tileID), x, y);
+            }
+
             var oldTileID = _data.data[idx];
 
             _data.data[idx] = tileID;

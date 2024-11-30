@@ -252,16 +252,16 @@ namespace MaximovInk.AdvancedTilemap
                 _isDirty = true;
             }
 
-            while (tile.Variations.Count > tile.Probabilites.Count)
+            while (tile.Variations.Count > tile.Probabilities.Count)
             {
-                tile.Probabilites.Add(1f);
+                tile.Probabilities.Add(1f);
 
                 _isDirty = true;
             }
 
-            while (tile.Variations.Count < tile.Probabilites.Count)
+            while (tile.Variations.Count < tile.Probabilities.Count)
             {
-                tile.Probabilites.RemoveAt(tile.Probabilites.Count - 1);
+                tile.Probabilities.RemoveAt(tile.Probabilities.Count - 1);
                 _isDirty = true;
             }
 
@@ -317,7 +317,7 @@ namespace MaximovInk.AdvancedTilemap
 
                 GUI.color = Color.white;
 
-                tile.Probabilites[i] = EditorGUILayout.Slider(tile.Probabilites[i], 0, 1);
+                tile.Probabilities[i] = EditorGUILayout.Slider(tile.Probabilities[i], 0, 1);
 
                 GUILayout.EndVertical();
 
@@ -342,6 +342,9 @@ namespace MaximovInk.AdvancedTilemap
         {
             GUILayout.Label($"TileDriver: {tile.TileDriver.ID}");
 
+            GUILayout.Space(10);
+
+            tile.Prefab = EditorGUILayout.ObjectField(tile.Prefab, typeof(ATilePrefab),false) as ATilePrefab;
             tile.ColliderDisabled = !EditorGUILayout.Toggle("Collider enabled", !tile.ColliderDisabled);
             tile.RandomVariations = EditorGUILayout.Toggle("variations enabled:", tile.RandomVariations);
             tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID);

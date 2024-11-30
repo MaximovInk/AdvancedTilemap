@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Texture: {fileID: 2800000, guid: 59fe0802405b6974a80e8d695570915c, type: 3}
   TileSize: {x: 8, y: 8}
-  PixelPerUnit: {x: 0, y: 0}
+  PixelPerUnit: {x: 8, y: 8}
   _tiles:
   - ID: 1
     Variations:
@@ -23,7 +23,7 @@ MonoBehaviour:
       RightBottom: {x: 1, y: 0}
       LeftBottom: {x: 0, y: 0}
       TextureSize: {x: 80, y: 88}
-    Probabilites:
+    Probabilities:
     - 1
     RandomVariations: 0
     ParameterContainer:
@@ -53,4 +53,6 @@ MonoBehaviour:
         objectValue: {fileID: 0}
         stringValue: 
     ColliderDisabled: 0
+    Prefab: {fileID: 4929611768632583192, guid: 6cdb8f99ac7b418449fea31d6bbb686f,
+      type: 3}
     _tileDriverID: AdvancedRuleTile

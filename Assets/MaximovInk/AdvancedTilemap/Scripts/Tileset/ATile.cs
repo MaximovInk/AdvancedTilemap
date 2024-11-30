@@ -1,21 +1,25 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MaximovInk.AdvancedTilemap
 {
     [System.Serializable]
     public class ATile
     {
+        public const ushort EMPTY = 0;
+
         public ushort ID;
 
-        public List<ATileUV> Variations = new List<ATileUV>();
-        public List<float> Probabilites = new List<float>();
+        public List<ATileUV> Variations = new();
+        public List<float> Probabilities = new();
 
         public bool RandomVariations;
 
         public ParameterContainer ParameterContainer;
         public bool ColliderDisabled;
-        public static ushort EMPTY = 0;
+
+        public ATilePrefab Prefab; 
 
         public ATileDriver TileDriver
         {
@@ -50,21 +54,21 @@ namespace MaximovInk.AdvancedTilemap
         {
             float totalProbability = 0;
 
-            for (int i = 0; i < Probabilites.Count; i++)
+            for (int i = 0; i < Probabilities.Count; i++)
             {
-                totalProbability += Probabilites[i];
+                totalProbability += Probabilities[i];
             }
 
             float hitProbability = Random.value * totalProbability;
 
-            for (int i = 0; i < Probabilites.Count; i++)
+            for (int i = 0; i < Probabilities.Count; i++)
             {
-                if (hitProbability < Probabilites[i])
+                if (hitProbability < Probabilities[i])
                 {
                     return (byte)i;
                 }
                 else
-                    hitProbability -= Probabilites[i];
+                    hitProbability -= Probabilities[i];
             }
 
             return 0;
@@ -90,7 +94,7 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             Variations.Add(newTileUV);
-            Probabilites.Add(1);
+            Probabilities.Add(1);
         }
 
         public ATile(string tileDriverID)

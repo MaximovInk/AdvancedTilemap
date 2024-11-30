@@ -1,6 +1,4 @@
-﻿
-using System;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -8,10 +6,6 @@ namespace MaximovInk.AdvancedTilemap
 {
     public static class ALayerGUI
     {
-     
-
-     
-
         private static bool _isDirty;
 
         public static bool DrawGUI(ALayer layer, ref ALayerEditorData data)
@@ -102,6 +96,8 @@ namespace MaximovInk.AdvancedTilemap
         public static void SceneGUI(ALayer layer, ref ALayerEditorData data)
         {
             if (data.selectedTile == 0) return ;
+
+            if (layer == null) return;
 
             OnSceneGUIUndo(layer, ref data);
             data.RepaintInvoke |= OnSceneGUIPaint(layer, ref data);

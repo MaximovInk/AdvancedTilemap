@@ -5,15 +5,22 @@ namespace MaximovInk.AdvancedTilemap
 {
     public class ATilePrefab : MonoBehaviour
     {
-        protected AChunk AttachedChunk;
-        protected Vector2Int Position;
-        protected ushort TileID;
+        public AChunk AttachedChunk => _chunk;
+        public Vector2Int Position => _position;
+        public ushort TileID => _tileID;
+
+        [HideInInspector,SerializeField]
+        private AChunk _chunk;
+        [HideInInspector, SerializeField]
+        private Vector2Int _position;
+        [HideInInspector, SerializeField]
+        private ushort _tileID;
 
         public void Init(AChunk chunk, int x, int y, ushort tileID)
         {
-            AttachedChunk = chunk;
-            Position = new Vector2Int(x, y);
-            TileID = tileID;
+            _chunk = chunk;
+            _position = new Vector2Int(x, y);
+            _tileID = tileID;
 
             OnInitialized();
         }

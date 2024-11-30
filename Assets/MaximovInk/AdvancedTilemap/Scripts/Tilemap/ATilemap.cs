@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -63,8 +62,6 @@ namespace MaximovInk.AdvancedTilemap
             set => _liquidStepsDuration = value;
         }
 
-        public Material LightMaterial => _lighting.LightMaterial;
-
         [SerializeField]
         private float _liquidStepsDuration = 0.1f;
 
@@ -78,26 +75,6 @@ namespace MaximovInk.AdvancedTilemap
         private bool _autoTrim;
 
         [SerializeField] private bool _showGrid;
-
-        public bool LightingEnabled
-        {
-            get => _lighting.Enabled;
-            set
-            {
-                var changed = _lighting.Enabled != value;
-                _lighting.Enabled = value;
-                if (changed)
-                    UpdateLightingState();
-            }
-        }
-
-        public ALightingSettings Lighting
-        {
-            get => _lighting;
-            set => _lighting = value;
-        }
-        [HideInInspector,SerializeField]
-        private ALightingSettings _lighting;
 
         public AChunkLoaderSettings ChunkLoader
         {
@@ -114,14 +91,7 @@ namespace MaximovInk.AdvancedTilemap
         public List<ALayer> layers = new();
         private readonly List<ALayerLoadChunksData> _loadedChunks = new();
 
-        private void Awake()
-        {
-            if (!Application.isPlaying) return;
-
-            InitLight();
-            SimulateLight();
-
-        }
+        private Vector2Int _lastGridPos;
 
         private void LateUpdate()
         {
@@ -134,8 +104,6 @@ namespace MaximovInk.AdvancedTilemap
                 _lightTimer = 0f;
 
                 _invokeUpdateLight = false;
-
-                SimulateLight();
             }
 
             UpdateLoader();
@@ -232,109 +200,10 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        public void UpdateLightingState(bool setIsDirty = false)
-        {
-            var l = _lighting;
 
-            if (l.ForegroundLayer == null || l.BackgroundLayer == null)
-                return;
-
-            if (l.LightMaterial == null) return;
-
-            l.ForegroundLayer.UpdateLightingState(l.Enabled, setIsDirty);
-        }
-
-        private readonly byte _lightStep = 25;
-
-        private void InitLight()
-        {
-            if (!_lighting.Enabled) return;
-
-            foreach (var layer in layers)
-            {
-                layer.OnTileChanged += ()=>_invokeUpdateLight=true;
-                layer.OnChunkCreated += () => _invokeUpdateLight = true;
-            }
-        }
-
-        private void EmitLight(ALayer layer, int x, int y)
-        {
-            var light = layer.GetLight(x, y);
-
-            EmitLight(layer, x -1, y, light);
-            EmitLight(layer, x +1, y, light);
-            EmitLight(layer, x , y -1, light);
-            EmitLight(layer, x, y +1, light);
-        }
-
-        private void EmitLight(ALayer layer, int x, int y, byte value)
-        {
-            if (value < _lightStep)
-                return;
-
-            var newValue = (byte)(value - _lightStep);
-
-
-            var oldValue = layer.GetLight(x, y);
-
-            if (oldValue < newValue)
-            {
-                layer.SetLight(x, y, newValue);
-
-                EmitLight(layer,x -1,y, newValue);
-                EmitLight(layer,x +1,y, newValue);
-                EmitLight(layer,x ,y-1, newValue);
-                EmitLight(layer,x ,y+1, newValue);
-            }
-        }
-
-        private void SimulateLight()
-        {
-            if (!_lighting.Enabled) return;
-
-            Profiler.BeginSample("light");
-
-
-            var l = _lighting;
-            l.ForegroundLayer.CalculateBounds();
-            l.BackgroundLayer.CalculateBounds();
-
-            var fBounds = l.ForegroundLayer.Bounds;
-
-            var bounds = new Bounds(fBounds.center,fBounds.size);
-            bounds.Encapsulate(l.BackgroundLayer.Bounds);
-
-            var min = Utilites.GetGridPosition(l.ForegroundLayer, bounds.min);
-            var max = Utilites.GetGridPosition(l.ForegroundLayer, bounds.max);
-
-
-            for (var ix = min.x; ix < max.x; ix++)
-            {
-                for (var iy = min.y; iy < max.y; iy++)
-                {
-                    if (l.BackgroundLayer.GetTile(ix, iy) != ATile.EMPTY ||
-                        l.ForegroundLayer.GetTile(ix, iy) != ATile.EMPTY)
-                    {
-                        l.ForegroundLayer.SetLight(ix, iy, 0);
-                        continue;
-                    }
-
-                    l.ForegroundLayer.SetLight(ix,iy, 255);
-                }
-            }
-
-            var layer = l.ForegroundLayer;
-
-            Profiler.EndSample();
-        }
-
-        private Vector2Int _lastGridPos;
 
         private void UpdateLoader()
         {
-
-
-
             for (var i = 0; i < _loadedChunks.Count; i++)
             {
                 foreach (var chunk in _loadedChunks[i].Chunks)
@@ -356,7 +225,6 @@ namespace MaximovInk.AdvancedTilemap
 
             var gridPosCenter = Utilites.GetGridPosition(layer, loaderData.Target.position);
 
-
             if (Vector2Int.Distance(_lastGridPos, gridPosCenter) < AChunk.CHUNK_SIZE)
             {
                 return;
@@ -376,10 +244,6 @@ namespace MaximovInk.AdvancedTilemap
             var loadingChunk = layer.GetOrCreateChunk(gridPosCenter.x, gridPosCenter.y);
             loadingChunk.IsLoaded = true;
             _loadedChunks[0].Chunks.Add(loadingChunk);
-
-
-
-           // Debug.Log($"{loadingChunk.GridX} {loadingChunk.GridY}");
 
             for (var ix = -loaderData.TargetOffset.x; ix <= loaderData.TargetOffset.x; ix++)
             {

@@ -155,47 +155,6 @@ namespace MaximovInk.AdvancedTilemap
             tilemap.ShowGrid = EditorGUILayout.Toggle("Show grid", tilemap.ShowGrid);
         }
 
-        private void DrawLighting()
-        {
-            tilemap.LightingEnabled = EditorGUILayout.Toggle("Lighting", tilemap.LightingEnabled);
-
-            if (tilemap.LightingEnabled)
-            {
-                EditorGUI.BeginChangeCheck();
-
-                GUILayout.BeginVertical(EditorStyles.helpBox);
-
-                var light = tilemap.Lighting;
-
-                light.ForegroundLayer = EditorGUILayout.ObjectField("Foreground", light.ForegroundLayer, typeof(ALayer), true) as ALayer;
-                light.BackgroundLayer = EditorGUILayout.ObjectField("Background", light.BackgroundLayer, typeof(ALayer), true) as ALayer;
-
-                if (light.ForegroundLayer == null || light.ForegroundLayer.Tilemap != tilemap)
-                    light.ForegroundLayer = null;
-                if (light.BackgroundLayer == null || light.BackgroundLayer?.Tilemap != tilemap)
-                    light.BackgroundLayer = null;
-
-                light.LightMaterial = EditorGUILayout.ObjectField("Material", light.LightMaterial, typeof(Material), true) as Material;
-
-                light.LightingMask = EditorGUILayout.LayerField("Layer", light.LightingMask);
-
-                light.ClearColor = EditorGUILayout.ColorField("Clear color", light.ClearColor);
-                light.PixelColor = EditorGUILayout.ColorField("Pixel color", light.PixelColor);
-
-                light.IsInverse = EditorGUILayout.Toggle("Is Inverse", light.IsInverse);
-
-                tilemap.Lighting = light;
-
-                GUILayout.EndVertical();
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    tilemap.UpdateLightingState(true);
-                }
-            }
-
-        }
-
         private void DrawLoader()
         {
             var loader = tilemap.ChunkLoader;
@@ -234,10 +193,6 @@ namespace MaximovInk.AdvancedTilemap
             DrawMainParameters();
 
             GUILayout.BeginVertical();
-
-            GUILayout.Space(20);
-
-            DrawLighting();
 
             GUILayout.Space(20);
 
