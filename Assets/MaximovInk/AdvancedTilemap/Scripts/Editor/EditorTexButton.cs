@@ -4,7 +4,8 @@ namespace MaximovInk.AdvancedTilemap
 {
     public class EditorTexButton
     {
-        private readonly GUIStyle _style;
+        private GUIStyle _style;
+
 
         public EditorTexButton(int[] array, int w, Color a, Color h, Color n, Color b)
         {
@@ -33,5 +34,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             return _style;
         }
+
+        public bool IsValid => _style.normal.background != null;
     }
 }

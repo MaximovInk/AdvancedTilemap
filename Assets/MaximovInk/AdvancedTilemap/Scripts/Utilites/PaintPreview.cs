@@ -1,9 +1,10 @@
-﻿using UnityEngine;
+﻿using System.Drawing;
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
     
-    public class PaintPreview : MonoBehaviour
+    public class PaintPreview : MonoBehaviour, ITilemap
     {
         private MeshFilter meshFilter;
         private MeshRenderer meshRenderer;
@@ -12,7 +13,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void Validate()
         {
-            gameObject.hideFlags = HideFlags.HideAndDontSave;
+           // gameObject.hideFlags = HideFlags.HideAndDontSave;
 
             var paints = FindObjectsByType<PaintPreview>( FindObjectsInactive.Include, FindObjectsSortMode.None);
 
@@ -71,6 +72,48 @@ namespace MaximovInk.AdvancedTilemap
 
         private Vector2 tileUnit = Vector2.one;
 
+
+        public void Clear()
+        {
+            CheckInit();
+
+            meshData.Clear();
+        }
+
+        private ATileDriverData _driverData;
+
+
+        public void SetDriverData(ATileDriverData data)
+        {
+            _driverData = data;
+        }
+
+        public void SetTile(int x, int y, ushort tileID, UVTransform data = default)
+        {
+            if (_driverData.tileset == null) return;
+            if (_driverData.tile.TileDriver == null) return;
+
+            tileUnit = _driverData.tileset.GetTileUnit();
+
+            _driverData.mesh = meshData;
+
+            _driverData.variation = 0;
+            _driverData.x = x;
+            _driverData.y = y;
+
+            _driverData.tile.TileDriver.SetTile(_driverData);
+        }
+
+        public void SetColor(int x, int y, Color32 color)
+        {
+            _driverData.color = color;
+        }
+
+        public void Apply()
+        {
+            meshData.ApplyData();
+        }
+
         public void GenerateBlock(int size, ATileDriverData tileDriverData)
 
         {
@@ -85,32 +128,10 @@ namespace MaximovInk.AdvancedTilemap
 
             tileUnit = tileDriverData.tileset.GetTileUnit();
 
-
-            /*if (size > 1)
-            {
-                int halfSize = size / 2;
-                x = -halfSize;
-                y = -halfSize;
-                maxX = halfSize;
-                maxY = halfSize;
-
-                if (size % 2 != 0)
-                {
-                    maxX++; maxY++;
-                }
-            }*/
-
             _maxX = size;
             _maxY = size;
 
             tileDriverData.mesh = meshData;
-
-            /*
-            1 | 2 | 4
-            8 | t | 16
-            32| 64| 128
-
-            */
 
             for (int ix = x; ix < _maxX; ix++)
             {

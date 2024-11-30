@@ -6,7 +6,7 @@ using static MaximovInk.Bitmask;
 namespace MaximovInk.AdvancedTilemap
 {
     [ExecuteAlways]
-    public class ALayer : MonoBehaviour
+    public class ALayer : MonoBehaviour, ITilemap
     {
         public event Action OnTileChanged;
         public event Action OnChunkCreated;

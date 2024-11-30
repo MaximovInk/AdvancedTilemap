@@ -1,12 +1,12 @@
 ﻿using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace MaximovInk.AdvancedTilemap
 {
     public static class ALayerGUI
     {
         private static bool _isDirty;
+        private static bool _isShift;
 
         public static bool DrawGUI(ALayer layer, ref ALayerEditorData data)
         {
@@ -131,18 +131,16 @@ namespace MaximovInk.AdvancedTilemap
 
         public static void Enable(ref ALayerEditorData data)
         {
-           
-
             data.color = Color.white;
             data.selectedTile = 0;
 
-            DestroyTexturePreview(ref data);
+           if(data.Tool != null) 
+               data.Tool.DestroyTexturePreview(ref data);
         }
 
         public static void Disable(ref ALayerEditorData data)
         {
-            DestroyTexturePreview(ref data);
-
+           data.Tool.DestroyTexturePreview(ref data);
         }
 
         private static void OnSceneGUIUndo(ALayer layer, ref ALayerEditorData data)
@@ -175,9 +173,6 @@ namespace MaximovInk.AdvancedTilemap
 
 
         }
-
-        private static bool _isShift;
-
 
         private static void DrawGUIPanel(ref ALayerEditorData data)
         {
@@ -266,12 +261,12 @@ namespace MaximovInk.AdvancedTilemap
                 if (e.shift && !_isShift)
                 {
                     _isShift = true;
-                    GenPreviewTextureBrush(ref data);
+                    data.Tool.GenPreviewTextureBrush(ref data);
                 }
                 else if (!e.shift && _isShift)
                 {
                     _isShift = false;
-                    GenPreviewTextureBrush(ref data);
+                    data.Tool.GenPreviewTextureBrush(ref data);
                 }
 
                 Vector3 mousePosition = e.mousePosition;
@@ -280,8 +275,8 @@ namespace MaximovInk.AdvancedTilemap
 
                 data.gridPos = Utilites.ConvertGlobalCoordsToGrid(data.Layer, mousePosition);
 
-                if (!UpdatePreviewBrushPos(ref data))
-                    GenPreviewTextureBrush(ref data);
+                if(!data.Tool.UpdatePreviewBrushPos(ref data))
+                    data.Tool.GenPreviewTextureBrush(ref data);
 
                 data.Tool.Update(ref data);
 
@@ -321,9 +316,6 @@ namespace MaximovInk.AdvancedTilemap
             if (data.Event.type == EventType.ScrollWheel)
                 handleInput = false;
 
-
-
-
             if (layer.Tileset == null) return false;
             if (!(data.selectedTile > 0 && data.selectedTile < layer.Tileset.TilesCount+1))
                 return false;
@@ -332,77 +324,15 @@ namespace MaximovInk.AdvancedTilemap
             {
                 DrawGUIPanel(ref data);
 
+                HandleEvents(ref repaint, ref data);
 
                 if (handleInput)
                 {
-                    HandleEvents(ref repaint, ref data);
                     HandleInput(ref repaint, ref data);
                 }
-              
-
-             
             }
 
             return repaint;
-        }
-
-        private static bool UpdatePreviewBrushPos(ref ALayerEditorData data)
-        {
-            if (data.PreviewTextureBrush == null)
-                return false;
-
-            var position = data.Layer.transform.TransformPoint(data.gridPos * data.Layer.Tileset.GetTileUnit());
-
-            position.z = data.Layer.transform.position.z - 1;
-
-            //data.PreviewTextureBrush.transform.position = position;
-            data.PreviewTextureBrush.SetPosition(position);
-            if (data.brushSize >= 1)
-            {
-                
-               // data.PreviewTextureBrush.transform.position = 
-                data.PreviewTextureBrush.SetPosition((Vector3)position - data.PreviewTextureBrush.transform.localScale / 2f + new Vector3(0.5f, 0.5f, 0));
-            }
-
-            return true;
-        }
-
-        private static void DestroyTexturePreview(ref ALayerEditorData data)
-        {
-            if (data.PreviewTextureBrush != null)
-                Object.DestroyImmediate(data.PreviewTextureBrush.gameObject);
-        }
-
-        public static void GenPreviewTextureBrush(ref ALayerEditorData data)
-        {
-            if (data.Layer.Tileset == null)
-            {
-                DestroyTexturePreview(ref data);
-
-                return;
-            }
-
-            if (data.PreviewTextureBrush == null)
-            {
-                var go = new GameObject();
-                go.name = "_PreviewPaintBrush";
-                data.PreviewTextureBrush = go.AddComponent<PaintPreview>();
-
-                data.PreviewTextureBrush.Validate();
-            }
-
-            var isShift = data.Event.shift;
-
-            data.PreviewTextureBrush.GenerateBlock(data.brushSize, new ATileDriverData()
-            {
-                tileset = data.Layer.Tileset,
-                tile = data.Layer.Tileset.GetTile(data.selectedTile),
-                tileData = data.UVTransform,
-                color = (isShift ? Color.red : (Color)data.color * data.Layer.TintColor),
-                variation = 0,
-            });
-
-            data.PreviewTextureBrush.SetMaterial(data.Layer.Material, data.Layer.Tileset.Texture);
         }
 
         private static void DrawLiquidBox(ref ALayerEditorData data)
@@ -436,9 +366,9 @@ namespace MaximovInk.AdvancedTilemap
             data.UVTransform._rot90 = EditorGUILayout.Toggle("rot90", data.UVTransform._rot90);
             data.UVTransform._flipVertical = EditorGUILayout.Toggle("flipVertical", data.UVTransform._flipVertical);
             data.UVTransform._flipHorizontal = EditorGUILayout.Toggle("flipHorizontal", data.UVTransform._flipHorizontal);
+
             if (EditorGUI.EndChangeCheck())
-                GenPreviewTextureBrush(ref data);
-            
+                data.Tool.GenPreviewTextureBrush(ref data);
         }
 
         private static void DrawMapBox(ref ALayerEditorData data)

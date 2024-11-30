@@ -72,38 +72,35 @@ namespace MaximovInk.AdvancedTilemap
 
         public static GUIStyle[] Styles;
 
+        private static void ValidateButton(ref EditorTexButton button, int[] array)
+        {
+            if(button is not { IsValid: true })
+                button = new EditorTexButton(
+                    array, 8,
+                    SceneButtonActive,
+                    SceneButtonHover,
+                    SceneButtonNormal,
+                    SceneButtonBackground);
+
+        }
+
         public static EditorTexButton GetPaintIcon()
         {
-            _paint ??= new EditorTexButton(
-                PaintIconArray, 8,
-                SceneButtonActive,
-                SceneButtonHover,
-                SceneButtonNormal,
-                SceneButtonBackground);
+            ValidateButton(ref _paint, PaintIconArray);
 
             return _paint;
         }
 
         public static EditorTexButton GetRectIcon()
         {
-            _rect ??= new EditorTexButton(
-                RectArray, 8,
-                SceneButtonActive,
-                SceneButtonHover,
-                SceneButtonNormal,
-                SceneButtonBackground);
+            ValidateButton(ref _rect, RectArray);
 
             return _rect;
         }
 
         public static EditorTexButton GetLineIcon()
         {
-            _line ??= new EditorTexButton(
-                LineArray, 8,
-                SceneButtonActive,
-                SceneButtonHover,
-                SceneButtonNormal,
-                SceneButtonBackground);
+            ValidateButton(ref _line, LineArray);
 
             return _line;
         }

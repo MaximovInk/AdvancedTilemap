@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -28,7 +27,7 @@ namespace MaximovInk.AdvancedTilemap
             return new Vector2Int(posX, posY);
         }
 
-        public static void DrawLine(ALayer layer, Vector2Int from, Vector2Int to, ushort ID, Color32 color, bool erase = false)
+        public static void DrawLine(ITilemap layer, Vector2Int from, Vector2Int to, ushort ID, Color32 color, bool erase = false)
         {
             var x = from.x;
             var y = from.y;

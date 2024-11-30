@@ -24,8 +24,8 @@ namespace MaximovInk.AdvancedTilemap
 
             var sceneView = (SceneView.sceneViews[0] as SceneView);
 
-            Camera sceneCam = sceneView.camera;
-            Vector3 spawnPos = sceneCam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 10f));
+            var sceneCam = sceneView.camera;
+            var spawnPos = sceneCam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 10f));
             return spawnPos;
         }
 
@@ -218,16 +218,15 @@ namespace MaximovInk.AdvancedTilemap
 
             GUILayout.Space(20);
 
-            if (tilemap.layers == null) tilemap.layers = new List<ALayer>();
+            tilemap.layers ??= new List<ALayer>();
 
-            for (int i = 0; i < tilemap.layers.Count; i++)
+            for (var i = 0; i < tilemap.layers.Count; i++)
             {
-                if (tilemap.layers[i] == null)
-                {
-                    tilemap.layers.RemoveAt(i);
+                if (tilemap.layers[i] != null) continue;
 
-                    i--;
-                }
+                tilemap.layers.RemoveAt(i);
+
+                i--;
 
             }
 
@@ -263,7 +262,8 @@ namespace MaximovInk.AdvancedTilemap
             if (_invokePreviewRegen)
             {
                 _invokePreviewRegen = false;
-                ALayerGUI.GenPreviewTextureBrush(ref _layerData);
+                //ALayerGUI.GenPreviewTextureBrush(ref _layerData);
+                _layerData.Tool.GenPreviewTextureBrush(ref _layerData);
      
             }
 

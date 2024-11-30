@@ -34,7 +34,8 @@ namespace MaximovInk.AdvancedTilemap
                 {
                     data.selectedTile = layer.GetTile(gridPos.x, gridPos.y);
                     data.color = layer.GetColor(gridPos.x, gridPos.y);
-                    ALayerGUI.GenPreviewTextureBrush(ref data);
+                   // ALayerGUI.GenPreviewTextureBrush(ref data);
+                   data.Tool.GenPreviewTextureBrush(ref data);
                 }
                 else if (data.Event.shift)
                 {
@@ -58,7 +59,8 @@ namespace MaximovInk.AdvancedTilemap
                 {
                     data.selectedTile = layer.GetTile(gridPos.x, gridPos.y);
                     data.color = layer.GetColor(gridPos.x, gridPos.y);
-                    ALayerGUI.GenPreviewTextureBrush(ref data);
+                    //ALayerGUI.GenPreviewTextureBrush(ref data);
+                    data.Tool.GenPreviewTextureBrush(ref data);
                 }
                 else if (data.Event.shift)
                 {

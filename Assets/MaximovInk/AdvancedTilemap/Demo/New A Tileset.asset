@@ -53,6 +53,5 @@ MonoBehaviour:
         objectValue: {fileID: 0}
         stringValue: 
     ColliderDisabled: 0
-    Prefab: {fileID: 4929611768632583192, guid: 6cdb8f99ac7b418449fea31d6bbb686f,
-      type: 3}
+    Prefab: {fileID: 0}
     _tileDriverID: AdvancedRuleTile
