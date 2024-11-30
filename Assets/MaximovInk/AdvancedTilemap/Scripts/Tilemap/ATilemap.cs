@@ -5,17 +5,6 @@ using UnityEngine.Profiling;
 namespace MaximovInk.AdvancedTilemap
 {
     [System.Serializable]
-    public struct ALightingSettings
-    {
-        public bool Enabled; 
-        public Material LightMaterial;
-        public ALayer ForegroundLayer;
-        public ALayer BackgroundLayer;
-
-        public LayerMask LightingMask;
-    }
-
-    [System.Serializable]
     public struct AChunkLoaderSettings
     {
         public bool Enabled;
@@ -243,15 +232,19 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        private void UpdateLightingState()
+        public void UpdateLightingState(bool setIsDirty = false)
         {
             var l = _lighting;
 
-            l.ForegroundLayer.UpdateLightingState(l.Enabled && true);
-            l.BackgroundLayer.UpdateLightingState(false);
+            if (l.ForegroundLayer == null || l.BackgroundLayer == null)
+                return;
+
+            if (l.LightMaterial == null) return;
+
+            l.ForegroundLayer.UpdateLightingState(l.Enabled, setIsDirty);
         }
 
-        private byte _lightStep = 25;
+        private readonly byte _lightStep = 25;
 
         private void InitLight()
         {

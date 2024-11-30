@@ -5,7 +5,8 @@ namespace MaximovInk.AdvancedTilemap
 {
     public partial class AChunk
     {
-        public event Action OnTileChanged;
+        public event Action OnTileBeginChanged;
+        public event Action<ushort,ushort> OnTileChanged;
 
         [SerializeField, HideInInspector] private AChunkData _data;
         [SerializeField, HideInInspector] private AChunkPersistenceData _persistenceData;
@@ -32,22 +33,25 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool SetTile(int x, int y, ushort tileID, UVTransform transform = default)
         {
-            int idx = x + y * CHUNK_SIZE;
-
+            var idx = x + y * CHUNK_SIZE;
 
             var variation = Layer.Tileset.GetTile(tileID).GenVariation();
+
+            OnTileBeginChanged?.Invoke();
 
             if (_data.data[idx] == tileID && _data.transforms[idx] == transform)
             {
                 if (_data.variations[idx] != variation)
                 {
                     _data.variations[idx] = variation;
-                    OnTileChanged?.Invoke();
+                    OnTileChanged?.Invoke(tileID,tileID);
                     _data.IsDirty = true;
                 }
 
                 return false;
             }
+
+            var oldTileID = _data.data[idx];
 
             _data.data[idx] = tileID;
             _data.collision[idx]
@@ -57,22 +61,10 @@ namespace MaximovInk.AdvancedTilemap
 
             _data.IsDirty = true;
 
-            OnTileChanged?.Invoke();
+            OnTileChanged?.Invoke(oldTileID, tileID);
 
             return true;
         }
-
-        /*public bool EraseTile(int x, int y)
-        {
-            if (_data.data[x + y * CHUNK_SIZE] == 0) return false;
-
-            _data.data[x + y * CHUNK_SIZE] = 0;
-            _data.collision[x + y * CHUNK_SIZE] = false;
-
-            _data.IsDirty = true;
-            OnTileChanged?.Invoke();
-            return true;
-        }*/
 
         private bool IsCollision(ushort tileID)
         {

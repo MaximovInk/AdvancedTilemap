@@ -19,6 +19,11 @@ namespace MaximovInk.AdvancedTilemap
             lightingChunk.SetLight(gx,gy, value);
         }
 
+        public void SetLightingDirty()
+        {
+            lightingChunk.meshIsDirty = true;
+        }
+
         public void UpdateLightingState(bool active)
         {
             if (active)

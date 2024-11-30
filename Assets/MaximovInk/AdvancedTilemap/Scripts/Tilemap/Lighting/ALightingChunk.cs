@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
+    [ExecuteAlways]
     public class ALightingChunk : MonoBehaviour
     {
         public bool meshIsDirty = false;
@@ -10,11 +12,6 @@ namespace MaximovInk.AdvancedTilemap
         public AChunk Chunk;
         [HideInInspector, SerializeField]
         private byte[] data;
-        /*[HideInInspector, SerializeField]
-        private MeshFilter meshFilter;
-        [HideInInspector, SerializeField]
-        private MeshRenderer meshRenderer;
-*/
 
         [HideInInspector, SerializeField]
         private MeshData meshData;
@@ -69,11 +66,23 @@ namespace MaximovInk.AdvancedTilemap
             {
                 _texture = new Texture2D(_width, _height);
 
+                var lightSettings = Chunk.Layer.Tilemap.Lighting;
+
+                var color = lightSettings.PixelColor;
+                var clear = lightSettings.ClearColor;
+                var inverse = lightSettings.IsInverse;
+
+                var value = 1f;
+
+                if (inverse)
+                    value = 1f - value;
+                var col = Color.Lerp(clear, color, value);
+
                 for (var i = 0; i < data.Length; i++)
                 {
                     var ix = i % AChunk.CHUNK_SIZE;
                     var iy = i / AChunk.CHUNK_SIZE;
-                    _texture.SetPixel(ix, iy, Color.clear);
+                    _texture.SetPixel(ix, iy, col); 
                 }
 
                 _texture.Apply();
@@ -134,15 +143,24 @@ namespace MaximovInk.AdvancedTilemap
             ValidateTexture();
             ValidateMesh();
 
+            var lightSettings = Chunk.Layer.Tilemap.Lighting;
+
+            var clear = lightSettings.ClearColor;
+            var color = lightSettings.PixelColor;
+            var inverse = lightSettings.IsInverse;
+
             for (var i = 0; i < data.Length; i++)
             {
                 var ix = i % AChunk.CHUNK_SIZE;
                 var iy = i / AChunk.CHUNK_SIZE;
                 var value =  Mathf.Clamp01(data[i] / 255f);
+                if (inverse)
+                    value = 1f - value;
 
-                _texture.SetPixel(ix,iy, Color.Lerp(Color.clear, Color.white, value));
+                _texture.SetPixel(ix,iy, Color.Lerp(clear, color, value));
             }
 
+            _texture.filterMode = FilterMode.Bilinear;
             _texture.Apply();
         }
 

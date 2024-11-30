@@ -871,11 +871,15 @@ namespace MaximovInk.AdvancedTilemap
 
         #region Lighting
 
-        public void UpdateLightingState(bool active)
+        public void UpdateLightingState(bool active, bool setDirty = false)
         {
+
             foreach (var chunk in chunksCache)
             {
                 chunk.Value.UpdateLightingState(active);
+ 
+                if(setDirty)
+                    chunk.Value.SetLightingDirty();
             }
         }
 
