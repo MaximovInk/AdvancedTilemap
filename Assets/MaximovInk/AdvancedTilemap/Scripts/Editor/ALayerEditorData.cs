@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -18,6 +19,7 @@ namespace MaximovInk.AdvancedTilemap
         public Color color;
         public UVTransform UVTransform;
         public Vector2Int gridPos;
+        public bool ShowTilesAsList;
 
         public bool RepaintInvoke;
     }

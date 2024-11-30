@@ -5,7 +5,7 @@ namespace MaximovInk.AdvancedTilemap
 
     public class DefaultTileDriver : ATileDriver
     {
-        public override string Name => "Default";
+        public override string ID => "Default";
 
         public override void SetTile(ATileDriverData data)
         {

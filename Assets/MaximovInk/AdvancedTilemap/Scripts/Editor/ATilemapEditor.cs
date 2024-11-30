@@ -248,7 +248,11 @@ namespace MaximovInk.AdvancedTilemap
             {
                 var layer = tilemap.layers[_tilemapData.LayerSelected];
 
+                var mat = layer.Material;
+
                ALayerGUI.DrawGUI(layer, ref _layerData);
+
+               if (mat != layer.Material) _invokePreviewRegen = true;
             }
         }
 

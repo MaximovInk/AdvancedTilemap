@@ -1,4 +1,6 @@
-﻿namespace MaximovInk.AdvancedTilemap
+﻿using UnityEngine;
+
+namespace MaximovInk.AdvancedTilemap
 {
     public class DummyMeshJob : IChunkProcessorJob
     {
@@ -57,8 +59,9 @@
                     bitmask = bitmask,
                     variation = variation,
                     tileset = tileset,
-                    blend = true,
-                    tileData = transform
+                    tileData = transform,
+                    chunkX = input.Chunk.GridX,
+                    chunkY = input.Chunk.GridY,
                 });
             }
 

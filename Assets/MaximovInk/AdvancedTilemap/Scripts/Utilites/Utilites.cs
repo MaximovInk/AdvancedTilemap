@@ -202,7 +202,7 @@ namespace MaximovInk.AdvancedTilemap
                 }
             }
 
-            return _drivers.FirstOrDefault(n => n.Name == id);
+            return _drivers.FirstOrDefault(n => n.ID == id);
         }
 
 

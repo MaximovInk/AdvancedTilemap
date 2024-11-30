@@ -146,7 +146,6 @@ namespace MaximovInk.AdvancedTilemap
                         driverData.bitmask = 255;
 
                     driverData.variation = 0;
-                    driverData.blend = true;
 
                     tileDriverData.tile.TileDriver.SetTile(driverData);
                 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using static MaximovInk.Bitmask;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -20,27 +21,31 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool ColliderEnabled { get => _colliderEnabled; set { _colliderEnabled = value; UpdateCollider(); } }
         public Material LiquidMaterial { get => _liquidMaterial; set {
-                bool changed = _liquidMaterial != value;
+                var changed = _liquidMaterial != value;
                 _liquidMaterial = value;
                 if (changed) UpdateLiquidState();
             } }
         public Material Material { get => _material; set { _material = value; UpdateRenderer(); } }
         public Color TintColor { get => _tintColor; set { _tintColor = value; UpdateRenderer(); } }
-        public bool IsUndoEnabled { get => Tilemap.UndoEnabled; }
-        public PhysicsMaterial2D PhysicsMaterial2D { get { return _physMaterial; } set { _physMaterial = value; UpdateColliderProperties(); } }
-        public bool IsTrigger { get { return _isTrigger; } set { _isTrigger = value; UpdateColliderProperties(); } }
-        public string Tag { get { return _tag; } set { _tag = value; UpdateChunksFlags(); } }
-        public LayerMask LayerMask { get { return _layerMask; } set { _layerMask = value; UpdateChunksFlags(); } }
+        public bool IsUndoEnabled => Tilemap.UndoEnabled;
+        public PhysicsMaterial2D PhysicsMaterial2D { get => _physMaterial;
+            set { _physMaterial = value; UpdateColliderProperties(); } }
+        public bool IsTrigger { get => _isTrigger;
+            set { _isTrigger = value; UpdateColliderProperties(); } }
+        public string Tag { get => _tag;
+            set { _tag = value; UpdateChunksFlags(); } }
+        public LayerMask LayerMask { get => _layerMask;
+            set { _layerMask = value; UpdateChunksFlags(); } }
         public bool LiquidEnabled { get => _liquidEnabled; set
             {
-                bool changed = _liquidEnabled != value;
+                var changed = _liquidEnabled != value;
                 _liquidEnabled = value;
                 if (changed)
                     UpdateLiquidState();
             } }
-        public bool AutoTrim { get => Tilemap.AutoTrim; }
+        public bool AutoTrim => Tilemap.AutoTrim;
 
-     
+
         public int MinGridX { get; private set; }
         public int MinGridY { get; private set; }
         public int MaxGridX { get; private set; }
@@ -84,6 +89,8 @@ namespace MaximovInk.AdvancedTilemap
                 return;
             }
 
+            if (Tileset == null) return;
+
 
             MinGridX = 0; MinGridY = 0; MaxGridX = 0; MaxGridY = 0;
             _bounds = new Bounds();
@@ -92,7 +99,7 @@ namespace MaximovInk.AdvancedTilemap
 
             foreach (var chunk in chunksCache)
             {
-                Bounds chunkBounds = chunk.Value.GetBounds();
+                var chunkBounds = chunk.Value.GetBounds();
                 Vector2 min = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkBounds.min));
                 Vector2 max = transform.InverseTransformPoint(chunk.Value.transform.TransformPoint(chunkBounds.max));
                 _bounds.Encapsulate(min + Vector2.one * unit);
@@ -107,26 +114,26 @@ namespace MaximovInk.AdvancedTilemap
 
         #region Undo
 
-        public TilemapCommandContainer tilemapCommands;
+        public TilemapCommandContainer TilemapCommands;
 
-        private ATilemapCommand currentRecording;
+        private ATilemapCommand _currentRecording;
 
         public void UpdateUndoStack()
         {
-            if (IsUndoEnabled && tilemapCommands == null)
-                tilemapCommands = new TilemapCommandContainer();
-            if (!IsUndoEnabled && tilemapCommands != null)
+            if (IsUndoEnabled && TilemapCommands == null)
+                TilemapCommands = new TilemapCommandContainer();
+            if (!IsUndoEnabled && TilemapCommands != null)
             {
                 ClearUndoStack();
-                tilemapCommands = null;
+                TilemapCommands = null;
             }
         }
 
         private void ClearUndoStack()
         {
-            tilemapCommands.undoCommands.Clear();
-            tilemapCommands.redoCommands.Clear();
-            currentRecording = null;
+            TilemapCommands.undoCommands.Clear();
+            TilemapCommands.redoCommands.Clear();
+            _currentRecording = null;
         }
 
         public void BeginRecordingCommand()
@@ -134,44 +141,44 @@ namespace MaximovInk.AdvancedTilemap
             if (!IsUndoEnabled)
                 return;
 
-            currentRecording = new ATilemapCommand();
+            _currentRecording = new ATilemapCommand();
         }
 
         public void EndRecordCommand()
         {
             if (!IsUndoEnabled) return;
             
-            if(currentRecording == null)
+            if(_currentRecording == null)
             {
                 Debug.LogError("Need start command to finish recording");
                 return;
             }
 
-            if (currentRecording.isEmpty()) 
+            if (_currentRecording.isEmpty()) 
                 return;
 
-            if(tilemapCommands == null) tilemapCommands = new TilemapCommandContainer();
+            if(TilemapCommands == null) TilemapCommands = new TilemapCommandContainer();
 
-            tilemapCommands.undoCommands.Push(currentRecording);
-            tilemapCommands.redoCommands.Clear();
+            TilemapCommands.undoCommands.Push(_currentRecording);
+            TilemapCommands.redoCommands.Clear();
 
-            currentRecording = null;
+            _currentRecording = null;
         }
 
         public void Undo()
         {
             if (!IsUndoEnabled) return;
 
-            if (currentRecording != null) return;
+            if (_currentRecording != null) return;
 
-            if (tilemapCommands.undoCommands.Count == 0) return;
+            if (TilemapCommands.undoCommands.Count == 0) return;
 
-            var command = tilemapCommands.undoCommands.Pop();
+            var command = TilemapCommands.undoCommands.Pop();
 
             if (command == null)
                 return;
 
-            for (int i = 0; i < command.tileChanges.Count; i++)
+            for (var i = 0; i < command.tileChanges.Count; i++)
             {
                 var tileChange = command.tileChanges[i];
                 if (tileChange.OldTileData == 0)
@@ -180,23 +187,23 @@ namespace MaximovInk.AdvancedTilemap
                     SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.OldTileData);
             }
 
-            tilemapCommands.redoCommands.Push(command);
+            TilemapCommands.redoCommands.Push(command);
         }
 
         public void Redo()
         {
             if (!IsUndoEnabled) return;
 
-            if (currentRecording != null) return;
+            if (_currentRecording != null) return;
 
-            if (tilemapCommands.redoCommands.Count == 0) return;
+            if (TilemapCommands.redoCommands.Count == 0) return;
 
-            var command = tilemapCommands.redoCommands.Pop();
+            var command = TilemapCommands.redoCommands.Pop();
 
             if (command == null)
                 return;
 
-            for (int i = 0; i < command.tileChanges.Count; i++)
+            for (var i = 0; i < command.tileChanges.Count; i++)
             {
                 var tileChange = command.tileChanges[i];
 
@@ -206,7 +213,7 @@ namespace MaximovInk.AdvancedTilemap
                     SetTile(tileChange.Position.x, tileChange.Position.y, tileChange.NewTileData);
             }
 
-            tilemapCommands.undoCommands.Push(command);
+            TilemapCommands.undoCommands.Push(command);
         }
 
         #endregion
@@ -221,18 +228,18 @@ namespace MaximovInk.AdvancedTilemap
 
             var coords = ConvertGlobalGridToChunk(x, y);
 
-            if (IsUndoEnabled && currentRecording != null)
+            if (IsUndoEnabled && _currentRecording != null)
             {
                 var oldID = chunk.GetTile(coords.x, coords.y);
                 var newID = tileID;
 
                 if(oldID != newID)
                 {
-                    var match = currentRecording.tileChanges.Find(n => n != null && n.Position.x == x && n.Position.y == y);
+                    var match = _currentRecording.tileChanges.Find(n => n != null && n.Position.x == x && n.Position.y == y);
 
                     if (match == null)
                     {
-                        currentRecording.tileChanges.Add(new ATilemapCommand.TileData() {
+                        _currentRecording.tileChanges.Add(new ATilemapCommand.TileData() {
                             Position = new Vector2Int(x,y),
                             OldTileData = oldID,
                             NewTileData = newID
@@ -328,9 +335,9 @@ namespace MaximovInk.AdvancedTilemap
 
         public void UpdateNeighborsBitmask(int x, int y)
         {
-            for (int ix = x - 1; ix < x + 2; ix++)
+            for (var ix = x - 1; ix < x + 2; ix++)
             {
-                for (int iy = y - 1; iy < y + 2; iy++)
+                for (var iy = y - 1; iy < y + 2; iy++)
                 {
                     if (ix == x && iy == y)
                         continue;
@@ -350,28 +357,28 @@ namespace MaximovInk.AdvancedTilemap
             byte bitmask = 0;
 
             if (GetTile(x - 1, y + 1) == tileID)
-                bitmask |= 1;
+                bitmask |= Bitmask.LEFT_TOP;
 
             if (GetTile(x, y + 1) == tileID)
-                bitmask |= 2;
+                bitmask |= TOP;
 
             if (GetTile(x + 1, y + 1) == tileID)
-                bitmask |= 4;
+                bitmask |= RIGHT_TOP;
 
             if (GetTile(x - 1, y) == tileID)
-                bitmask |= 8;
+                bitmask |= LEFT;
 
             if (GetTile(x + 1, y) == tileID)
-                bitmask |= 16;
+                bitmask |= RIGHT;
 
             if (GetTile(x - 1, y - 1) == tileID)
-                bitmask |= 32;
+                bitmask |= LEFT_BOTTOM;
 
             if (GetTile(x, y - 1) == tileID)
-                bitmask |= 64;
+                bitmask |= BOTTOM;
 
             if (GetTile(x + 1, y - 1) == tileID)
-                bitmask |= 128;
+                bitmask |= RIGHT_BOTTOM;
 
 
             return bitmask;
@@ -394,30 +401,28 @@ namespace MaximovInk.AdvancedTilemap
 
         public AChunk GetOrCreateChunk(int x, int y, bool autoCreate = true)
         {
-            int chunkX = (x < 0 ? (x + 1 - AChunk.CHUNK_SIZE) : x) / AChunk.CHUNK_SIZE;
-            int chunkY = (y < 0 ? (y + 1 - AChunk.CHUNK_SIZE) : y) / AChunk.CHUNK_SIZE;
-            uint key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
+            var chunkX = (x < 0 ? (x + 1 - AChunk.CHUNK_SIZE) : x) / AChunk.CHUNK_SIZE;
+            var chunkY = (y < 0 ? (y + 1 - AChunk.CHUNK_SIZE) : y) / AChunk.CHUNK_SIZE;
+            var key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
 
-            AChunk chunk;
+            chunksCache.TryGetValue(key, out var chunk);
 
-            chunksCache.TryGetValue(key, out chunk);
+            if (chunk != null || !autoCreate) return chunk;
 
-            if (chunk == null && autoCreate)
-            {
-                var go = new GameObject();
-                go.transform.SetParent(transform);
-                go.transform.localPosition = new Vector3(chunkX * AChunk.CHUNK_SIZE, chunkY * AChunk.CHUNK_SIZE);
+            var go = new GameObject();
+            go.transform.SetParent(transform);
+            go.transform.localPosition = new Vector3(chunkX * AChunk.CHUNK_SIZE, chunkY * AChunk.CHUNK_SIZE);
 
-                chunk = go.AddComponent<AChunk>();
-                chunk.Layer = this;
-                chunk.GridX = chunkX * AChunk.CHUNK_SIZE;
-                chunk.GridY = chunkY * AChunk.CHUNK_SIZE;
-                chunk.Init();
+            chunk = go.AddComponent<AChunk>();
+            chunk.Layer = this;
+            chunk.GridX = chunkX * AChunk.CHUNK_SIZE;
+            chunk.GridY = chunkY * AChunk.CHUNK_SIZE;
+            go.name = $"Chunk [{chunk.GridX},{chunk.GridY}]";
+            chunk.Init();
 
-                chunksCache[key] = chunk;
+            chunksCache[key] = chunk;
 
-                OnChunkCreated?.Invoke();
-            }
+            OnChunkCreated?.Invoke();
 
             return chunk;
         }
@@ -447,14 +452,14 @@ namespace MaximovInk.AdvancedTilemap
         private void BuildChunkCache()
         {
             chunksCache.Clear();
-            for (int i = 0; i < transform.childCount; ++i)
+            for (var i = 0; i < transform.childCount; ++i)
             {
-                AChunk chunk = transform.GetChild(i).GetComponent<AChunk>();
+                var chunk = transform.GetChild(i).GetComponent<AChunk>();
                 if (chunk)
                 {
-                    int chunkX = (chunk.GridX < 0 ? (chunk.GridX + 1 - AChunk.CHUNK_SIZE) : chunk.GridX) / AChunk.CHUNK_SIZE;
-                    int chunkY = (chunk.GridY < 0 ? (chunk.GridY + 1 - AChunk.CHUNK_SIZE) : chunk.GridY) / AChunk.CHUNK_SIZE;
-                    uint key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
+                    var chunkX = (chunk.GridX < 0 ? (chunk.GridX + 1 - AChunk.CHUNK_SIZE) : chunk.GridX) / AChunk.CHUNK_SIZE;
+                    var chunkY = (chunk.GridY < 0 ? (chunk.GridY + 1 - AChunk.CHUNK_SIZE) : chunk.GridY) / AChunk.CHUNK_SIZE;
+                    var key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
                     chunksCache[key] = chunk;
                     chunk.UpdateRenderer();
                 }
@@ -468,9 +473,9 @@ namespace MaximovInk.AdvancedTilemap
             if (IsUndoEnabled)
             {
                 CalculateBounds();
-                for (int ix = MinGridX; ix < MaxGridX; ix++)
+                for (var ix = MinGridX; ix < MaxGridX; ix++)
                 {
-                    for (int iy = MinGridY; iy < MaxGridY; iy++)
+                    for (var iy = MinGridY; iy < MaxGridY; iy++)
                     {
                         SetTile(ix, iy,0);
                     }
@@ -490,8 +495,8 @@ namespace MaximovInk.AdvancedTilemap
 
         public Vector2Int ConvertGlobalGridToChunk(int x, int y)
         {
-            int cx = (x < 0 ? -x - 1 : x) % AChunk.CHUNK_SIZE;
-            int cy = (y < 0 ? -y - 1 : y) % AChunk.CHUNK_SIZE;
+            var cx = (x < 0 ? -x - 1 : x) % AChunk.CHUNK_SIZE;
+            var cy = (y < 0 ? -y - 1 : y) % AChunk.CHUNK_SIZE;
             if (x < 0) cx = AChunk.CHUNK_SIZE - 1 - cx;
             if (y < 0) cy = AChunk.CHUNK_SIZE - 1 - cy;
 
@@ -598,17 +603,17 @@ namespace MaximovInk.AdvancedTilemap
             var min = Utilites.GetGridPosition(this,Camera.main.BoundsMin() - new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
             var max = Utilites.GetGridPosition(this,Camera.main.BoundsMax() + new Vector2(AChunk.CHUNK_SIZE * 3, AChunk.CHUNK_SIZE * 3));
 
-            for (int ix = min.x; ix < max.x; ix++)
+            for (var ix = min.x; ix < max.x; ix++)
             {
-                for (int iy = min.y; iy < max.y; iy++)
+                for (var iy = min.y; iy < max.y; iy++)
                 {
                     SimulateCell(ix,iy);
                 }
             }
 
-            for (int ix = min.x; ix < max.x; ix++)
+            for (var ix = min.x; ix < max.x; ix++)
             {
-                for (int iy = min.y; iy < max.y; iy++)
+                for (var iy = min.y; iy < max.y; iy++)
                 {
                     if (GetLiquid(ix, iy) < ALiquidChunk.MIN_VALUE)
                         SetSettled(ix, iy, false);
@@ -621,7 +626,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private float CalculateVerticalFlowValue(float remainingLiquid, float destination)
         {
-            float sum = remainingLiquid + destination;
+            var sum = remainingLiquid + destination;
             float value;
 
             if (sum <= ALiquidChunk.MAX_VALUE)
@@ -833,7 +838,6 @@ namespace MaximovInk.AdvancedTilemap
         {
             if (!LiquidEnabled)
             {
-                Debug.LogError("Liquid for layer[" + name + "] disabled");
                 return;
             }
 
@@ -850,7 +854,6 @@ namespace MaximovInk.AdvancedTilemap
         {
             if (!LiquidEnabled)
             {
-                Debug.LogError("Liquid for layer[" + name + "] disabled");
                 return 0;
             }
 

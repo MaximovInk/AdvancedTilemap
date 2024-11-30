@@ -1,18 +1,23 @@
 ﻿using UnityEngine;
 using static MaximovInk.Bitmask;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+
 namespace MaximovInk.AdvancedTilemap
 {
 
-    public class HorizontalPipeDriver : ATileDriver
+    public class VerticalPipeDriver : ATileDriver
     {
-        public HorizontalPipeDriver()
+        public VerticalPipeDriver()
         {
-            UVInTilesX = 3;
-            UVInTilesY = 1;
+            UVInTilesX = 1;
+            UVInTilesY = 3;
         }
 
-        public override string ID => "Horizontal Pipe";
+        public override string ID => "Vertical Pipe";
 
         public override void SetTile(ATileDriverData data)
         {
@@ -20,6 +25,8 @@ namespace MaximovInk.AdvancedTilemap
 
 
             byte bitmask = data.bitmask;
+
+
             /*
             1 | 2 | 4
             8 | t | 16
@@ -38,6 +45,13 @@ namespace MaximovInk.AdvancedTilemap
             var x4 = uvMin.x + uvSize.x * 5f / 6f;
             var x5 = uvMax.x;
 
+            var y0 = uvMin.y;
+            var y1 = uvMin.y + uvSize.y * 1f / 6f;
+            var y2 = uvMin.y + uvSize.y * 1f / 3f;
+            var y3 = uvMin.y + uvSize.y * 2f / 3f;
+            var y4 = uvMin.y + uvSize.y * 5f / 6f;
+            var y5 = uvMax.y;
+
             var meshDataParam = new MeshDataParameters();
             meshDataParam.color = data.color;
             meshDataParam.unit = data.tileset.GetTileUnit();
@@ -48,54 +62,55 @@ namespace MaximovInk.AdvancedTilemap
             meshDataParam.vX1 = data.x + 1;
             meshDataParam.vY1 = data.y + 1;
 
-            if (bitmask.HasBit(8))
+            if (bitmask.HasBit(64))
             {
-                if (bitmask.HasBit(16))
+                if (bitmask.HasBit(2)) 
                 {
                     meshDataParam.uv = ATileUV.Generate(
-                      new Vector2(x2, uvMin.y),
-                      new Vector2(x3, uvMax.y));
+                      new Vector2(uvMin.x, y2),
+                      new Vector2(uvMax.x, y3));
 
                     data.mesh.AddSquare(meshDataParam);
                 }
                 else
                 {
                     meshDataParam.uv = ATileUV.Generate(
-                      new Vector2(x3, uvMin.y),
-                      new Vector2(x5, uvMax.y));
+                      new Vector2(uvMin.x, y3),
+                      new Vector2(uvMax.x, y5));
 
                     data.mesh.AddSquare(meshDataParam);
                 }
             }
 
-            if (bitmask.HasBit(16) && !bitmask.HasBit(8))
+            if (bitmask.HasBit(2) && !bitmask.HasBit(64))
             {
                 meshDataParam.uv = ATileUV.Generate(
-                       new Vector2(x0, uvMin.y),
-                       new Vector2(x2, uvMax.y));
+                       new Vector2(uvMin.x, y0),
+                       new Vector2(uvMax.x, y2));
 
                 data.mesh.AddSquare(meshDataParam);
             }
 
-            if (!bitmask.HasBit(16) && !bitmask.HasBit(8))
+            if (!bitmask.HasBit(2) && !bitmask.HasBit(64))
             {
                 meshDataParam.vX0 = data.x;
                 meshDataParam.vY0 = data.y;
-                meshDataParam.vX1 = data.x + 0.5f;
-                meshDataParam.vY1 = data.y + 1;
+                meshDataParam.vX1 = data.x + 1f;
+                meshDataParam.vY1 = data.y + 0.5f;
                 meshDataParam.uv = ATileUV.Generate(
-                      new Vector2(x0, uvMin.y),
-                      new Vector2(x1, uvMax.y));
+                      new Vector2( uvMin.x,y0),
+                      new Vector2( uvMax.x, y1));
 
                 data.mesh.AddSquare(meshDataParam);
 
-                meshDataParam.vX0 = data.x + 0.5f;
-                meshDataParam.vY0 = data.y;
+                meshDataParam.vX0 = data.x ;
+                meshDataParam.vY0 = data.y + 0.5f;
                 meshDataParam.vX1 = data.x + 1;
                 meshDataParam.vY1 = data.y + 1;
+
                 meshDataParam.uv = ATileUV.Generate(
-                        new Vector2(x4, uvMin.y),
-                         new Vector2(x5, uvMax.y));
+                         new Vector2(uvMin.x,y4 ),
+                         new Vector2(uvMax.x,y5));
 
                 data.mesh.AddSquare(meshDataParam);
             }
@@ -109,7 +124,7 @@ namespace MaximovInk.AdvancedTilemap
             var uvMax = uv.Max;
             var uvSize = uv.Max - uvMin;
 
-            var uvUnit = new Vector2(uvSize.x / 3, uvSize.y / 1);
+            var uvUnit = new Vector2(uvSize.x / 1, uvSize.y / 3);
 
             var width = 150;
             var viewTileUnit = width / 3;

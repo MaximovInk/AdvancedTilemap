@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 8288b6218c1c55d4e9b696cb2568968d
+guid: e6f994449d7bf384088296b989a3b9ac
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6629569795583710617
-    second: ruleTile_0
+      213: 5207700867384369339
+    second: abc_0
+  - first:
+      213: 6534105772380905701
+    second: abc_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +75,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -98,10 +101,10 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -111,10 +114,10 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
     buildTarget: WebGL
-    maxTextureSize: 64
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -126,13 +129,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ruleTile_0
+      name: abc_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 24
-        height: 40
+        y: 79
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -140,8 +143,29 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9951d67aa96f00c50800000000000000
-      internalID: 6629569795583710617
+      spriteID: bb060f8e858754840800000000000000
+      internalID: 5207700867384369339
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: abc_1
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 9
+        width: 70
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5e0e79fa49ecdaa50800000000000000
+      internalID: 6534105772380905701
       vertices: []
       indices: 
       edges: []
@@ -157,7 +181,8 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      ruleTile_0: 6629569795583710617
+      abc_0: 5207700867384369339
+      abc_1: 6534105772380905701
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

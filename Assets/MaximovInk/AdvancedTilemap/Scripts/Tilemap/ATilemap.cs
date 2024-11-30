@@ -58,7 +58,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool DisplayChunksInHierarchy
         {
-            get { return displayChunksHierarchy; }
+            get => displayChunksHierarchy;
             set
             {
                 var changed = displayChunksHierarchy != value;
@@ -95,7 +95,7 @@ namespace MaximovInk.AdvancedTilemap
             get => _lighting.Enabled;
             set
             {
-                bool changed = _lighting.Enabled != value;
+                var changed = _lighting.Enabled != value;
                 _lighting.Enabled = value;
                 if (changed)
                     UpdateLightingState();
@@ -123,7 +123,7 @@ namespace MaximovInk.AdvancedTilemap
         private float _lightTimer = 0.1f;
 
         public List<ALayer> layers = new();
-        private List<ALayerLoadChunksData> _loadedChunks = new();
+        private readonly List<ALayerLoadChunksData> _loadedChunks = new();
 
         private void Awake()
         {
@@ -154,7 +154,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void Refresh(bool immediate = false)
         {
-            foreach (ALayer layer in layers)
+            foreach (var layer in layers)
             {
                 if (layer == null) continue;
 
@@ -164,7 +164,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void Trim()
         {
-            foreach (ALayer layer in layers)
+            foreach (var layer in layers)
             {
                 if (layer == null) continue;
 
@@ -175,7 +175,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateUndoStack()
         {
-            foreach (ALayer layer in layers)
+            foreach (var layer in layers)
             {
                 if (layer == null) continue;
 
@@ -185,7 +185,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateRenderer()
         {
-            foreach(ALayer layer in layers)
+            foreach(var layer in layers)
             {
                 if (layer == null) continue;
 
@@ -195,7 +195,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateChunksFlags()
         {
-            foreach (ALayer layer in layers)
+            foreach (var layer in layers)
             {
                 if (layer == null) continue;
 
@@ -209,8 +209,9 @@ namespace MaximovInk.AdvancedTilemap
             var layer = go.AddComponent<ALayer>();
 
             go.name = $"layer{layers.Count}";
-            layer.transform.SetParent(transform);
-            layer.transform.localPosition = Vector3.zero;
+            var layerT = layer.transform;
+            layerT.SetParent(transform);
+            layerT.localPosition = Vector3.zero;
             layer.Tilemap = this;
             layers.Add(layer);
 
@@ -225,20 +226,20 @@ namespace MaximovInk.AdvancedTilemap
 
         public void TrimAll(bool immediate = false)
         {
-            for (int i = 0; i < layers.Count; i++)
+            foreach (var layer in layers)
             {
                 if (immediate)
-                    layers[i].Trim();
+                    layer.Trim();
                 else
-                    layers[i].TrimInvoke = true;
+                    layer.TrimInvoke = true;
             }
         }
 
         public void Clear()
         {
-            for (int i = 0; i < layers.Count; i++)
+            foreach (var layer in layers)
             {
-                    layers[i].Clear();
+                layer.Clear();
             }
         }
 
@@ -275,8 +276,6 @@ namespace MaximovInk.AdvancedTilemap
 
         private void EmitLight(ALayer layer, int x, int y, byte value)
         {
-            //Profiler.BeginSample("emitLight");
-
             if (value < _lightStep)
                 return;
 
@@ -294,8 +293,6 @@ namespace MaximovInk.AdvancedTilemap
                 EmitLight(layer,x ,y-1, newValue);
                 EmitLight(layer,x ,y+1, newValue);
             }
-
-            // Profiler.EndSample();
         }
 
         private void SimulateLight()
@@ -318,9 +315,9 @@ namespace MaximovInk.AdvancedTilemap
             var max = Utilites.GetGridPosition(l.ForegroundLayer, bounds.max);
 
 
-            for (int ix = min.x; ix < max.x; ix++)
+            for (var ix = min.x; ix < max.x; ix++)
             {
-                for (int iy = min.y; iy < max.y; iy++)
+                for (var iy = min.y; iy < max.y; iy++)
                 {
                     if (l.BackgroundLayer.GetTile(ix, iy) != ATile.EMPTY ||
                         l.ForegroundLayer.GetTile(ix, iy) != ATile.EMPTY)
@@ -335,22 +332,6 @@ namespace MaximovInk.AdvancedTilemap
 
             var layer = l.ForegroundLayer;
 
-            for (int ix = min.x; ix < max.x; ix++)
-            {
-                for (int iy = min.y; iy < max.y; iy++)
-                {
-                    //var light = layer.GetLight(ix, iy);
-                    /*RecursiveLight(layer, ix,iy, 0, -1);
-                    RecursiveLight(layer, ix, iy, 0, 1);
-                    RecursiveLight(layer, ix, iy, 1, 0);
-                    RecursiveLight(layer, ix, iy, -1, 0);*/
-
-                    //EmitLight(layer, ix, iy);
-
-
-                }
-            }
-
             Profiler.EndSample();
         }
 
@@ -361,7 +342,7 @@ namespace MaximovInk.AdvancedTilemap
 
 
 
-            for (int i = 0; i < _loadedChunks.Count; i++)
+            for (var i = 0; i < _loadedChunks.Count; i++)
             {
                 foreach (var chunk in _loadedChunks[i].Chunks)
                 {
@@ -407,9 +388,9 @@ namespace MaximovInk.AdvancedTilemap
 
            // Debug.Log($"{loadingChunk.GridX} {loadingChunk.GridY}");
 
-            for (int ix = -loaderData.TargetOffset.x; ix <= loaderData.TargetOffset.x; ix++)
+            for (var ix = -loaderData.TargetOffset.x; ix <= loaderData.TargetOffset.x; ix++)
             {
-                for (int iy = -loaderData.TargetOffset.y; iy <= loaderData.TargetOffset.y; iy++)
+                for (var iy = -loaderData.TargetOffset.y; iy <= loaderData.TargetOffset.y; iy++)
                 {
                     if(ix == 0 && iy == 0)continue;
 

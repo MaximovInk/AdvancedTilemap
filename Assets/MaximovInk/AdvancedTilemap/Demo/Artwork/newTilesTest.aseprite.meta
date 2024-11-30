@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ad62a370f4037574e8690b78645cf9b8
+guid: 18849c3c6f719d846b2d5c86043f5b8c
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -121,7 +121,7 @@ ScriptedImporter:
     tessellationDetail: 0
     uvTransform: {x: 0, y: 0}
   animatedSpriteImportData:
-  - name: horizontalPipe
+  - name: newTilesTest
     originalName: 
     pivot: {x: 0.5, y: 0}
     alignment: 9
@@ -130,9 +130,9 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 24
-      height: 8
-    spriteID: 4dd66c054359b124aa99d4af3584e97b
+      width: 56
+      height: 56
+    spriteID: b2ffca1a420f7e2488d5ae3bce1c81c4
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -144,21 +144,21 @@ ScriptedImporter:
   spriteSheetImportData: []
   asepriteLayers:
   - layerIndex: 0
-    guid: -1405985542
-    name: horizontalPipe
+    guid: -164711131
+    name: newTilesTest
     layerFlags: 0
     layerType: 0
     blendMode: 0
     cells:
-    - name: horizontalPipe
+    - name: newTilesTest
       frameIndex: 0
       additiveSortOrder: 0
       cellRect:
         x: 0
         y: 0
-        width: 24
-        height: 8
-      spriteId: 4dd66c054359b124aa99d4af3584e97b
+        width: 56
+        height: 56
+      spriteId: b2ffca1a420f7e2488d5ae3bce1c81c4
     linkedCells: []
     parentIndex: -1
   platformSettings:
@@ -177,4 +177,4 @@ ScriptedImporter:
   generatePhysicsShape: 0
   secondarySpriteTextures: []
   spritePackingTag: 
-  canvasSize: {x: 24, y: 8}
+  canvasSize: {x: 56, y: 56}

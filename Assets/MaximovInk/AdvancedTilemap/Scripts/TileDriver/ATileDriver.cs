@@ -7,7 +7,9 @@ namespace MaximovInk.AdvancedTilemap
     [Serializable]
     public abstract class ATileDriver
     {
-        public abstract string Name { get; }
+        public abstract string ID { get; }
+
+        public virtual string Description => "Description";
 
         public virtual int UVInTilesX
         {
@@ -28,7 +30,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public virtual ATile GenerateTile(ATileset tileset)
         {
-            var tile = new ATile(Name);
+            var tile = new ATile(ID);
             var uv = new ATileUV();
            
             uv.TextureSize = new Vector2Int(tileset.Texture.width, tileset.Texture.height);
@@ -38,6 +40,15 @@ namespace MaximovInk.AdvancedTilemap
             tile.SetUV(uv);
 
             return tile;
+        }
+
+        public virtual Parameter GetOrAddParameter(ATile tile, string ID, bool isHidden = true,
+            ParameterType type = ParameterType.Int)
+        {
+            var param = tile.ParameterContainer.GetParam(ID);
+            param ??= tile.ParameterContainer.AddNewParam(new Parameter() { name = ID, type = type, isHidden = isHidden });
+
+            return param;
         }
 
         public virtual List<ATile> GenerateTiles(ATileset tileset)
@@ -57,7 +68,7 @@ namespace MaximovInk.AdvancedTilemap
             {
                 for (var iy = 0; iy < height; iy++)
                 {
-                    var tile = new ATile(Name);
+                    var tile = new ATile(ID);
                     var uv = new ATileUV();
                     uv.Min = new Vector2Int(ix, iy) * tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
                     uv.Max = uv.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
@@ -73,8 +84,8 @@ namespace MaximovInk.AdvancedTilemap
 
         public static bool IsEquals(ATileDriver a, ATileDriver b)
         {
-            var aTileDriver = a is null ? string.Empty : a.Name;
-            var bTileDriver = b is null ? string.Empty : b.Name;
+            var aTileDriver = a is null ? string.Empty : a.ID;
+            var bTileDriver = b is null ? string.Empty : b.ID;
 
             return aTileDriver == bTileDriver;
         }

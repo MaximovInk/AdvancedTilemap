@@ -53,18 +53,17 @@ namespace MaximovInk.AdvancedTilemap
             return false;
         }
 #endif
-        private bool Exist(byte position) => HasBit(tempBitmask, position);
+        private bool Exist(byte position) => _tempBitmask.HasBit(position);
 
-        private byte tempBitmask;
+        private byte _tempBitmask;
 
-
-        public override string Name => "Rule tile";
+        public override string ID => "Rule tile";
 
         public override void SetTile(ATileDriverData data)
         {
             var tile = data.tile;
 
-            tempBitmask = data.bitmask;
+            _tempBitmask = data.bitmask;
 
             var uv = tile.GetUV(data.variation);
             var uvMin = uv.Min;
@@ -500,13 +499,13 @@ namespace MaximovInk.AdvancedTilemap
                  new Vector2(x4, y3));
             }
 
-            AddSubtile(meshDataParam, data, leftTopUV, SubtilePosition.LEFT_TOP);
-            AddSubtile(meshDataParam, data, rightTopUV, SubtilePosition.RIGHT_TOP);
-            AddSubtile(meshDataParam, data, leftBottomUV, SubtilePosition.LEFT_BOTTOM);
-            AddSubtile(meshDataParam, data, rightBottomUV, SubtilePosition.RIGHT_BOTTOM);
+            AddSubTile(meshDataParam, data, leftTopUV, SubTilePosition.LEFT_TOP);
+            AddSubTile(meshDataParam, data, rightTopUV, SubTilePosition.RIGHT_TOP);
+            AddSubTile(meshDataParam, data, leftBottomUV, SubTilePosition.LEFT_BOTTOM);
+            AddSubTile(meshDataParam, data, rightBottomUV, SubTilePosition.RIGHT_BOTTOM);
         }
 
-        public enum SubtilePosition
+        public enum SubTilePosition
         {
             LEFT_TOP,
             RIGHT_TOP,
@@ -514,29 +513,29 @@ namespace MaximovInk.AdvancedTilemap
             RIGHT_BOTTOM,
         }
 
-        protected void AddSubtile(MeshDataParameters meshDataParam, ATileDriverData data, ATileUV uv, SubtilePosition position)
+        protected void AddSubTile(MeshDataParameters meshDataParam, ATileDriverData data, ATileUV uv, SubTilePosition position)
         {
             switch (position)
             {
-                case SubtilePosition.LEFT_TOP:
+                case SubTilePosition.LEFT_TOP:
                     meshDataParam.vX0 = data.x;
                     meshDataParam.vX1 = data.x + 0.5f;
                     meshDataParam.vY0 = data.y + 0.5f;
                     meshDataParam.vY1 = data.y + 1f;
                     break;
-                case SubtilePosition.RIGHT_TOP:
+                case SubTilePosition.RIGHT_TOP:
                     meshDataParam.vX0 = data.x + 0.5f;
                     meshDataParam.vX1 = data.x + 1f;
                     meshDataParam.vY0 = data.y + 0.5f;
                     meshDataParam.vY1 = data.y + 1f;
                     break;
-                case SubtilePosition.LEFT_BOTTOM:
+                case SubTilePosition.LEFT_BOTTOM:
                     meshDataParam.vX0 = data.x;
                     meshDataParam.vX1 = data.x + 0.5f;
                     meshDataParam.vY0 = data.y;
                     meshDataParam.vY1 = data.y + 0.5f;
                     break;
-                case SubtilePosition.RIGHT_BOTTOM:
+                case SubTilePosition.RIGHT_BOTTOM:
                     meshDataParam.vX0 = data.x + 0.5f;
                     meshDataParam.vX1 = data.x + 1f;
                     meshDataParam.vY0 = data.y;
@@ -549,15 +548,15 @@ namespace MaximovInk.AdvancedTilemap
             data.mesh.AddSquare(meshDataParam);
         }
 
-        protected void AddSubtiles(MeshDataParameters meshDataParam, ATileDriverData data, ATileUV lb, ATileUV lt, ATileUV rb, ATileUV rt)
+        protected void AddSubTiles(MeshDataParameters meshDataParam, ATileDriverData data, ATileUV lb, ATileUV lt, ATileUV rb, ATileUV rt)
         {
-            AddSubtile(meshDataParam, data, lb, SubtilePosition.LEFT_BOTTOM);
+            AddSubTile(meshDataParam, data, lb, SubTilePosition.LEFT_BOTTOM);
 
-            AddSubtile(meshDataParam, data, rb, SubtilePosition.RIGHT_BOTTOM);
+            AddSubTile(meshDataParam, data, rb, SubTilePosition.RIGHT_BOTTOM);
 
-            AddSubtile(meshDataParam, data, lt, SubtilePosition.LEFT_TOP);
+            AddSubTile(meshDataParam, data, lt, SubTilePosition.LEFT_TOP);
 
-            AddSubtile(meshDataParam, data, rt, SubtilePosition.RIGHT_TOP);
+            AddSubTile(meshDataParam, data, rt, SubTilePosition.RIGHT_TOP);
         }
     }
 }

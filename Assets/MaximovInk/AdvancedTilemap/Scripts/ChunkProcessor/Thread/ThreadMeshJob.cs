@@ -53,8 +53,9 @@ namespace MaximovInk.AdvancedTilemap
                         bitmask = bitmask,
                         variation = variation,
                         tileset = tileset,
-                        blend = true,
-                        tileData = transform
+                        tileData = transform,
+                        chunkX = input.Chunk.GridX,
+                        chunkY = input.Chunk.GridY,
                     });
                 }
 
