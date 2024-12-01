@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -26,7 +27,7 @@ namespace MaximovInk.AdvancedTilemap
                 return;
             }
 
-            var tiles = input.ChunkData.data;
+            var tiles = input.ChunkData.tiles;
 
             var tileset = input.ChunkPersistenceData.Layer.Tileset;
 
@@ -44,7 +45,24 @@ namespace MaximovInk.AdvancedTilemap
 
                 var tileDriver = tile.TileDriver;
 
-                var bitmask = input.ChunkData.bitmaskData[i];
+                var bitmask = input.ChunkData.bitmask[i];
+                var selfBitmask = input.ChunkData.selfBitmask[i];
+
+                switch (tile.BitmaskMode)
+                {
+                    case BitmaskMode.Self:
+                        bitmask = selfBitmask;
+                        break;
+                    case BitmaskMode.All:
+                        //already
+                        //bitmask = bitmask;
+                        break;
+                    case BitmaskMode.Other:
+                        //I don't tested this [
+                        bitmask = (byte)(bitmask & ~selfBitmask);
+                        break;
+                }
+
                 var variation = input.ChunkData.variations[i];
                 var transform = input.ChunkData.transforms[i];
                 var color = input.ChunkData.colors[i];
@@ -57,6 +75,7 @@ namespace MaximovInk.AdvancedTilemap
                     mesh = input.MeshData,
                     tile = tile,
                     bitmask = bitmask,
+                    selfBitmask = selfBitmask,
                     variation = variation,
                     tileset = tileset,
                     tileData = transform,

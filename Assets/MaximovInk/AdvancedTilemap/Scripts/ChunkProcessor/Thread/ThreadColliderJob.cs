@@ -125,7 +125,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             List<ColliderSegment> segments = new List<ColliderSegment>();
 
-            for (int i = 0; i < _data.data.Length; i++)
+            for (int i = 0; i < _data.tiles.Length; i++)
             {
                 if (!_data.collision[i])
                     continue;

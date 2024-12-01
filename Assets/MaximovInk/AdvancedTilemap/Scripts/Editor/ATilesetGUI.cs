@@ -8,31 +8,29 @@ namespace MaximovInk.AdvancedTilemap
     public static class ATilesetGUI
     {
         private const float SPACING = 10f;
-
-        private static bool _isDirty = false;
-
-        private static ATileDriver[] tileDrivers;
+        private static bool _isDirty;
+        private static ATileDriver[] _tileDrivers;
 
         public static void UpdateTileDrivers()
         {
-            tileDrivers = Utilites.GetAllDriversOfProject();
+            _tileDrivers = Utilites.GetAllDriversOfProject();
         }
 
         private static ATileDriver TileDriverPopup(ref ATilesetEditorData editorData)
         {
             var tileDriverID = editorData.TileDriverID;
-            var foundTileDriver = tileDrivers.FirstOrDefault(n => n.ID == tileDriverID);
+            var foundTileDriver = _tileDrivers.FirstOrDefault(n => n.ID == tileDriverID);
             if (foundTileDriver is not null)
             {
-                editorData.TileDriverIndex = Array.IndexOf(tileDrivers, foundTileDriver);
+                editorData.TileDriverIndex = Array.IndexOf(_tileDrivers, foundTileDriver);
             }
 
             var prevIndex = editorData.TileDriverIndex;
             editorData.TileDriverIndex =
-                EditorGUILayout.Popup(Mathf.Clamp(editorData.TileDriverIndex, 0, tileDrivers.Length), tileDrivers.Select(n => n.ID).ToArray());
+                EditorGUILayout.Popup(Mathf.Clamp(editorData.TileDriverIndex, 0, _tileDrivers.Length), _tileDrivers.Select(n => n.ID).ToArray());
             if (prevIndex != editorData.TileDriverIndex || foundTileDriver is null)
             {
-                foundTileDriver = tileDrivers[editorData.TileDriverIndex];
+                foundTileDriver = _tileDrivers[editorData.TileDriverIndex];
                 editorData.TileDriverID = foundTileDriver.ID;
             }
 
@@ -100,7 +98,7 @@ namespace MaximovInk.AdvancedTilemap
 
             GUILayout.Space(SPACING);
 
-            if (tileDrivers == null || tileDrivers.Length == 0)
+            if (_tileDrivers == null || _tileDrivers.Length == 0)
             {
                 return _isDirty;
             }
@@ -345,9 +343,11 @@ namespace MaximovInk.AdvancedTilemap
             GUILayout.Space(10);
 
             tile.Prefab = EditorGUILayout.ObjectField(tile.Prefab, typeof(ATilePrefab),false) as ATilePrefab;
+            tile.BitmaskMode = (BitmaskMode)EditorGUILayout.EnumPopup("Bitmask mode", tile.BitmaskMode);
             tile.ColliderDisabled = !EditorGUILayout.Toggle("Collider enabled", !tile.ColliderDisabled);
             tile.RandomVariations = EditorGUILayout.Toggle("variations enabled:", tile.RandomVariations);
-            tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID);
+           // tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID); // or refresh id's
+           EditorGUILayout.LabelField($"ID: {tile.ID}");
         }
 
         private static void DrawTileEditorParameterContainer(ATile tile, ref ATilesetEditorData data)

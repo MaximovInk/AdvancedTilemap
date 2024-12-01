@@ -4,7 +4,7 @@ using UnityEngine;
 namespace MaximovInk.AdvancedTilemap
 {
     [ExecuteAlways]
-    public class ALiquidChunk : MonoBehaviour
+    public class ALiquidRenderer : MonoBehaviour
     {
         public bool meshIsDirty = false;
 

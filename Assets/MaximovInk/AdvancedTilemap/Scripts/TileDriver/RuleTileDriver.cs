@@ -63,7 +63,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             var tile = data.tile;
 
-            _tempBitmask = data.bitmask;
+            _tempBitmask = data.selfBitmask;
 
             var uv = tile.GetUV(data.variation);
             var uvMin = uv.Min;

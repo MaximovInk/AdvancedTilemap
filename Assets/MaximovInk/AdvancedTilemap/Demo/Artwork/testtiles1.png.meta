@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 3f32bc85c0b37b346962c41b37eb719d
+guid: 390b4b26326b1c0468bcd431e9b1e782
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8667466294985060184
-    second: tree_0
+      213: 4511413370837115596
+    second: testtiles1_0
+  - first:
+      213: -2594675518755833387
+    second: testtiles1_1
+  - first:
+      213: -9055074321001190159
+    second: testtiles1_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +57,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 8
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,10 +78,10 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -126,13 +132,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: tree_0
+      name: testtiles1_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 0
-        width: 82
-        height: 120
+        y: 79
+        width: 17
+        height: 17
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -140,8 +146,50 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8a09eb0b359f6b780800000000000000
-      internalID: -8667466294985060184
+      spriteID: cc2a1bbee82cb9e30800000000000000
+      internalID: 4511413370837115596
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: testtiles1_1
+      rect:
+        serializedVersion: 2
+        x: 31
+        y: 79
+        width: 18
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d9f725ec5cddfbd0800000000000000
+      internalID: -2594675518755833387
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: testtiles1_2
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 2
+        width: 76
+        height: 76
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1fc66f181e9e55280800000000000000
+      internalID: -9055074321001190159
       vertices: []
       indices: 
       edges: []
@@ -157,7 +205,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      tree_0: -8667466294985060184
+      testtiles1_0: 4511413370837115596
+      testtiles1_1: -2594675518755833387
+      testtiles1_2: -9055074321001190159
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

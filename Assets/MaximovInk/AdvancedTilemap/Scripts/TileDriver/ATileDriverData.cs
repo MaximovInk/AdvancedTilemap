@@ -5,6 +5,7 @@ namespace MaximovInk.AdvancedTilemap
     public struct ATileDriverData
     {
         public ATile tile;
+        public byte selfBitmask;
         public byte bitmask;
         public int x;
         public int y;

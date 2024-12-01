@@ -1,9 +1,15 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace MaximovInk.AdvancedTilemap
 {
+    public enum BitmaskMode
+    {
+        Self,
+        All,
+        Other
+    }
+
     [System.Serializable]
     public class ATile
     {
@@ -18,6 +24,8 @@ namespace MaximovInk.AdvancedTilemap
 
         public ParameterContainer ParameterContainer;
         public bool ColliderDisabled;
+
+        public BitmaskMode BitmaskMode = BitmaskMode.Self;
 
         public ATilePrefab Prefab; 
 

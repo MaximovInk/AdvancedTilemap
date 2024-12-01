@@ -5,9 +5,12 @@ namespace MaximovInk.AdvancedTilemap
     [System.Serializable]
     public class AChunkData
     {
-        public int ArraySize => data.Length;
-        public ushort[] data;
-        public byte[] bitmaskData;
+        public int ArraySize => tiles.Length;
+        public ushort[] tiles;
+
+        public byte[] bitmask;
+        public byte[] selfBitmask;
+
         public Color32[] colors;
         public bool[] collision;
         public byte[] variations;
@@ -19,7 +22,7 @@ namespace MaximovInk.AdvancedTilemap
             {
                 for (var i = 0; i < ArraySize; i++)
                 {
-                    if (data[i] > 0) return false;
+                    if (tiles[i] > 0) return false;
                 }
 
                 return true;
@@ -28,8 +31,9 @@ namespace MaximovInk.AdvancedTilemap
 
         public AChunkData(int width, int height)
         {
-            data = new ushort[width * height];
-            bitmaskData = new byte[width * height];
+            tiles = new ushort[width * height];
+            bitmask = new byte[width * height];
+            selfBitmask = new byte[width * height];
             colors = new Color32[width * height];
             collision = new bool[width * height];
             variations = new byte[width * height];
@@ -50,9 +54,19 @@ namespace MaximovInk.AdvancedTilemap
         {
             for (var i = 0; i < ArraySize; i++)
             {
-                IsDirty |= bitmaskData[i] != value;
+                IsDirty |= bitmask[i] != value;
 
-                bitmaskData[i] = value;
+                bitmask[i] = value;
+            }
+        }
+
+        public void FillSelfBitmask(byte value = 0)
+        {
+            for (var i = 0; i < ArraySize; i++)
+            {
+                IsDirty |= selfBitmask[i] != value;
+
+                selfBitmask[i] = value;
             }
         }
 
@@ -60,9 +74,9 @@ namespace MaximovInk.AdvancedTilemap
         {
             for (var i = 0; i < ArraySize; i++)
             {
-                IsDirty |= data[i] != value;
+                IsDirty |= tiles[i] != value;
 
-                data[i] = value;
+                tiles[i] = value;
             }
         }
 

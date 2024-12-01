@@ -1,4 +1,4 @@
-﻿Shader "ATilemap/TilemapUnlitShader" {
+﻿Shader "ATilemap/Unlit cutout" {
 Properties {
     _Color ("Main Color", Color) = (1,1,1,1)
     _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}

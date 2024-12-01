@@ -11,7 +11,7 @@ namespace MaximovInk.AdvancedTilemap
     {
         private const bool blend = true;
 
-        public override string ID => "AdvancedRuleTile";
+        public override string ID => "ARuleTile";
         public override string Description => "Works as starbound and can be filled with unlimited pattern";
 
         public ARuleTile()
@@ -43,8 +43,8 @@ namespace MaximovInk.AdvancedTilemap
             var fillX = FillX(tile);
             var fillY = FillY(tile);
 
-            var xArray = new float[fillX * 2 + 3 ];
-            var yArray = new float[fillY * 2 + 3 + 2 ];
+            var xArray = new float[fillX * 2 + 2 + 1];
+            var yArray = new float[fillY * 2 + 3 + 2];
 
             var stepX = 1f / (xArray.Length - 1);
             var stepY = 1f / (yArray.Length - 1);
@@ -98,7 +98,7 @@ namespace MaximovInk.AdvancedTilemap
 
             data.mesh.AddSquare(meshDataParam);
 
-            var bitmask = data.bitmask;
+            var bitmask = data.selfBitmask;
 
             /*
     1 | 2 | 4
@@ -142,7 +142,7 @@ namespace MaximovInk.AdvancedTilemap
             var tileX2 = tileMaxUV.x;
 
             //left top
-            if (!bitmask.HasBit(LEFT_TOP | TOP | LEFT))
+            if (!bitmask.HasBit(LEFT_TOP | TOP | LEFT) ) //!bitmask.HasBit(LEFT_TOP | TOP | LEFT) //&& !bitmask.HasBit(TOP) && !bitmask.HasBit(LEFT)
             {
                 meshDataParam.vX0 = vX0;
                 meshDataParam.vX1 = vX1;
@@ -259,6 +259,7 @@ namespace MaximovInk.AdvancedTilemap
                 return;
             }
 
+            
             //left
             if (!bitmask.HasBit(LEFT))
             {
@@ -449,16 +450,18 @@ namespace MaximovInk.AdvancedTilemap
 
         public override void SelectTile(ATileset tileset, ATileUV uv, ATile tile, int variationID = 0)
         {
-            var xParam = FillX(tile);
-            var yParam = FillY(tile);
-
             base.SelectTile(tileset, uv, tile, variationID);
+
+            var fillX = FillX(tile);
+            var fillY = FillY(tile);
+
+            UpdateUVInTiles(tile, tileset, fillX, fillY);
         }
 
-        private void UpdateUVInTiles(ATile tile, ATileset tileset, int fillX, int fillY, bool extend)
+        private void UpdateUVInTiles(ATile tile, ATileset tileset, int fillX, int fillY)
         {
-            UVInTilesX = fillX + 1 + (extend ? 3 : 0);
-            UVInTilesY = fillY + 2 + (extend ? 4 : 0);
+            UVInTilesX = fillX + 1;
+            UVInTilesY = fillY + 2;
 
             var uv = tile.GetUV();
 
@@ -474,12 +477,22 @@ namespace MaximovInk.AdvancedTilemap
 
             var lastMaxX = uv.Max.x;
 
+
+
             for (byte i = 1; i < tile.Variations.Count; i++)
             {
                 var vUV = tile.GetUV(i);
 
-                vUV.Min = new Vector2(lastMaxX, vUV.Min.y);
-                vUV.Max = vUV.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+                //vUV.Min = new Vector2(lastMaxX, vUV.Min.y);
+                //vUV.Max = vUV.Min + tileset.TileTexUnit * new Vector2(UVInTilesX, UVInTilesY);
+
+                newMin = new Vector2(lastMaxX, uv.Min.y);
+                newMax = new Vector2(lastMaxX + size.x, uv.Max.y);
+
+                vUV.Min = newMin;
+                vUV.Max = newMax;
+
+                lastMaxX = vUV.Max.x;
 
                 tile.SetUV(vUV, i);
             }
@@ -493,17 +506,15 @@ namespace MaximovInk.AdvancedTilemap
 
             var xParam = GetOrAddParameter(tile, "FillX");
             var yParam = GetOrAddParameter(tile, "FillY");
-            var extendParam = GetOrAddParameter(tile, "Extend", true, ParameterType.Bool);
 
             EditorGUI.BeginChangeCheck();
 
             xParam.intValue = Mathf.Max(1, EditorGUILayout.IntField("Fill X", xParam.intValue));
             yParam.intValue = Mathf.Max(1, EditorGUILayout.IntField("Fill Y", yParam.intValue));
-            extendParam.boolValue = EditorGUILayout.Toggle("Extend borders", extendParam.boolValue);
 
             if (EditorGUI.EndChangeCheck())
             {
-                UpdateUVInTiles(tile, tileset, xParam.intValue, yParam.intValue, extendParam.boolValue);
+                UpdateUVInTiles(tile, tileset, xParam.intValue, yParam.intValue);
             }
 
         }

@@ -21,7 +21,6 @@ namespace MaximovInk.AdvancedTilemap
     [ExecuteAlways]
     public class ATilemap : MonoBehaviour
     {
-        public const int LIQUID_DEAD_Y = -100;
         public const float Z_TILE_OFFSET = 0.1F;
 
         public int SortingOrder { get => sortingOrder;
@@ -84,10 +83,6 @@ namespace MaximovInk.AdvancedTilemap
         [HideInInspector, SerializeField]
         private AChunkLoaderSettings _chunkLoaderSettings;
 
-        private bool _invokeUpdateLight;
-
-        private float _lightTimer = 0.1f;
-
         public List<ALayer> layers = new();
         private readonly List<ALayerLoadChunksData> _loadedChunks = new();
 
@@ -96,15 +91,6 @@ namespace MaximovInk.AdvancedTilemap
         private void LateUpdate()
         {
             if (!Application.isPlaying) return;
-
-            _lightTimer += Time.deltaTime;
-
-            if (_invokeUpdateLight && _lightTimer > 0.1f)
-            {
-                _lightTimer = 0f;
-
-                _invokeUpdateLight = false;
-            }
 
             UpdateLoader();
         }
@@ -199,8 +185,6 @@ namespace MaximovInk.AdvancedTilemap
                 layer.Clear();
             }
         }
-
-
 
         private void UpdateLoader()
         {

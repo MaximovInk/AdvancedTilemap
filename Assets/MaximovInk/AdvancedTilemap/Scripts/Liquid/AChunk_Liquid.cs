@@ -4,36 +4,36 @@ namespace MaximovInk.AdvancedTilemap
 {
     public partial class AChunk
     {
-        [SerializeField] private ALiquidChunk liquidChunk;
+        [SerializeField] private ALiquidRenderer _liquidRenderer;
 
         public bool GetSettled(int x, int y)
         {
-            return liquidChunk.GetSettled(x, y);
+            return _liquidRenderer.GetSettled(x, y);
         }
         public void SetSettled(int x, int y, bool value)
         {
-            liquidChunk.SetSettled(x, y, value);
+            _liquidRenderer.SetSettled(x, y, value);
         }
 
         public float GetLiquid(int gx, int gy)
         {
-            return liquidChunk.GetLiquid(gx, gy);
+            return _liquidRenderer.GetLiquid(gx, gy);
         }
         public void SetLiquid(int gx, int gy, float value)
         {
-            liquidChunk.SetLiquid(gx, gy, value);
+            _liquidRenderer.SetLiquid(gx, gy, value);
         }
         public void AddLiquid(int gx, int gy, float value)
         {
-            liquidChunk.AddLiquid(gx, gy, value);
+            _liquidRenderer.AddLiquid(gx, gy, value);
         }
 
         public void UpdateLiquidState()
         {
             if (Layer.LiquidEnabled)
             {
-                liquidChunk = GetComponentInChildren<ALiquidChunk>();
-                if (liquidChunk == null)
+                _liquidRenderer = GetComponentInChildren<ALiquidRenderer>();
+                if (_liquidRenderer == null)
                 {
                     var go = new GameObject();
                     go.transform.SetParent(transform);
@@ -41,14 +41,14 @@ namespace MaximovInk.AdvancedTilemap
                     go.transform.localScale = Vector3.one;
                     go.transform.localRotation = Quaternion.identity;
 
-                    liquidChunk = go.AddComponent<ALiquidChunk>();
-                    liquidChunk.Init(CHUNK_SIZE, CHUNK_SIZE, this);
+                    _liquidRenderer = go.AddComponent<ALiquidRenderer>();
+                    _liquidRenderer.Init(CHUNK_SIZE, CHUNK_SIZE, this);
                 }
-                liquidChunk.SetMaterial(Layer.LiquidMaterial);
+                _liquidRenderer.SetMaterial(Layer.LiquidMaterial);
             }
-            else if (liquidChunk != null)
+            else if (_liquidRenderer != null)
             {
-                DestroyImmediate(liquidChunk.gameObject);
+                DestroyImmediate(_liquidRenderer.gameObject);
             }
         }
 

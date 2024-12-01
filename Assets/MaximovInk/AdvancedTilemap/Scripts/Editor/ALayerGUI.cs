@@ -29,9 +29,7 @@ namespace MaximovInk.AdvancedTilemap
             layer.LayerMask = EditorGUILayout.LayerField("Layer:", layer.LayerMask);
             layer.Tag = EditorGUILayout.TagField("Tag:", layer.Tag);
 
-            if (data.selectedTile == 0 && layer.Tileset != null && layer.Tileset.TilesCount > 0)
-                data.selectedTile = 1;
-
+           
 
             if (GUILayout.Button("Refresh"))
             {
@@ -133,14 +131,15 @@ namespace MaximovInk.AdvancedTilemap
         {
             data.color = Color.white;
             data.selectedTile = 0;
+            data.Tool?.DestroyTexturePreview(ref data);
 
-           if(data.Tool != null) 
-               data.Tool.DestroyTexturePreview(ref data);
+            if (data.selectedTile == 0 && data.Layer?.Tileset != null && data.Layer?.Tileset.TilesCount > 0)
+                data.selectedTile = 1;
         }
 
         public static void Disable(ref ALayerEditorData data)
         {
-           data.Tool.DestroyTexturePreview(ref data);
+            data.Tool?.DestroyTexturePreview(ref data);
         }
 
         private static void OnSceneGUIUndo(ALayer layer, ref ALayerEditorData data)
@@ -209,9 +208,20 @@ namespace MaximovInk.AdvancedTilemap
 
             GUILayout.BeginVertical(GUILayout.MaxWidth(90));
 
-            GUILayout.Label($"<b>Tile pos: [{data.gridPos.x}:{data.gridPos.y}] </b>", MKEditorStyles.Styles[1]);
-            GUILayout.Label($"<b>Bounds Min: [{data.Layer.MinGridX};{data.Layer.MinGridY}]</b>", MKEditorStyles.Styles[1]);
-            GUILayout.Label($"<b>Bounds Max: [{data.Layer.MaxGridX};{data.Layer.MaxGridY}]</b>", MKEditorStyles.Styles[1]);
+            var style = MKEditorStyles.Styles[1];
+
+            GUILayout.Label($"<b>Tile pos: [{data.gridPos.x}:{data.gridPos.y}] </b>", style);
+            GUILayout.Label($"<b>Bounds Min: [{data.Layer.MinGridX};{data.Layer.MinGridY}]</b>", style);
+            GUILayout.Label($"<b>Bounds Max: [{data.Layer.MaxGridX};{data.Layer.MaxGridY}]</b>", style);
+
+            GUILayout.Space(10);
+
+            GUILayout.Label("<b>Controls</b>", style);
+            GUILayout.Label("<b>LMB - place block</b>", style);
+            GUILayout.Label("<b>LMB+LSHIFT - remove block</b>", style);
+            GUILayout.Label("<b>LMB+LCTRL - copy block</b>", style);
+            GUILayout.Label("<b>RMB - place liquid</b>", style);
+            GUILayout.Label("<b>RMB+LSHIFT - remove liquid</b>", style);
 
             GUILayout.EndVertical();
 
@@ -367,8 +377,10 @@ namespace MaximovInk.AdvancedTilemap
             data.UVTransform._flipVertical = EditorGUILayout.Toggle("flipVertical", data.UVTransform._flipVertical);
             data.UVTransform._flipHorizontal = EditorGUILayout.Toggle("flipHorizontal", data.UVTransform._flipHorizontal);
 
-            if (EditorGUI.EndChangeCheck())
+            if (EditorGUI.EndChangeCheck() && data.Tool != null)
+            {
                 data.Tool.GenPreviewTextureBrush(ref data);
+            }
         }
 
         private static void DrawMapBox(ref ALayerEditorData data)

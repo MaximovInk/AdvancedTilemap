@@ -1,5 +1,4 @@
-﻿using System.Text;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -14,20 +13,68 @@ namespace MaximovInk.AdvancedTilemap
 
         public static void DrawRectWithOutline(Rect rect, Color color, Color colorOutline)
         {
-            Vector3[] rectVerts = {
+            /*Vector3[] rectVerts = {
             new(rect.x, rect.y, 0),
             new(rect.x + rect.width, rect.y, 0),
             new(rect.x + rect.width, rect.y + rect.height, 0),
             new(rect.x, rect.y + rect.height, 0) };
-            Handles.DrawSolidRectangleWithOutline(rectVerts, color, colorOutline);
+            Handles.DrawSolidRectangleWithOutline(rectVerts, color, colorOutline);*/
+
+           // EditorGUI.DrawRect(rect, colorOutline);
+
+            DrawBorderRect(rect, colorOutline, 3f);
         }
 
         private const float MAX_SCALE_H = 500f;
         private const float MIN_SCALE_H = 300f;
 
-        public const float PREVIEW_SCALE_DEFAULT = 1.6f;
+        public const float PREVIEW_SCALE_DEFAULT = 1f;
 
-        public static void DrawPreviewTileset(ATileset tileset, ref ushort selectedTile, ref float previewScaler, ref Vector2 scrollViewValue, ref bool showAsList, float height = 300f)
+
+        public static void DrawBorderRect(Rect area, Color color, float borderWidth)
+        {
+            //------------------------------------------------
+            float x1 = area.x;
+            float y1 = area.y;
+            float x2 = area.width;
+            float y2 = borderWidth;
+
+            Rect lineRect = new Rect(x1, y1, x2, y2);
+
+            EditorGUI.DrawRect(lineRect, color);
+
+            //------------------------------------------------
+            x1 = area.x + area.width;
+            y1 = area.y;
+            x2 = borderWidth;
+            y2 = area.height;
+
+            lineRect = new Rect(x1, y1, x2, y2);
+
+            EditorGUI.DrawRect(lineRect, color);
+
+            //------------------------------------------------
+            x1 = area.x;
+            y1 = area.y;
+            x2 = borderWidth;
+            y2 = area.height;
+
+            lineRect = new Rect(x1, y1, x2, y2);
+
+            EditorGUI.DrawRect(lineRect, color);
+
+            //------------------------------------------------
+            x1 = area.x;
+            y1 = area.y + area.height;
+            x2 = area.width;
+            y2 = borderWidth;
+
+            lineRect = new Rect(x1, y1, x2, y2);
+
+            EditorGUI.DrawRect(lineRect, color);
+        }
+
+        public static void DrawPreviewTileset(ATileset tileset, ref ushort selectedTile, ref float previewScaler, ref Vector2 scrollViewValue, ref bool showAsList, float height = 300f, float lOffset = 20f, float rOffset = 20f)
         {
             if (tileset == null || tileset.Texture == null) return;
 
@@ -49,7 +96,7 @@ namespace MaximovInk.AdvancedTilemap
             }
             else
             {
-                previewScaler = EditorGUILayout.Slider("Scale:", previewScaler, 0.2f, 100f);
+                previewScaler = EditorGUILayout.Slider("Scale:", previewScaler, 0.2f, 10f);
 
                 var newHeight = Mathf.Clamp(height * previewScaler, MIN_SCALE_H, MAX_SCALE_H);
 
@@ -60,7 +107,7 @@ namespace MaximovInk.AdvancedTilemap
 
                 using (new GUILayout.HorizontalScope())
                 {
-                    GUILayout.Space(20f);
+                    GUILayout.Space(lOffset);
 
                     using (new GUILayout.VerticalScope())
                     {
@@ -90,14 +137,14 @@ namespace MaximovInk.AdvancedTilemap
                         {
                             var tile = tileset.GetTile(i);
 
-                            if (i == selectedTile)
+                            if (tile.ID == selectedTile)
                                 DrawPreviewTile(rect, tile, new Color(1, 1, 1, 0.5f), new Color(0, 0, 0, 0.2f), ref selectedTile);
 
                             else
                                 DrawPreviewTile(rect, tile, new Color(1, 1, 1, 0.5f), Color.clear, ref selectedTile);
                         }
 
-                        if (selectedTile > 0 && selectedTile < tileset.TilesCount + 1)
+                        if (selectedTile > 0 && selectedTile <= tileset.TilesCount)
                         {
                             var tile = tileset.GetTile(selectedTile);
 
@@ -111,6 +158,8 @@ namespace MaximovInk.AdvancedTilemap
 
                         GUILayout.EndScrollView();
                     }
+
+                    GUILayout.Space(rOffset);
                 }
 
                 
@@ -137,7 +186,6 @@ namespace MaximovInk.AdvancedTilemap
 
         public static void DrawPreviewTile(Rect rect, ATile tile, Color color, Color fillColor, ref ushort selectedTile)
         {
-
             var uv = tile.GetUV();
             var uvSize = uv.Max - uv.Min;
 
@@ -150,10 +198,7 @@ namespace MaximovInk.AdvancedTilemap
 
             if (GUI.Button(tileRect, "", GUIStyle.none))
             {
-                if (selectedTile == tile.ID)
-                    selectedTile = 0;
-                else
-                    selectedTile = tile.ID;
+                selectedTile = selectedTile == tile.ID ? (ushort)0 : tile.ID;
             }
 
             DrawRectWithOutline(tileRect, fillColor, color);

@@ -1,7 +1,6 @@
 ﻿
 using System.Collections.Generic;
 using System.Threading;
-using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -18,7 +17,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void ThreadGenerate(AChunkProcessorData input)
         {
-            var tiles = input.ChunkData.data;
+            var tiles = input.ChunkData.tiles;
 
             var tileset = input.ChunkPersistenceData.Layer.Tileset;
 
@@ -36,7 +35,8 @@ namespace MaximovInk.AdvancedTilemap
 
                 var tileDriver = tile.TileDriver;
 
-                var bitmask = input.ChunkData.bitmaskData[i];
+                var bitmask = input.ChunkData.bitmask[i];
+                var selfBitmask = input.ChunkData.selfBitmask[i];
                 var variation = input.ChunkData.variations[i];
                 var transform = input.ChunkData.transforms[i];
                 var color = input.ChunkData.colors[i];
@@ -51,6 +51,7 @@ namespace MaximovInk.AdvancedTilemap
                         mesh = input.MeshData,
                         tile = tile,
                         bitmask = bitmask,
+                        selfBitmask = selfBitmask,
                         variation = variation,
                         tileset = tileset,
                         tileData = transform,

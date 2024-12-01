@@ -255,7 +255,7 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             if (chunk.SetTile(coords.x, coords.y, tileID, data)) {
-                UpdateBitmask(x, y);
+                UpdateAllBitmask(x, y);
                 UpdateNeighborsBitmask(x, y);
 
                 if (AutoTrim && tileID == ATile.EMPTY)
@@ -302,6 +302,31 @@ namespace MaximovInk.AdvancedTilemap
 
         #region Bitmask
 
+        public void SetSelfBitmask(int x, int y, byte bitmask)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null)
+                return;
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            if (chunk.GetSelfBitmask(coords.x, coords.y) != bitmask)
+                chunk.SetSelfBitmask(coords.x, coords.y, bitmask);
+
+        }
+
+        public byte GetSelfBitmask(int x, int y)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null) return 0;
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            return chunk.GetSelfBitmask(coords.x, coords.y);
+        }
+
         public void SetBitmask(int x, int y, byte bitmask)
         {
             var chunk = GetOrCreateChunk(x, y,false);
@@ -326,9 +351,10 @@ namespace MaximovInk.AdvancedTilemap
             return chunk.GetBitmask(coords.x, coords.y);
         }
 
-        public void UpdateBitmask(int x, int y)
+        public void UpdateAllBitmask(int x, int y)
         {
             SetBitmask(x, y, CalculateBitmask(x, y));
+            SetSelfBitmask(x,y, CalculateSelfBitmask(x,y));
 
             OnTileChanged?.Invoke();
         }
@@ -342,12 +368,49 @@ namespace MaximovInk.AdvancedTilemap
                     if (ix == x && iy == y)
                         continue;
 
-                    UpdateBitmask(ix, iy);
+                    UpdateAllBitmask(ix, iy);
                 }
             }
         }
 
         public byte CalculateBitmask(int x, int y)
+        {
+            var tileID = GetTile(x, y);
+
+            if (tileID == 0)
+                return 0;
+
+            byte bitmask = 0;
+
+            if (GetTile(x - 1, y + 1) != 0)
+                bitmask |= LEFT_TOP;
+
+            if (GetTile(x, y + 1) != tileID)
+                bitmask |= TOP;
+
+            if (GetTile(x + 1, y + 1) != 0)
+                bitmask |= RIGHT_TOP;
+
+            if (GetTile(x - 1, y) != 0)
+                bitmask |= LEFT;
+
+            if (GetTile(x + 1, y) != 0)
+                bitmask |= RIGHT;
+
+            if (GetTile(x - 1, y - 1) != 0)
+                bitmask |= LEFT_BOTTOM;
+
+            if (GetTile(x, y - 1) != 0)
+                bitmask |= BOTTOM;
+
+            if (GetTile(x + 1, y - 1) != 0)
+                bitmask |= RIGHT_BOTTOM;
+
+
+            return bitmask;
+        }
+
+        public byte CalculateSelfBitmask(int x, int y)
         {
             var tileID = GetTile(x, y);
 
@@ -615,31 +678,31 @@ namespace MaximovInk.AdvancedTilemap
             {
                 for (var iy = min.y; iy < max.y; iy++)
                 {
-                    if (GetLiquid(ix, iy) < ALiquidChunk.MIN_VALUE)
+                    if (GetLiquid(ix, iy) < ALiquidRenderer.MIN_VALUE)
                         SetSettled(ix, iy, false);
                 }
             }
         }
 
         private bool IsEmptyLiq(int x, int y) =>
-            GetTile(x, y) == 0 && ALiquidChunk.MIN_LIQUID_Y < y;
+            GetTile(x, y) == 0 && ALiquidRenderer.MIN_LIQUID_Y < y;
 
         private float CalculateVerticalFlowValue(float remainingLiquid, float destination)
         {
             var sum = remainingLiquid + destination;
             float value;
 
-            if (sum <= ALiquidChunk.MAX_VALUE)
+            if (sum <= ALiquidRenderer.MAX_VALUE)
             {
-                value = ALiquidChunk.MAX_VALUE;
+                value = ALiquidRenderer.MAX_VALUE;
             }
-            else if (sum < 2 * ALiquidChunk.MAX_VALUE + ALiquidChunk.MAX_COMPRESSION)
+            else if (sum < 2 * ALiquidRenderer.MAX_VALUE + ALiquidRenderer.MAX_COMPRESSION)
             {
-                value = (ALiquidChunk.MAX_VALUE * ALiquidChunk.MAX_VALUE + sum * ALiquidChunk.MAX_COMPRESSION) / (ALiquidChunk.MAX_VALUE + ALiquidChunk.MAX_COMPRESSION);
+                value = (ALiquidRenderer.MAX_VALUE * ALiquidRenderer.MAX_VALUE + sum * ALiquidRenderer.MAX_COMPRESSION) / (ALiquidRenderer.MAX_VALUE + ALiquidRenderer.MAX_COMPRESSION);
             }
             else
             {
-                value = (sum + ALiquidChunk.MAX_COMPRESSION) / 2f;
+                value = (sum + ALiquidRenderer.MAX_COMPRESSION) / 2f;
             }
 
             return value;
@@ -658,7 +721,7 @@ namespace MaximovInk.AdvancedTilemap
             if (liquidValue == 0) return;
             if (GetSettled(x, y)) return;
 
-            if(liquidValue < ALiquidChunk.MIN_VALUE)
+            if(liquidValue < ALiquidRenderer.MIN_VALUE)
             { SetLiquid(x, y, 0); return; }
 
             var startValue = liquidValue;
@@ -670,12 +733,12 @@ namespace MaximovInk.AdvancedTilemap
             {
                 var bLiquid = GetLiquid(x, y - 1);
                 flow = CalculateVerticalFlowValue(startValue, bLiquid) - bLiquid;
-                if (bLiquid > 0 && flow > ALiquidChunk.MIN_FLOW)
-                    flow *= ALiquidChunk.FLOW_SPEED;
+                if (bLiquid > 0 && flow > ALiquidRenderer.MIN_FLOW)
+                    flow *= ALiquidRenderer.FLOW_SPEED;
 
                 flow = Mathf.Max(flow, 0);
-                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, startValue))
-                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, startValue);
+                if (flow > Mathf.Min(ALiquidRenderer.MAX_FLOW, startValue))
+                    flow = Mathf.Min(ALiquidRenderer.MAX_FLOW, startValue);
 
                 if (flow != 0)
                 {
@@ -687,7 +750,7 @@ namespace MaximovInk.AdvancedTilemap
 
                 }
             }
-            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            if (remainingValue < ALiquidRenderer.MIN_VALUE)
             {
                 AddLiquid(x, y, -remainingValue);
                 return;
@@ -697,12 +760,12 @@ namespace MaximovInk.AdvancedTilemap
             if (IsEmptyLiq(x - 1, y))
             {
                 flow = (remainingValue - GetLiquid(x - 1, y)) / 4f;
-                if (flow > ALiquidChunk.MIN_FLOW)
-                    flow *= ALiquidChunk.FLOW_SPEED;
+                if (flow > ALiquidRenderer.MIN_FLOW)
+                    flow *= ALiquidRenderer.FLOW_SPEED;
 
                 flow = Mathf.Max(flow, 0);
-                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
-                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+                if (flow > Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue);
 
                 if (flow != 0)
                 {
@@ -713,7 +776,7 @@ namespace MaximovInk.AdvancedTilemap
 
                 }
             }
-            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            if (remainingValue < ALiquidRenderer.MIN_VALUE)
             {
                 AddLiquid(x, y, -remainingValue);
                 return;
@@ -723,12 +786,12 @@ namespace MaximovInk.AdvancedTilemap
             if (IsEmptyLiq(x + 1, y))
             {
                 flow = (remainingValue - GetLiquid(x + 1, y)) / 3f;
-                if (flow > ALiquidChunk.MIN_FLOW)
-                    flow *= ALiquidChunk.FLOW_SPEED;
+                if (flow > ALiquidRenderer.MIN_FLOW)
+                    flow *= ALiquidRenderer.FLOW_SPEED;
 
                 flow = Mathf.Max(flow, 0);
-                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
-                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+                if (flow > Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue);
 
                 if (flow != 0)
                 {
@@ -739,7 +802,7 @@ namespace MaximovInk.AdvancedTilemap
 
                 }
             }
-            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            if (remainingValue < ALiquidRenderer.MIN_VALUE)
             {
                 AddLiquid(x, y, -remainingValue);
                 return;
@@ -749,12 +812,12 @@ namespace MaximovInk.AdvancedTilemap
             if (IsEmptyLiq(x, y + 1))
             {
                 flow = remainingValue - CalculateVerticalFlowValue(remainingValue, GetLiquid(x, y + 1));
-                if (flow > ALiquidChunk.MIN_FLOW)
-                    flow *= ALiquidChunk.FLOW_SPEED;
+                if (flow > ALiquidRenderer.MIN_FLOW)
+                    flow *= ALiquidRenderer.FLOW_SPEED;
 
                 flow = Mathf.Max(flow, 0);
-                if (flow > Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue))
-                    flow = Mathf.Min(ALiquidChunk.MAX_FLOW, remainingValue);
+                if (flow > Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue))
+                    flow = Mathf.Min(ALiquidRenderer.MAX_FLOW, remainingValue);
 
                 if (flow != 0)
                 {
@@ -766,13 +829,13 @@ namespace MaximovInk.AdvancedTilemap
 
                 }
             }
-            if (remainingValue < ALiquidChunk.MIN_VALUE)
+            if (remainingValue < ALiquidRenderer.MIN_VALUE)
             {
                 AddLiquid(x, y, -remainingValue);
                 return;
             }
 
-            if (startValue - remainingValue < ALiquidChunk.STABLE_FLOW)
+            if (startValue - remainingValue < ALiquidRenderer.STABLE_FLOW)
             {
                 SetSettled(x, y, true);
             }

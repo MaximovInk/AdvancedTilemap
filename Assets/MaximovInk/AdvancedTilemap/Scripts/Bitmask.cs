@@ -20,7 +20,7 @@
 
         public static bool HasBit(this byte bitmask, byte position)
         {
-            return (bitmask & position) == position;
+            return (bitmask & position) != 0;
         }
     }
 }

@@ -90,7 +90,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void SetBitmask(byte bitmask)
         {
-            _driverData.bitmask = bitmask;
+            _driverData.selfBitmask = bitmask;
         }
 
         public void SetTile(int x, int y, ushort tileID, UVTransform data = default)
@@ -147,29 +147,29 @@ namespace MaximovInk.AdvancedTilemap
                     driverData.x = ix;
                     driverData.y = iy;
 
-                    driverData.bitmask = 0;
+                    driverData.selfBitmask = 0;
 
                     if (ix < _maxX - 1)
-                        driverData.bitmask |= RIGHT;
+                        driverData.selfBitmask |= RIGHT;
                     if (ix > x)
-                        driverData.bitmask |= LEFT;
+                        driverData.selfBitmask |= LEFT;
                     if (iy > y)
-                        driverData.bitmask |= BOTTOM;
+                        driverData.selfBitmask |= BOTTOM;
                     if (iy < _maxY - 1)
-                        driverData.bitmask |= TOP;
+                        driverData.selfBitmask |= TOP;
 
                     if (iy < _maxY - 1 && ix > x)
-                        driverData.bitmask |= LEFT_TOP;
+                        driverData.selfBitmask |= LEFT_TOP;
                     if (iy < _maxY - 1 && ix < _maxX - 1)
-                        driverData.bitmask |= RIGHT_TOP;
+                        driverData.selfBitmask |= RIGHT_TOP;
 
                     if (iy > y && ix > x)
-                        driverData.bitmask |= LEFT_BOTTOM;
+                        driverData.selfBitmask |= LEFT_BOTTOM;
                     if (iy > y && ix < _maxX - 1)
-                        driverData.bitmask |= RIGHT_BOTTOM;
+                        driverData.selfBitmask |= RIGHT_BOTTOM;
 
                     if (ix > x && iy > y && ix < _maxX - 1 && iy < _maxY - 1)
-                        driverData.bitmask = FILL;
+                        driverData.selfBitmask = FILL;
 
                     driverData.variation = 0;
 

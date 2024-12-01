@@ -28,7 +28,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public ushort GetTile(int x, int y)
         {
-            return _data.data[x + y * CHUNK_SIZE];
+            return _data.tiles[x + y * CHUNK_SIZE];
         }
 
         public bool SetTile(int x, int y, ushort tileID, UVTransform transform = default)
@@ -39,7 +39,7 @@ namespace MaximovInk.AdvancedTilemap
 
             OnTileBeginChanged?.Invoke();
 
-            if (_data.data[idx] == tileID && _data.transforms[idx] == transform)
+            if (_data.tiles[idx] == tileID && _data.transforms[idx] == transform)
             {
                 if (_data.variations[idx] != variation)
                 {
@@ -61,9 +61,9 @@ namespace MaximovInk.AdvancedTilemap
                 SpawnPrefabAt(Layer.Tileset.GetTile(tileID), x, y);
             }
 
-            var oldTileID = _data.data[idx];
+            var oldTileID = _data.tiles[idx];
 
-            _data.data[idx] = tileID;
+            _data.tiles[idx] = tileID;
             _data.collision[idx]
                 = IsCollision(tileID);
             _data.transforms[idx] = transform;
@@ -83,14 +83,28 @@ namespace MaximovInk.AdvancedTilemap
 
         public byte GetBitmask(int x, int y)
         {
-            return _data.bitmaskData[x + y * CHUNK_SIZE];
+            return _data.bitmask[x + y * CHUNK_SIZE];
         }
 
         public void SetBitmask(int x, int y, byte bitmask)
         {
-            var changed = _data.bitmaskData[x + y * CHUNK_SIZE] != bitmask;
+            var changed = _data.bitmask[x + y * CHUNK_SIZE] != bitmask;
 
-            _data.bitmaskData[x + y * CHUNK_SIZE] = bitmask;
+            _data.bitmask[x + y * CHUNK_SIZE] = bitmask;
+
+            _data.IsDirty = changed;
+        }
+
+        public byte GetSelfBitmask(int x, int y)
+        {
+            return _data.selfBitmask[x + y * CHUNK_SIZE];
+        }
+
+        public void SetSelfBitmask(int x, int y, byte bitmask)
+        {
+            var changed = _data.selfBitmask[x + y * CHUNK_SIZE] != bitmask;
+
+            _data.selfBitmask[x + y * CHUNK_SIZE] = bitmask;
 
             _data.IsDirty = changed;
         }
@@ -109,9 +123,9 @@ namespace MaximovInk.AdvancedTilemap
 
         public bool IsEmpty()
         {
-            for (int i = 0; i < _data.data.Length; i++)
+            for (int i = 0; i < _data.tiles.Length; i++)
             {
-                if (_data.data[i] != 0)
+                if (_data.tiles[i] != 0)
                     return false;
             }
 
@@ -132,7 +146,7 @@ namespace MaximovInk.AdvancedTilemap
         {
             int idx = x + y * CHUNK_SIZE;
 
-            var tileID = _data.data[idx];
+            var tileID = _data.tiles[idx];
 
             if (tileID == 0)
             {

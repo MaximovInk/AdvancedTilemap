@@ -24,7 +24,7 @@ namespace MaximovInk.AdvancedTilemap
             var tile = data.tile;
 
 
-            byte bitmask = data.bitmask;
+            byte bitmask = data.selfBitmask;
 
 
             /*

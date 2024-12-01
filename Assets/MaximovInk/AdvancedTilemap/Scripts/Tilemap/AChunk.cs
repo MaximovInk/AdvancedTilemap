@@ -82,6 +82,7 @@ namespace MaximovInk.AdvancedTilemap
                 _data = new AChunkData(CHUNK_SIZE, CHUNK_SIZE);
                 _data.Fill();
                 _data.FillBitmask();
+                _data.FillSelfBitmask();
                 _data.FillColor(Color.white);
                 _data.FillCollision(false);
             }
@@ -192,7 +193,7 @@ namespace MaximovInk.AdvancedTilemap
 
             for (int i = 0; i < _data.ArraySize; i++)
             {
-                _data.collision[i] = IsCollision(_data.data[i]);
+                _data.collision[i] = IsCollision(_data.tiles[i]);
             }
         }
 
@@ -208,9 +209,9 @@ namespace MaximovInk.AdvancedTilemap
                 Vector3 vMinMax = Vector2.Scale(new Vector2(GridX < 0 ? CHUNK_SIZE : 0f, GridY < 0 ? CHUNK_SIZE : 0f), tileUnit);
                 bounds.SetMinMax(vMinMax, vMinMax);
             }
-            for (int i = 0; i < _data.data.Length; ++i)
+            for (int i = 0; i < _data.tiles.Length; ++i)
             {
-                if (_data.data[i] == 0)
+                if (_data.tiles[i] == 0)
                     continue;
 
                 int gx = i % CHUNK_SIZE;

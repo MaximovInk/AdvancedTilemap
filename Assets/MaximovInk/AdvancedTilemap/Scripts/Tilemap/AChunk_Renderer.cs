@@ -47,10 +47,10 @@ namespace MaximovInk.AdvancedTilemap
         {
             for (int i = 0; i < _data.ArraySize; i++)
             {
-                if (_data.data[i] == 0)
+                if (_data.tiles[i] == 0)
                     continue;
 
-                if (_data.data[i] > Layer.Tileset.TilesCount)
+                if (_data.tiles[i] > Layer.Tileset.TilesCount)
                     SetTile(i % CHUNK_SIZE, i / CHUNK_SIZE,0);
             }
         }
@@ -86,9 +86,9 @@ namespace MaximovInk.AdvancedTilemap
         {
             for (int i = 0; i < _data.ArraySize; i++)
             {
-                if (_data.data[i] == 0) continue;
+                if (_data.tiles[i] == 0) continue;
 
-                var tile = Layer.Tileset.GetTile(_data.data[i]);
+                var tile = Layer.Tileset.GetTile(_data.tiles[i]);
 
                 _data.variations[i] = tile.ValidateVariationID(_data.variations[i]);
             }
@@ -98,9 +98,9 @@ namespace MaximovInk.AdvancedTilemap
         {
             for (int i = 0; i < _data.ArraySize; i++)
             {
-                if (_data.data[i] == 0) continue;
+                if (_data.tiles[i] == 0) continue;
 
-                _data.variations[i] = Layer.Tileset.GetTile(_data.data[i]).GenVariation();
+                _data.variations[i] = Layer.Tileset.GetTile(_data.tiles[i]).GenVariation();
             }
         }
 
