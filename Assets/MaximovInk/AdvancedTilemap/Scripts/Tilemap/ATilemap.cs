@@ -37,12 +37,6 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        public bool ShowGrid
-        {
-            get => _showGrid;
-            set => _showGrid=value;
-        }
-
         public bool DisplayChunksInHierarchy
         {
             get => displayChunksHierarchy;
@@ -73,7 +67,6 @@ namespace MaximovInk.AdvancedTilemap
         [SerializeField]
         private bool _autoTrim;
 
-        [SerializeField] private bool _showGrid;
 
         public AChunkLoaderSettings ChunkLoader
         {
