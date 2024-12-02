@@ -12,8 +12,14 @@ namespace MaximovInk.AdvancedTilemap
 
         public static Color TilemapGridColor
         {
-            get => Utilites.IntToColor32(PlayerPrefs.GetInt("ATilemapGColor", Utilites.Color32ToInt(new Color32(255, 255, 255, 32))));
+            get => Utilites.IntToColor32(PlayerPrefs.GetInt("ATilemapGColor", Utilites.Color32ToInt(new Color32(13, 255, 234, 50))));
             set => PlayerPrefs.SetInt("ATilemapGColor", Utilites.Color32ToInt(value));
+        }
+
+        public static bool ShowGrid
+        {
+            get => PlayerPrefs.GetInt("ATilemapShowGrid", 0) != 0;
+            set => PlayerPrefs.SetInt("ATilemapShowGrid", value ? 1 : 0);
         }
     }
 }

@@ -152,7 +152,14 @@ namespace MaximovInk.AdvancedTilemap
             tilemap.SortingOrder = EditorGUILayout.IntField("Sorting order", tilemap.SortingOrder);
             tilemap.AutoTrim = EditorGUILayout.Toggle("Auto trim", tilemap.AutoTrim);
             GUILayout.Space(10);
-            tilemap.ShowGrid = EditorGUILayout.Toggle("Show grid", tilemap.ShowGrid);
+
+
+            GlobalSettings.ShowGrid = EditorGUILayout.Toggle("Show grid", GlobalSettings.ShowGrid);
+
+            if (GlobalSettings.ShowGrid)
+            {
+                GlobalSettings.TilemapGridColor = EditorGUILayout.ColorField("Grid Color", GlobalSettings.TilemapGridColor);
+            }
         }
 
         private void DrawLoader()
@@ -259,7 +266,7 @@ namespace MaximovInk.AdvancedTilemap
 
           //  layer.DrawGizmos();
 
-            if (_invokePreviewRegen)
+            if (_invokePreviewRegen && _layerData.Tool!=null)
             {
                 _invokePreviewRegen = false;
                 //ALayerGUI.GenPreviewTextureBrush(ref _layerData);

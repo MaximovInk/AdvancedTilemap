@@ -111,13 +111,13 @@ namespace MaximovInk.AdvancedTilemap
         {
             meshData.Clear();
 
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
             {
                 if (data[i] > 0)
                 {
-                    int ix = i % AChunk.CHUNK_SIZE;
-                    int iy = i / AChunk.CHUNK_SIZE;
-                    float value = Mathf.Clamp01(data[i]);
+                    var ix = i % AChunk.CHUNK_SIZE;
+                    var iy = i / AChunk.CHUNK_SIZE;
+                    var value = Mathf.Clamp01(data[i]);
 
                     var topLiquid = Chunk.Layer.GetLiquid(ix + Chunk.GridX, iy + 1 + Chunk.GridY);
 

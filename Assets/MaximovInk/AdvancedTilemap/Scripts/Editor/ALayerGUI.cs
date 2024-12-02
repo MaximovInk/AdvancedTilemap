@@ -407,11 +407,6 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             layer.TintColor = EditorGUILayout.ColorField("Tint Color:", layer.TintColor);
-
-            GUILayout.Label("Global editor settings");
-            GlobalSettings.TilemapGridColor = EditorGUILayout.ColorField("Grid Color", GlobalSettings.TilemapGridColor);
-
-
         }
 
         private static void DrawColliderBox(ref ALayerEditorData data)
