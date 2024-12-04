@@ -155,8 +155,11 @@ namespace MaximovInk.AdvancedTilemap
 
         public static Vector2Int GetGridPosition(ALayer layer, Vector2 localPos)
         {
+            var pos = layer.transform.InverseTransformPoint(localPos);
+
             return new Vector2Int(GetGridX(layer, localPos), GetGridY(layer, localPos));
         }
+
 
         private static ATileDriver[] _drivers;
 

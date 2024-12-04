@@ -96,9 +96,11 @@ namespace MaximovInk.AdvancedTilemap
             if (data.selectedTile == 0) return ;
 
             if (layer == null) return;
+            if (layer.Tileset == null) return;
 
             OnSceneGUIUndo(layer, ref data);
             data.RepaintInvoke |= OnSceneGUIPaint(layer, ref data);
+
 
             if (layer != null || layer.Tilemap != null)
             {
@@ -294,25 +296,38 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
+
+
         private static bool OnSceneGUIPaint(ALayer layer, ref ALayerEditorData data)
         {
             MKEditorStyles.ValidateStyles();
+
+            DrawGUIPanel(ref data);
 
             var repaint = false;
 
             if (EditorWindow.mouseOverWindow != SceneView.currentDrawingSceneView)
             {
+       
                 return true;
             }
 
             if (DragAndDrop.objectReferences.Length > 0)
             {
+
                 return true;
             }
 
             if ((Tools.current != Tool.Rect && Tools.current != Tool.None))
             {
+
                 return true;
+            }
+
+            if (EditorApplication.isCompiling)
+            {
+   
+                return false;
             }
 
             var handleInput = true;
@@ -327,12 +342,15 @@ namespace MaximovInk.AdvancedTilemap
                 handleInput = false;
 
             if (layer.Tileset == null) return false;
-            if (!(data.selectedTile > 0 && data.selectedTile < layer.Tileset.TilesCount+1))
+            if (!(data.selectedTile > 0 && data.selectedTile < layer.Tileset.TilesCount + 1))
+            {
+
                 return false;
+            }
 
             if (data.SelectedToolbar == 0 || data.SelectedToolbar == 1)
             {
-                DrawGUIPanel(ref data);
+  
 
                 HandleEvents(ref repaint, ref data);
 
@@ -407,6 +425,7 @@ namespace MaximovInk.AdvancedTilemap
             }
 
             layer.TintColor = EditorGUILayout.ColorField("Tint Color:", layer.TintColor);
+            layer.LightType = (LightLayerType)EditorGUILayout.EnumPopup("Light type", layer.LightType);
         }
 
         private static void DrawColliderBox(ref ALayerEditorData data)

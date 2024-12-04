@@ -1,4 +1,4 @@
-﻿using System;
+﻿
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
@@ -11,8 +11,8 @@ namespace MaximovInk.AdvancedTilemap
 
         public MeshData GetMeshData() => _meshData;
 
-        [SerializeField, HideInInspector] private MeshFilter meshFilter;
-        [SerializeField, HideInInspector] private MeshRenderer meshRenderer;
+        [SerializeField, HideInInspector] protected MeshFilter _meshFilter;
+        [SerializeField, HideInInspector] protected MeshRenderer _meshRenderer;
 
         private MaterialPropertyBlock materialProperty;
 
@@ -31,17 +31,17 @@ namespace MaximovInk.AdvancedTilemap
         {
             if (this == null) return;
 
-            if (meshFilter == null)
-                meshFilter = gameObject.GetComponent<MeshFilter>();
+            if (_meshFilter == null)
+                _meshFilter = gameObject.GetComponent<MeshFilter>();
 
-            if (meshRenderer == null)
-                meshRenderer = gameObject.GetComponent<MeshRenderer>();
+            if (_meshRenderer == null)
+                _meshRenderer = gameObject.GetComponent<MeshRenderer>();
 
-            if (meshFilter == null)
-                meshFilter = gameObject.AddComponent<MeshFilter>();
+            if (_meshFilter == null)
+                _meshFilter = gameObject.AddComponent<MeshFilter>();
 
-            if (meshRenderer == null)
-                meshRenderer = gameObject.AddComponent<MeshRenderer>();
+            if (_meshRenderer == null)
+                _meshRenderer = gameObject.AddComponent<MeshRenderer>();
         }
         public void CheckDataValidate()
         {
@@ -63,12 +63,12 @@ namespace MaximovInk.AdvancedTilemap
 
             if (Layer == null) return;
 
-            meshRenderer.sharedMaterial = Layer.Material;
+            _meshRenderer.sharedMaterial = Layer.Material;
 
             if (materialProperty == null)
                 materialProperty = new MaterialPropertyBlock();
 
-            meshRenderer.GetPropertyBlock(materialProperty);
+            _meshRenderer.GetPropertyBlock(materialProperty);
 
             if (Layer.Tileset?.Texture == null)
                 return;
@@ -77,9 +77,9 @@ namespace MaximovInk.AdvancedTilemap
             materialProperty.SetTexture("_MainTex", Layer.Tileset.Texture);
             materialProperty.SetColor("_Color", Layer.TintColor);
 
-            meshRenderer.SetPropertyBlock(materialProperty);
+            _meshRenderer.SetPropertyBlock(materialProperty);
 
-            meshRenderer.sortingOrder = Layer.Tilemap.SortingOrder;
+            _meshRenderer.sortingOrder = Layer.Tilemap.SortingOrder;
         }
 
         public void ValidateVariations()

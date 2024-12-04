@@ -13,13 +13,23 @@ namespace MaximovInk.AdvancedTilemap
         public int GridX;
         public int GridY;
 
-        public bool IsLoaded;
-        public bool CanTrim => !IsLoaded && IsEmpty();
+        public bool IsLoaderActive
+        {
+            get => _isLoaderActive;
+            set
+            {
+                _isLoaderActive = value;
+                UpdateLoadedState();
+            }
+        }
+        public bool CanTrim => !IsLoaderActive && IsEmpty();
 
         private ChunkProcessor _chunkProcessor;
 
         public PolygonCollider2D Collider => _collider2D;
         [SerializeField, HideInInspector] private PolygonCollider2D _collider2D;
+
+        [SerializeField] private bool _isLoaderActive;
 
         private void Awake()
         {
@@ -38,9 +48,14 @@ namespace MaximovInk.AdvancedTilemap
             CheckRenderer();
             CheckValidate();
             UpdateRenderer();
-            ColliderEnabledChange(Layer.ColliderEnabled);
+            
             UpdateLiquidState();
             UpdateFlags();
+
+            UpdateLightingState(Layer.Tilemap.Lighting.Enabled);
+            ColliderEnabledChange(Layer.ColliderEnabled);
+
+            UpdateLoadedState();
         }
 
         public void UpdateFlags()
@@ -60,7 +75,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void CheckValidate()
         {
-            if (Layer?.Tileset != null)
+            if (Layer != null ? Layer.Tileset : false)
             {
                 var tileUnit = Layer.Tileset.GetTileUnit();
                 transform.localPosition = new Vector3(GridX * tileUnit.x, GridY * tileUnit.y);
@@ -69,7 +84,7 @@ namespace MaximovInk.AdvancedTilemap
             if (_meshData == null)
             {
                 _meshData = new MeshData();
-                meshFilter.sharedMesh = _meshData.GetMesh();
+                _meshFilter.sharedMesh = _meshData.GetMesh();
             }
 
             if (Layer == null)
@@ -97,15 +112,35 @@ namespace MaximovInk.AdvancedTilemap
 
         private void Update()
         {
-            if (_data.IsDirty)
+            RealtimeUpdate();
+            EditorUpdate();
+        }
+
+        private bool _trimInvoke;
+
+        private void RealtimeUpdate()
+        {
+            if (_trimInvoke)
             {
-                ValidateVariations();
-                _data.IsDirty = false;
-                Generate();
+                _trimInvoke = false;
+
+                if (!Layer.TrimIfNeeded())
+                    Layer.CalculateBounds();
             }
 
+            if (_data.IsDirty)
+            {
+                _data.IsDirty = false;
+
+                ValidateVariations();
+                Generate();
+            }
+        }
+
+        private void EditorUpdate()
+        {
 #if UNITY_EDITOR
-            if(!Application.isPlaying)
+            if (!Application.isPlaying)
                 UpdateRenderer();
 #endif
         }
@@ -154,8 +189,7 @@ namespace MaximovInk.AdvancedTilemap
 
             GenerationJobsCompleted?.Invoke();
 
-            if(!Layer.TrimIfNeeded())
-                Layer.CalculateBounds();
+            _trimInvoke = true;
         }
 
         #region Collider
@@ -201,7 +235,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public Bounds GetBounds()
         {
-            Bounds bounds = meshFilter.sharedMesh ? meshFilter.sharedMesh.bounds : default;
+            Bounds bounds = _meshFilter.sharedMesh ? _meshFilter.sharedMesh.bounds : default;
 
             var tileUnit = Layer.Tileset.GetTileUnit();
             if (bounds == default)
@@ -225,6 +259,28 @@ namespace MaximovInk.AdvancedTilemap
                 bounds.Encapsulate(gridPos);
             }
             return bounds;
+
+        }
+
+        private void UpdateLoadedState()
+        {
+            var state = IsLoaderActive || !Layer.Tilemap.ChunkLoader.Enabled || !Application.isPlaying;
+
+            if (_meshRenderer.enabled != state)
+            {
+                _meshRenderer.enabled = state;
+            }
+
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+
+                if (child.gameObject.activeSelf != state)
+                {
+                    child.gameObject.SetActive(state);
+                }
+            }
+
 
         }
     }

@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.Serialization;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -16,6 +20,14 @@ namespace MaximovInk.AdvancedTilemap
     {
         public ALayer Layer;
         public List<AChunk> Chunks;
+    }
+
+    [System.Serializable]
+    public struct ALightingSettings
+    {
+        public bool Enabled;
+        public Material LightMaterial;
+        public LayerMask LightingMask;
     }
 
     [ExecuteAlways]
@@ -67,7 +79,6 @@ namespace MaximovInk.AdvancedTilemap
         [SerializeField]
         private bool _autoTrim;
 
-
         public AChunkLoaderSettings ChunkLoader
         {
             get => _chunkLoaderSettings;
@@ -76,21 +87,37 @@ namespace MaximovInk.AdvancedTilemap
         [HideInInspector, SerializeField]
         private AChunkLoaderSettings _chunkLoaderSettings;
 
-        public List<ALayer> layers = new();
+        public List<ALayer> Layers = new();
         private readonly List<ALayerLoadChunksData> _loadedChunks = new();
 
         private Vector2Int _lastGridPos;
+
+        public ALightingSettings Lighting
+        {
+            get => _lighting;
+            set => _lighting = value;
+        }
+        [HideInInspector, SerializeField]
+        private ALightingSettings _lighting;
 
         private void LateUpdate()
         {
             if (!Application.isPlaying) return;
 
+            Profiler.BeginSample("Update loader");
             UpdateLoader();
+            Profiler.EndSample();
+
+
+            Profiler.BeginSample("Update light");
+            if (_invokeUpdateLight)
+                UpdateLighting(true);
+            Profiler.EndSample();
         }
 
         public void Refresh(bool immediate = false)
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 if (layer == null) continue;
 
@@ -100,7 +127,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void Trim()
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 if (layer == null) continue;
 
@@ -111,7 +138,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateUndoStack()
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 if (layer == null) continue;
 
@@ -121,7 +148,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateRenderer()
         {
-            foreach(var layer in layers)
+            foreach(var layer in Layers)
             {
                 if (layer == null) continue;
 
@@ -131,7 +158,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void UpdateChunksFlags()
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 if (layer == null) continue;
 
@@ -144,25 +171,25 @@ namespace MaximovInk.AdvancedTilemap
             var go = new GameObject();
             var layer = go.AddComponent<ALayer>();
 
-            go.name = $"layer{layers.Count}";
+            go.name = $"layer{Layers.Count}";
             var layerT = layer.transform;
             layerT.SetParent(transform);
             layerT.localPosition = Vector3.zero;
             layer.Tilemap = this;
-            layers.Add(layer);
+            Layers.Add(layer);
 
             return layer;
         }
 
         public void RemoveLayer(int index)
         {
-            DestroyImmediate(layers[index].gameObject);
-            layers.RemoveAt(index);
+            DestroyImmediate(Layers[index].gameObject);
+            Layers.RemoveAt(index);
         }
 
         public void TrimAll(bool immediate = false)
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 if (immediate)
                     layer.Trim();
@@ -173,41 +200,42 @@ namespace MaximovInk.AdvancedTilemap
 
         public void Clear()
         {
-            foreach (var layer in layers)
+            foreach (var layer in Layers)
             {
                 layer.Clear();
             }
         }
 
-        private void UpdateLoader()
+        private void UpdateLoader(bool ignorePosDistance = false)
         {
+            var loaderData = _chunkLoaderSettings;
+
+            if (!loaderData.Enabled) return;
+            if (Layers.Count == 0) return;
+            if (loaderData.Target == null) return;
+
+            var layer = Layers[0];
+
+            var gridPosCenter = Utilites.ConvertGlobalCoordsToGrid(layer, loaderData.Target.position);
+
+            if (Vector2Int.Distance(_lastGridPos, gridPosCenter) < AChunk.CHUNK_SIZE/2f && !ignorePosDistance)
+            {
+                return;
+            }
+
             for (var i = 0; i < _loadedChunks.Count; i++)
             {
                 foreach (var chunk in _loadedChunks[i].Chunks)
                 {
-                    chunk.IsLoaded = false;
+                    chunk.IsLoaderActive = false;
                 }
 
                 _loadedChunks[i].Chunks.Clear();
+                _loadedChunks[i].Layer.TrimIfNeeded();
             }
-
             _loadedChunks.Clear();
 
-            if (!_chunkLoaderSettings.Enabled)
-                return;
-
-
-            var layer = layers[0];
-            var loaderData = _chunkLoaderSettings;
-
-            var gridPosCenter = Utilites.GetGridPosition(layer, loaderData.Target.position);
-
-            if (Vector2Int.Distance(_lastGridPos, gridPosCenter) < AChunk.CHUNK_SIZE)
-            {
-                return;
-            }
-
-            foreach (var t in layers)
+            foreach (var t in Layers)
             {
                 _loadedChunks.Add(new ALayerLoadChunksData()
                 {
@@ -216,29 +244,162 @@ namespace MaximovInk.AdvancedTilemap
                 });
             }
 
-            _lastGridPos = gridPosCenter;
-
-            var loadingChunk = layer.GetOrCreateChunk(gridPosCenter.x, gridPosCenter.y);
-            loadingChunk.IsLoaded = true;
-            _loadedChunks[0].Chunks.Add(loadingChunk);
-
-            for (var ix = -loaderData.TargetOffset.x; ix <= loaderData.TargetOffset.x; ix++)
+            for (int i = 0; i < _loadedChunks.Count; i++)
             {
-                for (var iy = -loaderData.TargetOffset.y; iy <= loaderData.TargetOffset.y; iy++)
+                layer = _loadedChunks[i].Layer;
+
+                var loadingChunk = layer.GetOrCreateChunk(gridPosCenter.x, gridPosCenter.y);
+                loadingChunk.IsLoaderActive = true;
+                _loadedChunks[i].Chunks.Add(loadingChunk);
+
+                for (var ix = -loaderData.TargetOffset.x; ix <= loaderData.TargetOffset.x; ix++)
                 {
-                    if(ix == 0 && iy == 0)continue;
+                    for (var iy = -loaderData.TargetOffset.y; iy <= loaderData.TargetOffset.y; iy++)
+                    {
+                        if (ix == 0 && iy == 0) continue;
 
-                    var temp = layer.GetOrCreateChunk(loadingChunk.GridX + AChunk.CHUNK_SIZE * ix,
-                        loadingChunk.GridY + AChunk.CHUNK_SIZE * iy);
+                        var temp = layer.GetOrCreateChunk(loadingChunk.GridX + AChunk.CHUNK_SIZE * ix,
+                            loadingChunk.GridY + AChunk.CHUNK_SIZE * iy);
 
-                    temp.IsLoaded = true;
+                        temp.IsLoaderActive = true;
 
-                    _loadedChunks[0].Chunks.Add(temp);
+                        _loadedChunks[i].Chunks.Add(temp);
+
+                    }
                 }
             }
 
+            _lastGridPos = gridPosCenter;
+
+            UpdateLighting();
 
         }
+
+        private void Awake()
+        {
+            UpdateLighting();
+
+            UpdateLoader(true);
+        }
+
+        #region LIGHTING
+
+        [SerializeField]
+        private bool _invokeUpdateLight;
+
+        private readonly List<ALayer> _foreground = new();
+        private readonly List<ALayer> _background = new();
+
+        private int GetTile(List<ALayer> layers, int x, int y)
+        {
+            foreach (var t in layers)
+            {
+                var tile = t.GetTile(x, y);
+                if (t.GetTile(x, y) != 0) return tile;
+            }
+
+            return 0;
+        }
+
+        private void SetTile(List<ALayer> layers, int x, int y, ushort tile)
+        {
+            foreach (var t in layers)
+            {
+                t.SetTile(x, y, tile);
+            }
+        }
+
+        private void SetLight(List<ALayer> layers, int x, int y, byte value)
+        {
+            foreach (var t in layers)
+            {
+                t.SetLight(x, y, value);
+            }
+        }
+
+        private void EmitLight(List<ALayer> layers, int x, int y)
+        {
+            foreach (var t in layers)
+            {
+                t.EmitLight(x, y);
+            }
+        }
+
+        public void UpdateLighting(bool immediate = false)
+        {
+            _invokeUpdateLight = true;
+
+            if (!immediate) return;
+
+            _invokeUpdateLight = false;
+
+            var l = _lighting;
+
+            _foreground.Clear();
+            _background.Clear();
+
+            var bounds = new Bounds();
+
+            foreach (var layer in Layers)
+            {
+                if (layer.LightType == LightLayerType.NoLight)
+                {
+                    layer.UpdateLightingState(false);
+                    continue;
+                }
+
+                switch (layer.LightType)
+                {
+                    case LightLayerType.Foreground:
+                        _foreground.Add(layer);
+                        break;
+                    case LightLayerType.Background:
+                        _background.Add(layer);
+                        break;
+                }
+
+                bounds.Encapsulate(layer.Bounds);
+
+                layer.UpdateLightingState(l.Enabled);
+            }
+
+            if (!l.Enabled) return;
+
+            if (_foreground.Count == 0) return;
+
+            var mainLayer = _foreground[0];
+
+            var min = Utilites.GetGridPosition(mainLayer, bounds.min);
+            var max = Utilites.GetGridPosition(mainLayer, bounds.max);
+
+            if (!Application.isPlaying) return;
+
+            List<Vector2Int> emits = new();
+
+            for (int ix = min.x; ix < max.x; ix++)
+            {
+                for (int iy = max.y; iy >= min.y; iy--)
+                {
+                    var frontTile = GetTile(_foreground, ix, iy);
+
+                    var hasTile = frontTile > 0 ;
+
+                    SetLight(_foreground, ix, iy, (byte)(hasTile ? 0 : 255));
+
+                    if (!hasTile)
+                    {
+                        emits.Add(new Vector2Int(ix, iy));
+                    }
+                }
+            }
+
+            foreach (var em in emits)
+            {
+                EmitLight(_foreground, em.x, em.y);
+            }
+        }
+
+        #endregion
 
     }
 }

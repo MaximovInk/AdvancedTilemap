@@ -73,6 +73,9 @@ namespace MaximovInk.AdvancedTilemap
 
             OnTileChanged?.Invoke(oldTileID, tileID);
 
+            Layer.Tilemap.UpdateLighting();
+
+
             return true;
         }
 

@@ -2,7 +2,6 @@
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -61,15 +60,16 @@ namespace MaximovInk.AdvancedTilemap
         {
             tilemap = (ATilemap)target;
 
-            layers = serializedObject.FindProperty("layers");
-            list = new ReorderableList(serializedObject, layers, true, true, true, true);
-
-            list.drawHeaderCallback = DrawHeaderCallback;
-            list.onAddCallback = AddCallback;
-            list.onReorderCallbackWithDetails = ReorderCallback;
-            list.onRemoveCallback = RemoveCallback;
-            list.drawElementCallback = DrawElementCallback;
-            list.onSelectCallback = SelectCallback;
+            layers = serializedObject.FindProperty("Layers");
+            list = new ReorderableList(serializedObject, layers, true, true, true, true)
+            {
+                drawHeaderCallback = DrawHeaderCallback,
+                onAddCallback = AddCallback,
+                onReorderCallbackWithDetails = ReorderCallback,
+                onRemoveCallback = RemoveCallback,
+                drawElementCallback = DrawElementCallback,
+                onSelectCallback = SelectCallback
+            };
 
             _layerData.PreviewScale = EditorUtils.PREVIEW_SCALE_DEFAULT;
  
@@ -98,14 +98,14 @@ namespace MaximovInk.AdvancedTilemap
 
             _invokePreviewRegen = true;
 
-            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.layers.Count) return;
+            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.Layers.Count) return;
 
             SelectLayer();
         }
 
         private void SelectLayer()
         {
-            var layer = tilemap.layers[_tilemapData.LayerSelected];
+            var layer = tilemap.Layers[_tilemapData.LayerSelected];
 
             EditorGUIUtility.PingObject(layer);
 
@@ -117,9 +117,9 @@ namespace MaximovInk.AdvancedTilemap
             var text1Rect = new Rect(rect.x + rect.width - 70, rect.y, 30, rect.height);
            
             var text2Rect = new Rect(rect.x + rect.width - 40, rect.y, 40, rect.height);
-            var pos = tilemap.layers[index].transform.position;
+            var pos = tilemap.Layers[index].transform.position;
 
-            GUI.Label(textRect, tilemap.layers[index].gameObject.name);
+            GUI.Label(textRect, tilemap.Layers[index].gameObject.name);
             GUI.Label(text1Rect, $"Z: {pos.z}");
         }
 
@@ -130,7 +130,7 @@ namespace MaximovInk.AdvancedTilemap
 
         private void ReorderCallback(ReorderableList list, int oldIndex, int newIndex)
         {
-            var oldLayer = tilemap.layers[list.index];
+            var oldLayer = tilemap.Layers[list.index];
 
             oldLayer.transform.SetSiblingIndex(newIndex);
         }
@@ -193,6 +193,31 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
+        private void DrawLighting()
+        {
+            GUILayout.BeginVertical(EditorStyles.helpBox);
+
+          
+            EditorGUI.BeginChangeCheck();
+
+            var light = tilemap.Lighting;
+
+            light.Enabled = EditorGUILayout.Toggle("Lighting", light.Enabled);
+
+            light.LightMaterial = EditorGUILayout.ObjectField("Material", light.LightMaterial, typeof(Material), true) as Material;
+
+            light.LightingMask = EditorGUILayout.LayerField("Layer", light.LightingMask);
+
+            tilemap.Lighting = light;
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                tilemap.UpdateLighting();
+            }
+
+            GUILayout.EndVertical();
+        }
+
         private void DrawTilemapParameters()
         {
             GUILayout.BeginVertical(EditorStyles.helpBox);
@@ -200,6 +225,8 @@ namespace MaximovInk.AdvancedTilemap
             DrawMainParameters();
 
             GUILayout.BeginVertical();
+
+            DrawLighting();
 
             GUILayout.Space(20);
 
@@ -225,13 +252,13 @@ namespace MaximovInk.AdvancedTilemap
 
             GUILayout.Space(20);
 
-            tilemap.layers ??= new List<ALayer>();
+            tilemap.Layers ??= new List<ALayer>();
 
-            for (var i = 0; i < tilemap.layers.Count; i++)
+            for (var i = 0; i < tilemap.Layers.Count; i++)
             {
-                if (tilemap.layers[i] != null) continue;
+                if (tilemap.Layers[i] != null) continue;
 
-                tilemap.layers.RemoveAt(i);
+                tilemap.Layers.RemoveAt(i);
 
                 i--;
 
@@ -243,9 +270,9 @@ namespace MaximovInk.AdvancedTilemap
 
             serializedObject.ApplyModifiedProperties();
 
-            if (_tilemapData.LayerSelected > -1 && _tilemapData.LayerSelected < tilemap.layers.Count)
+            if (_tilemapData.LayerSelected > -1 && _tilemapData.LayerSelected < tilemap.Layers.Count)
             {
-                var layer = tilemap.layers[_tilemapData.LayerSelected];
+                var layer = tilemap.Layers[_tilemapData.LayerSelected];
 
                 var mat = layer.Material;
 
@@ -257,10 +284,10 @@ namespace MaximovInk.AdvancedTilemap
 
         private void OnSceneGUI()
         {
-            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.layers.Count) return;
+            if (_tilemapData.LayerSelected < 0 || _tilemapData.LayerSelected >= tilemap.Layers.Count) return;
             if (_layerData.SelectedToolbar < 0) return;
 
-            var layer = tilemap.layers[_tilemapData.LayerSelected];
+            var layer = tilemap.Layers[_tilemapData.LayerSelected];
 
             ALayerGUI.SceneGUI(layer, ref _layerData);
 

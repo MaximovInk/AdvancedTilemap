@@ -5,6 +5,13 @@ using static MaximovInk.Bitmask;
 
 namespace MaximovInk.AdvancedTilemap
 {
+    public enum LightLayerType
+    {
+        NoLight,
+        Background,
+        Foreground,
+    }
+
     [ExecuteAlways]
     public class ALayer : MonoBehaviour, ITilemap
     {
@@ -45,7 +52,6 @@ namespace MaximovInk.AdvancedTilemap
             } }
         public bool AutoTrim => Tilemap.AutoTrim;
 
-
         public int MinGridX { get; private set; }
         public int MinGridY { get; private set; }
         public int MaxGridX { get; private set; }
@@ -59,6 +65,7 @@ namespace MaximovInk.AdvancedTilemap
         public ATilemap Tilemap;
         public ATileset Tileset;
 
+        public LightLayerType LightType;
         public Color MinLiquidColor = Color.white;
         public Color MaxLiquidColor = Color.white;
         public bool ShowChunkBounds = false;
@@ -77,7 +84,7 @@ namespace MaximovInk.AdvancedTilemap
         [HideInInspector, SerializeField] private bool _isTrigger;
         [HideInInspector, SerializeField] private PhysicsMaterial2D _physMaterial;
 
-        private Dictionary<uint, AChunk> chunksCache = new Dictionary<uint, AChunk>();
+        private readonly Dictionary<uint, AChunk> chunksCache = new Dictionary<uint, AChunk>();
 
         private float _liquidTimer = 0;
 
@@ -451,6 +458,22 @@ namespace MaximovInk.AdvancedTilemap
 
         #region Main
 
+        private readonly Stack<AChunk> _freeChunks = new();
+
+        public void FreeChunk(AChunk chunk)
+        {
+            chunk.gameObject.SetActive(false);
+            chunk.IsLoaderActive = false;
+
+            _freeChunks.Push(chunk);
+
+        }
+
+        public AChunk UseChunk()
+        {
+            return _freeChunks.Pop();
+        }
+
         public void Refresh(bool immediate = false)
         {
             Update();
@@ -472,11 +495,23 @@ namespace MaximovInk.AdvancedTilemap
 
             if (chunk != null || !autoCreate) return chunk;
 
-            var go = new GameObject();
+            GameObject go;
+
+            if (_freeChunks.Count > 0)
+            {
+               chunk = UseChunk();
+               go = chunk.gameObject;
+               go.SetActive(true);
+            }
+            else
+            { 
+                go = new GameObject();
+                chunk = go.AddComponent<AChunk>();
+            }
+
             go.transform.SetParent(transform);
             go.transform.localPosition = new Vector3(chunkX * AChunk.CHUNK_SIZE, chunkY * AChunk.CHUNK_SIZE);
 
-            chunk = go.AddComponent<AChunk>();
             chunk.Layer = this;
             chunk.GridX = chunkX * AChunk.CHUNK_SIZE;
             chunk.GridY = chunkY * AChunk.CHUNK_SIZE;
@@ -494,11 +529,24 @@ namespace MaximovInk.AdvancedTilemap
         {
             foreach (var chunk in chunksCache)
             {
+                if(chunk.Value == null) continue;
+
                 if (chunk.Value.CanTrim)
                 {
-                    DestroyImmediate(chunk.Value.gameObject);
+                    if (Application.isPlaying)
+                    {
+                        FreeChunk(chunk.Value);
+                    }
+                    else
+                    {
+                        DestroyImmediate(chunk.Value.gameObject);
+                    }
+                   
                 }
             }
+
+
+
             BuildChunkCache();
           
         }
@@ -520,11 +568,18 @@ namespace MaximovInk.AdvancedTilemap
                 var chunk = transform.GetChild(i).GetComponent<AChunk>();
                 if (chunk)
                 {
-                    var chunkX = (chunk.GridX < 0 ? (chunk.GridX + 1 - AChunk.CHUNK_SIZE) : chunk.GridX) / AChunk.CHUNK_SIZE;
-                    var chunkY = (chunk.GridY < 0 ? (chunk.GridY + 1 - AChunk.CHUNK_SIZE) : chunk.GridY) / AChunk.CHUNK_SIZE;
-                    var key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
-                    chunksCache[key] = chunk;
-                    chunk.UpdateRenderer();
+                    if(!Application.isPlaying)
+                        chunk.IsLoaderActive = false;
+
+                    if (chunk.gameObject.activeSelf)
+                    {
+                        var chunkX = (chunk.GridX < 0 ? (chunk.GridX + 1 - AChunk.CHUNK_SIZE) : chunk.GridX) / AChunk.CHUNK_SIZE;
+                        var chunkY = (chunk.GridY < 0 ? (chunk.GridY + 1 - AChunk.CHUNK_SIZE) : chunk.GridY) / AChunk.CHUNK_SIZE;
+                        var key = (uint)((chunkY << 16) | (chunkX & 0x0000FFFF));
+                        chunksCache[key] = chunk;
+                        chunk.UpdateRenderer();
+                    }
+                   
                 }
             }
 
@@ -549,7 +604,14 @@ namespace MaximovInk.AdvancedTilemap
 
             foreach (var chunk in chunksCache)
             {
-                DestroyImmediate(chunk.Value.gameObject);
+                if (Application.isPlaying)
+                {
+                    FreeChunk(chunk.Value);
+                }
+                else
+                {
+                    DestroyImmediate(chunk.Value.gameObject);
+                }
             }
             chunksCache.Clear();
 
@@ -628,6 +690,8 @@ namespace MaximovInk.AdvancedTilemap
                     }
                 }
             }
+
+          
 
         }
 
@@ -931,5 +995,72 @@ namespace MaximovInk.AdvancedTilemap
         }
 
         #endregion
+
+        #region Lighting
+
+        public void UpdateLightingState(bool active)
+        {
+            foreach (var chunk in chunksCache)
+            {
+                chunk.Value.UpdateLightingState(active);
+            }
+        }
+
+        public void SetLight(int x, int y, byte value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            if (chunk == null)
+                return;
+
+            chunk.SetLight(coords.x, coords.y, value);
+        }
+
+        public bool TryGetLight(int x, int y, out byte value)
+        {
+            var chunk = GetOrCreateChunk(x, y, false);
+
+            if (chunk == null)
+            {
+                value = 0;
+                return false;
+            }
+
+            var coords = ConvertGlobalGridToChunk(x, y);
+
+            value = chunk.GetLight(coords.x, coords.y);
+            return true;
+        }
+
+        private void TryEmitLightTo(int x, int y, byte set)
+        {
+            if (!TryGetLight(x, y, out var value)) return;
+
+            if (value >= set) return;
+
+            SetLight(x, y, set);
+
+            EmitLight(x, y);
+        }
+
+        private const int LIGHT_STEP = byte.MaxValue/LIGHT_STEPS_COUNT;
+        private const int LIGHT_STEPS_COUNT = 3;
+
+        public void EmitLight(int x, int y)
+        {
+            if (!TryGetLight(x, y, out var current)) return;
+
+            var newCurrent = (byte)Mathf.Clamp(current - LIGHT_STEP, 0,255);
+
+            TryEmitLightTo(x-1,y, newCurrent);
+            TryEmitLightTo(x+1,y, newCurrent);
+            TryEmitLightTo(x,y+1, newCurrent);
+            TryEmitLightTo(x,y-1, newCurrent);
+        }
+
+        #endregion
+
     }
 }

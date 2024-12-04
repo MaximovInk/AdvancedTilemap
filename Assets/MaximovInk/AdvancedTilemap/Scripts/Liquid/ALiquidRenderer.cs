@@ -1,12 +1,13 @@
 ﻿
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MaximovInk.AdvancedTilemap
 {
     [ExecuteAlways]
     public class ALiquidRenderer : MonoBehaviour
     {
-        public bool meshIsDirty = false;
+        public bool MeshIsDirty = false;
 
         [HideInInspector, SerializeField]
         private float[] data;
@@ -78,7 +79,7 @@ namespace MaximovInk.AdvancedTilemap
         public void SetSettled(int x, int y, bool value)
         {
             settledData[x + y * AChunk.CHUNK_SIZE] = value;
-            meshIsDirty = true;
+            MeshIsDirty = true;
         }
 
         public void AddLiquid(int x, int y, float value)
@@ -86,7 +87,7 @@ namespace MaximovInk.AdvancedTilemap
             data[x + y * AChunk.CHUNK_SIZE] += value;
             settledData[x + y * AChunk.CHUNK_SIZE] = false;
 
-            meshIsDirty = true;
+            MeshIsDirty = true;
         }
 
         public float GetLiquid(int x, int y)
@@ -96,7 +97,7 @@ namespace MaximovInk.AdvancedTilemap
 
         public void SetLiquid(int x, int y, float value)
         {
-            meshIsDirty = true;
+            MeshIsDirty = true;
             data[x + y * AChunk.CHUNK_SIZE] = value;
         }
 
@@ -140,9 +141,9 @@ namespace MaximovInk.AdvancedTilemap
 
         private void LateUpdate()
         {
-            if (meshIsDirty)
+            if (MeshIsDirty)
             {
-                meshIsDirty = false;
+                MeshIsDirty = false;
 
                 GenerateMesh();
                 ApplyData();
