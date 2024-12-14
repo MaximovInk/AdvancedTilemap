@@ -2,6 +2,8 @@
 Advanced tilemap system for Unity v 2.5
 Features of alike Starbound & Terraria tiles, but with more features!
 
+2.5 not compatible with previous versions! :(
+
 ![yxUwy56](https://github.com/user-attachments/assets/291b4f2b-cdbb-48ed-b8fd-8e5b2d30ff84)
 
 Features:
@@ -35,9 +37,7 @@ Features:
 ![rAeOZmD](https://github.com/user-attachments/assets/ad1aff1a-8c87-4863-b3d7-94daf53db805)
 
 ## Liquid example
-![изображение](https://github.com/user-attachments/assets/8bf82c5a-ab15-4e22-b909-69dea84766d3)
-
-
+![изображение](https://github.com/user-attachments/assets/30cd31fc-9851-4aff-ad38-1dab22852852)
 
 # Old screenshots:
 ## Rule tiles same as Starbound
