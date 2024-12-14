@@ -21,5 +21,7 @@ namespace MaximovInk.AdvancedTilemap
         public bool ShowTilesAsList;
 
         public bool RepaintInvoke;
+
+        public bool ToolGenerateInvoke;
     }
 }

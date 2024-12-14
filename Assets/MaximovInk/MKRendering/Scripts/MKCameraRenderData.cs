@@ -27,8 +27,6 @@ namespace MaximovInk.MKRendering
         public Vector2 Offset;
         public float ResolutionScale;
 
-        public Material RenderMaterial;
-
         public MKLightingData Lighting;
     }
 

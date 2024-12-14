@@ -45,10 +45,7 @@ namespace MaximovInk.AdvancedTilemap
         public virtual Parameter GetOrAddParameter(ATile tile, string ID, bool isHidden = true,
             ParameterType type = ParameterType.Int)
         {
-            var param = tile.ParameterContainer.GetParam(ID);
-            param ??= tile.ParameterContainer.AddNewParam(new Parameter() { name = ID, type = type, isHidden = isHidden });
-
-            return param;
+            return tile.ParameterContainer.GetOrAddParameter(ID, isHidden, type);
         }
 
         public virtual List<ATile> GenerateTiles(ATileset tileset)

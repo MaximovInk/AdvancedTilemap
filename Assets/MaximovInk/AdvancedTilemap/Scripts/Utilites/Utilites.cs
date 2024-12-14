@@ -75,7 +75,7 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        private static void SetTile(int x,int y, ALayer layer, int size, ushort ID, Color32 color,UVTransform tileData = default)
+        private static void SetTile(int x,int y, ITilemap layer, int size, ushort ID, Color32 color,UVTransform tileData = default)
         {
             var min = size / 2;
             var max = size - min;
@@ -90,7 +90,7 @@ namespace MaximovInk.AdvancedTilemap
             }
         }
 
-        public static void DrawLine(ALayer layer, Vector2Int from, Vector2Int to, int size, ushort ID, Color32 color, UVTransform tileData = default)
+        public static void DrawLine(ITilemap layer, Vector2Int from, Vector2Int to, int size, ushort ID, Color32 color, UVTransform tileData = default)
         {
             var x = from.x;
             var y = from.y;

@@ -12,7 +12,7 @@ Shader "MKRendering/LightRenderShader"
     SubShader
     {
         Tags{"Queue" = "Transparent" "RenderType" = "Transparent" "IgnoreProjector" = "True" }
-        
+             ZWrite Off
         Blend SrcAlpha OneMinusSrcAlpha
 
         Pass
@@ -20,8 +20,6 @@ Shader "MKRendering/LightRenderShader"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            // make fog work
-            #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
 

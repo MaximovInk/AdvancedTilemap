@@ -8,9 +8,6 @@ namespace MaximovInk.MKRendering
     {
         public LayerMask LightingMask;
         public Material LightMeshMaterial;
-        
-        [Range(0f,1)]
-        public float ResolutionScale;
 
         [Range(0,75)]
         public float EditorUpdateRateFPS;

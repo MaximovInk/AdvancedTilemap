@@ -105,19 +105,31 @@ namespace MaximovInk.MKRendering
 
             _lightCamera.targetTexture = _renderTexture;
         }
-      
+
+        private Color GetDarkness()
+        {
+            var lighting = _renderData.CameraSettings.Lighting;
+
+            if (Application.isPlaying)
+            {
+                return lighting.Darkness;
+            }
+
+            return Color.clear;
+        }
+
         public void ValidateRenderMaterial()
         {
-            if (_renderData.CameraSettings.RenderMaterial == null) return;
-
             var lighting = _renderData.CameraSettings.Lighting;
+
+            if (lighting.RenderLightMaterial == null) return;
 
             _renderMaterial = new Material(lighting.RenderLightMaterial)
             {
                 mainTexture = _renderTexture
             };
 
-            _renderMaterial.SetColor(DarknessProp, lighting.Darkness);
+            _renderMaterial.SetColor(DarknessProp, GetDarkness());
             _renderMaterial.SetFloat(HSamples, lighting.Blur.HSamples);
             _renderMaterial.SetFloat(VSamples, lighting.Blur.VSamples);
             _renderMaterial.SetFloat(Radius, lighting.Blur.Radius);
@@ -165,14 +177,14 @@ namespace MaximovInk.MKRendering
         {
             var res = new Vector2Int(Screen.currentResolution.width, Screen.currentResolution.height);
 
-   
-
             var scaledRes = new Vector2Int((int)(res.x * _settings.ResolutionScale), (int)(res.y * _settings.ResolutionScale));
 
             if (scaledRes != _renderData.ScaledResolution)
             {
                 UpdateView();
             }
+
+
         }
     }
 

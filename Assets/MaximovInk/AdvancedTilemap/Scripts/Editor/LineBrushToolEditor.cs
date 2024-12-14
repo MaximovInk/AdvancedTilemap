@@ -35,7 +35,7 @@ namespace MaximovInk.AdvancedTilemap
                     layer.BeginRecordingCommand();
                     if (data.Event.shift)
                     {
-                        Utilites.DrawLine(layer, _lastMousePos, data.gridPos, 0, Color.white, true);
+                        Utilites.DrawLine(layer, _lastMousePos, data.gridPos, data.brushSize, 0, Color.white);
                     }
                     else
                     {
@@ -51,6 +51,8 @@ namespace MaximovInk.AdvancedTilemap
                     _firstClicked = false;
                 }
             }
+
+            base.Update(ref data);
         }
 
         public override bool UpdatePreviewBrushPos(ref ALayerEditorData data)
@@ -64,16 +66,25 @@ namespace MaximovInk.AdvancedTilemap
             if (data.PreviewTextureBrush == null)
                 return false;
 
+            var tileUnit = data.Layer.Tileset.GetTileUnit();
+
             var position = data.Layer.transform.TransformPoint(_lastMousePos * data.Layer.Tileset.GetTileUnit());
             position.z = data.Layer.transform.position.z - 1;
 
             data.PreviewTextureBrush.SetPosition(position);
-            if (data.brushSize >= 1)
+
+            if (data.brushSize > 1)
             {
-                data.PreviewTextureBrush.SetPosition(
-                    position 
-                    - data.PreviewTextureBrush.transform.localScale / 2f
-                    + new Vector3(0.5f, 0.5f, 0));
+                 var offset = tileUnit * data.brushSize / 2;
+
+                 if (data.brushSize % 2 != 0)
+                 {
+                     offset.x -= tileUnit.x/2;
+                     offset.y -= tileUnit.y/2;
+                 }
+
+                 data.PreviewTextureBrush.SetPosition(
+                     position + (Vector3)offset);
             }
 
             return false;
@@ -102,6 +113,8 @@ namespace MaximovInk.AdvancedTilemap
             data.PreviewTextureBrush.Clear();
             if (_isDrag)
             {
+                var tileID = data.selectedTile;
+
                 data.PreviewTextureBrush.SetDriverData(new ATileDriverData()
                 {
                     tileset = data.Layer.Tileset,
@@ -110,7 +123,31 @@ namespace MaximovInk.AdvancedTilemap
                     color = (isShift ? Color.red : (Color)data.color * data.Layer.TintColor),
                     variation = 0,
                 });
-                Utilites.DrawLine(data.PreviewTextureBrush, Vector2Int.zero, data.gridPos - _lastMousePos, 0, Color.white, true);
+
+                if (data.Event.shift)
+                {
+                    Utilites.DrawLine(
+                        data.PreviewTextureBrush,
+                        Vector2Int.zero, 
+                        data.gridPos - _lastMousePos ,
+                        data.brushSize,
+                        tileID,
+                        Color.red, 
+                        data.UVTransform
+                    );
+                }
+                else
+                {
+                    Utilites.DrawLine(
+                            data.PreviewTextureBrush,
+                            Vector2Int.zero, 
+                            data.gridPos - _lastMousePos,
+                            data.brushSize, 
+                            tileID, 
+                            data.color,
+                            data.UVTransform
+                            );
+                }
             }
             else
             {

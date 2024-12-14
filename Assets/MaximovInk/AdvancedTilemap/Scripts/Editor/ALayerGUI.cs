@@ -190,17 +190,26 @@ namespace MaximovInk.AdvancedTilemap
             GUILayout.Space(5);
 
             if (MKEditorStyles.Button(MKEditorStyles.GetPaintIcon(), data.Tool is TileBrushToolEditor))
+            {
                 data.Tool = new TileBrushToolEditor();
+                data.ToolGenerateInvoke = true;
+            }
 
             GUILayout.Space(5);
 
             if (MKEditorStyles.Button(MKEditorStyles.GetRectIcon(), data.Tool is RectBrushToolEditor))
+            {
                 data.Tool = new RectBrushToolEditor();
+                data.ToolGenerateInvoke = true;
+            }
 
             GUILayout.Space(5);
 
             if (MKEditorStyles.Button(MKEditorStyles.GetLineIcon(), data.Tool is LineBrushToolEditor))
+            {
                 data.Tool = new LineBrushToolEditor();
+                data.ToolGenerateInvoke = true;
+            }
 
             GUILayout.Space(5);
 

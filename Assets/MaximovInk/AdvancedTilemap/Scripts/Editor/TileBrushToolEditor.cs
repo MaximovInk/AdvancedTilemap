@@ -12,10 +12,6 @@ namespace MaximovInk.AdvancedTilemap
 
         public override void Update(ref ALayerEditorData data)
         {
-            Vector3 mousePosition = data.Event.mousePosition;
-            Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
-            mousePosition = ray.origin;
-
             var gridPos = data.gridPos;
 
             if (data.Event.type == EventType.MouseDown && data.Event.button == 0)
@@ -82,6 +78,8 @@ namespace MaximovInk.AdvancedTilemap
                     data.Layer.EndRecordCommand();
                 }
             }
+
+            base.Update(ref data);
         }
     }
 }

@@ -69,6 +69,16 @@ namespace MaximovInk.AdvancedTilemap
                     _firstClicked = false;
                 }
             }
+
+            base.Update(ref data);
+        }
+
+        private void GenerateSingleBlock(ALayerEditorData data)
+        {
+            var newData = data;
+            newData.brushSize = 1;
+
+            base.GenPreviewTextureBrush(ref newData);
         }
 
         public override bool UpdatePreviewBrushPos(ref ALayerEditorData data)
@@ -123,8 +133,6 @@ namespace MaximovInk.AdvancedTilemap
                 data.PreviewTextureBrush.Validate();
             }
 
-            
-
             var isShift = data.Event.shift;
             data.PreviewTextureBrush.Clear();
             if (_isDrag)
@@ -154,14 +162,12 @@ namespace MaximovInk.AdvancedTilemap
             }
             else
             {
-
-                base.GenPreviewTextureBrush(ref data);
+                GenerateSingleBlock(data);
                 return;
 
             }
 
             data.PreviewTextureBrush.Apply();
-
             data.PreviewTextureBrush.SetMaterial(data.Layer.Material, data.Layer.Tileset.Texture);
 
         }

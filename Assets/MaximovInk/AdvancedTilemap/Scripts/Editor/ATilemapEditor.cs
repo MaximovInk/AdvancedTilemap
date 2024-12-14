@@ -60,6 +60,8 @@ namespace MaximovInk.AdvancedTilemap
         {
             tilemap = (ATilemap)target;
 
+_tilemapData.PropertiesFoldout = true;
+
             layers = serializedObject.FindProperty("Layers");
             list = new ReorderableList(serializedObject, layers, true, true, true, true)
             {
@@ -137,6 +139,18 @@ namespace MaximovInk.AdvancedTilemap
 
         private void AddCallback(ReorderableList list)
         {
+            if (tilemap.Layers.Count > 0)
+            {
+                var prevLayer = tilemap.Layers[^1];
+
+                var layer = tilemap.MakeLayer();
+
+                layer.Tileset = prevLayer.Tileset;
+                layer.Material = prevLayer.Material;
+
+                return;
+            }
+
             tilemap.MakeLayer();
         }
 

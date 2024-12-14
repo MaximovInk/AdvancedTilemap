@@ -5,7 +5,14 @@ namespace MaximovInk.AdvancedTilemap
     [System.Serializable]
     public abstract class AToolEditor
     {
-        public abstract void Update(ref ALayerEditorData data);
+        public virtual void Update(ref ALayerEditorData data)
+        {
+            if (data.ToolGenerateInvoke)
+            {
+                GenPreviewTextureBrush(ref data);
+                data.ToolGenerateInvoke = false;
+            }
+        }
 
         public virtual bool UpdatePreviewBrushPos(ref ALayerEditorData data)
         {
