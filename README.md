@@ -33,6 +33,21 @@ Features:
 ![SJ0lt99](https://github.com/user-attachments/assets/d76c06a5-3be2-4cdb-bcf3-f625c956684d)
 ![изображение](https://github.com/user-attachments/assets/76bd0a58-5c81-421b-b2cd-564a17035c2f)
 
+### How to enable lighting?
+- Place on MainCamera script MKCamera, set RenderLightMaterial to Assets/MaximovInk/MKRendering/LightMaterial
+- Set up your preference of settings, nice look:
+ 
+![изображение](https://github.com/user-attachments/assets/1cd2371c-73ed-4ba3-9d76-d47d1d905d37)
+- Enable Lighting and ChunkLoader in tilemp settings
+
+![изображение](https://github.com/user-attachments/assets/f1273733-4705-412c-aee8-7cdc46917f21)
+- Set light type of layer!
+
+![изображение](https://github.com/user-attachments/assets/9c74ca11-6358-40cd-9f65-b3e7c4a6e149)
+
+- Now you have ambient lighting
+
+
 ## Tileset editor
 ![rAeOZmD](https://github.com/user-attachments/assets/ad1aff1a-8c87-4863-b3d7-94daf53db805)
 
