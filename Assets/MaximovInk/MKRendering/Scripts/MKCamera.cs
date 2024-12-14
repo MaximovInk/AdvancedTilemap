@@ -45,7 +45,7 @@ namespace MaximovInk.MKRendering
 
             _renderData.ScaledResolution = new Vector2Int((int)(_renderData.ScaledResolution.y * aspect), (int)(_renderData.ScaledResolution.y));
 
-            _postProcessCamera.cullingMask &= ~_renderData.RenderSettings.LightingMask;
+            _postProcessCamera.cullingMask &= ~_renderData.CameraSettings.Lighting.LightingMask;
         }
 
         private void ValidateLightCamera()
@@ -61,7 +61,7 @@ namespace MaximovInk.MKRendering
             _lightCamera.nearClipPlane = 0f;
             _lightCamera.orthographicSize = _postProcessCamera.orthographicSize;
             _lightCamera.orthographic = true;
-            _lightCamera.cullingMask = _renderData.RenderSettings.LightingMask;
+            _lightCamera.cullingMask = _renderData.CameraSettings.Lighting.LightingMask;
 
             var rcTransform = _lightCamera.transform;
             rcTransform.SetParent(transform);
@@ -141,14 +141,12 @@ namespace MaximovInk.MKRendering
        
         public void UpdateView()
         {
-            var renderSettings = MKRenderingManager.Instance.Settings;
 
             var res = new Vector2Int(Screen.currentResolution.width, Screen.currentResolution.height);
             var scaledRes = new Vector2Int((int)(res.x * _settings.ResolutionScale), (int)(res.y * _settings.ResolutionScale));
 
             _renderData = new MKCameraRenderData()
             {
-                RenderSettings = renderSettings,
                 CameraSettings = _settings,
                 Resolution = res,
                 ScaledResolution = scaledRes
@@ -186,6 +184,7 @@ namespace MaximovInk.MKRendering
 
 
         }
+
     }
 
 }

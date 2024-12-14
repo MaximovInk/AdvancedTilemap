@@ -19,6 +19,8 @@ namespace MaximovInk.MKRendering
         public Color Darkness;
 
         public Material RenderLightMaterial;
+
+        public LayerMask LightingMask;
     }
 
     [System.Serializable]
@@ -34,7 +36,6 @@ namespace MaximovInk.MKRendering
     public struct MKCameraRenderData
     {
         public MKCameraSettings CameraSettings;
-        public MKRenderingSettings RenderSettings;
         public Vector2Int Resolution;
         public Vector2Int ScaledResolution;
     }
