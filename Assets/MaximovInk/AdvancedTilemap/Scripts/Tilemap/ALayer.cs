@@ -12,11 +12,15 @@ namespace MaximovInk.AdvancedTilemap
         Foreground,
     }
 
+    public delegate void TileChanged(Vector2Int pos, int oldID, int newID);
+
+    public delegate void ChunkCreated(AChunk chunk);
+
     [ExecuteAlways]
     public class ALayer : MonoBehaviour, ITilemap
     {
-        public event Action OnTileChanged;
-        public event Action OnChunkCreated;
+        public event TileChanged OnTileChanged;
+        public event ChunkCreated OnChunkCreated;
 
         public bool IsActive { get => gameObject.activeSelf; set
             {
@@ -84,7 +88,7 @@ namespace MaximovInk.AdvancedTilemap
         [HideInInspector, SerializeField] private bool _isTrigger;
         [HideInInspector, SerializeField] private PhysicsMaterial2D _physMaterial;
 
-        private readonly Dictionary<uint, AChunk> chunksCache = new Dictionary<uint, AChunk>();
+        private readonly Dictionary<uint, AChunk> chunksCache = new();
 
         private float _liquidTimer = 0;
 
@@ -227,6 +231,13 @@ namespace MaximovInk.AdvancedTilemap
 
         #region BaseData
 
+        public void SetTile(int x, int y, string tileName, UVTransform data = default)
+        {
+            var tileID = Tileset.GetTile(tileName);
+
+            SetTile(x,y,tileID.ID, data);
+        }
+
         public void SetTile(int x, int y, ushort tileID, UVTransform data = default)
         {
             var chunk = GetOrCreateChunk(x, y, tileID != ATile.EMPTY);
@@ -261,12 +272,16 @@ namespace MaximovInk.AdvancedTilemap
                 }
             }
 
-            if (chunk.SetTile(coords.x, coords.y, tileID, data)) {
+            var setTileReturn = chunk.SetTile(coords.x, coords.y, tileID, data);
+
+            if (setTileReturn.IsChanged) {
                 UpdateAllBitmask(x, y);
                 UpdateNeighborsBitmask(x, y);
 
                 if (AutoTrim && tileID == ATile.EMPTY)
                     TrimInvoke = true;
+
+                OnTileChanged?.Invoke(new Vector2Int(x,y) , setTileReturn.OldID, tileID);
             }
         }
 
@@ -362,8 +377,6 @@ namespace MaximovInk.AdvancedTilemap
         {
             SetBitmask(x, y, CalculateBitmask(x, y));
             SetSelfBitmask(x,y, CalculateSelfBitmask(x,y));
-
-            OnTileChanged?.Invoke();
         }
 
         public void UpdateNeighborsBitmask(int x, int y)
@@ -520,7 +533,7 @@ namespace MaximovInk.AdvancedTilemap
 
             chunksCache[key] = chunk;
 
-            OnChunkCreated?.Invoke();
+            OnChunkCreated?.Invoke(chunk);
 
             return chunk;
         }

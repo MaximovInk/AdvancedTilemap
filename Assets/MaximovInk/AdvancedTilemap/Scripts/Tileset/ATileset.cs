@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
@@ -25,6 +26,8 @@ namespace MaximovInk.AdvancedTilemap
                     );
             } 
         }
+
+        public List<ATile> GetTiles() => _tiles;
 
         [SerializeField]
         private List<ATile> _tiles = new List<ATile>();
@@ -65,6 +68,19 @@ namespace MaximovInk.AdvancedTilemap
             id = Mathf.Clamp(id-1, 0, _tiles.Count-1);
 
             return _tiles[id];
+        }
+
+        public ATile GetTile(string name)
+        {
+            if (_tiles.Count == 0)
+                return null;
+
+            return _tiles.FirstOrDefault(n => n.Name == name);
+        }
+
+        public bool HasTile(string name)
+        {
+            return _tiles.Any(n => n.Name == name);
         }
 
         public void UpdateIDs()

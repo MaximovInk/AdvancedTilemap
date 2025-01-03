@@ -160,6 +160,18 @@ namespace MaximovInk.AdvancedTilemap
             return new Vector2Int(GetGridX(layer, localPos), GetGridY(layer, localPos));
         }
 
+        public static Vector3 GridToWorld(ALayer layer, Vector2Int gridPos)
+        {
+            var tileUnit = layer.Tileset.GetTileUnit();
+
+            var position = layer.transform.TransformPoint(gridPos * tileUnit);
+            position.x += tileUnit.x/2f;
+            position.y += tileUnit.y/2f;
+
+            position.z = layer.transform.position.z - 1;
+
+            return position;
+        }
 
         private static ATileDriver[] _drivers;
 

@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEngine;
 
 namespace MaximovInk.AdvancedTilemap
 {
@@ -22,6 +23,19 @@ namespace MaximovInk.AdvancedTilemap
             {
                 EditorUtility.SetDirty(_tileset);
             }
+        }
+
+        public override Texture2D RenderStaticPreview(string assetPath, Object[] subAssets, int width, int height)
+        {
+            _tileset = (ATileset)target;
+
+            if (_tileset == null || _tileset.Texture == null)
+                return null;
+
+            var tex = new Texture2D(_tileset.Texture.width, _tileset.Texture.height);
+            EditorUtility.CopySerialized(_tileset.Texture, tex);
+
+            return tex;
         }
     }
 }

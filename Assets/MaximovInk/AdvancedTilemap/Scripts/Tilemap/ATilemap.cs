@@ -280,6 +280,21 @@ namespace MaximovInk.AdvancedTilemap
             UpdateLoader(true);
         }
 
+        public List<ALayer> GetLayersWithTileName(string nameID)
+        {
+            var found = new List<ALayer>();
+
+            foreach (var layer in Layers)
+            {
+                if(layer.Tileset == null)continue;
+
+                if(layer.Tileset.HasTile(nameID))
+                    found.Add(layer);
+            }
+
+            return found;
+        }
+
         #region LIGHTING
 
         [SerializeField]
@@ -329,6 +344,8 @@ namespace MaximovInk.AdvancedTilemap
 
             if (!immediate) return;
 
+            Profiler.BeginSample("prepare");
+
             _invokeUpdateLight = false;
 
             var l = _lighting;
@@ -361,6 +378,8 @@ namespace MaximovInk.AdvancedTilemap
                 layer.UpdateLightingState(l.Enabled);
             }
 
+            Profiler.EndSample();
+
             if (!l.Enabled) return;
 
             if (_foreground.Count == 0) return;
@@ -371,6 +390,8 @@ namespace MaximovInk.AdvancedTilemap
             var max = Utilites.GetGridPosition(mainLayer, bounds.max);
 
             if (!Application.isPlaying) return;
+
+            Profiler.BeginSample("clear");
 
             List<Vector2Int> emits = new();
 
@@ -390,11 +411,14 @@ namespace MaximovInk.AdvancedTilemap
                     }
                 }
             }
+            Profiler.EndSample();
+            Profiler.BeginSample("emit");
 
             foreach (var em in emits)
             {
                 EmitLight(_foreground, em.x, em.y);
             }
+            Profiler.EndSample();
         }
 
         #endregion

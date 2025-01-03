@@ -273,7 +273,7 @@ namespace MaximovInk.AdvancedTilemap
             data.SelectedTileScroll =
                 GUILayout.BeginScrollView(data.SelectedTileScroll, GUIStyle.none, GUI.skin.horizontalScrollbar);
 
-            data.TilesWidth = (Screen.width - 150) / (tile.TileDriver.UVInTilesX * 50);
+            data.TilesWidth = (Screen.width - 150) / (tile.TileDriver.UVInTilesX * 25);
             data.TilesWidth = (int)(data.TilesWidth * 0.5f);
 
             var beginH = true;
@@ -342,12 +342,14 @@ namespace MaximovInk.AdvancedTilemap
 
             GUILayout.Space(10);
 
-            tile.Prefab = EditorGUILayout.ObjectField(tile.Prefab, typeof(ATilePrefab),false) as ATilePrefab;
+            tile.Prefab = EditorGUILayout.ObjectField(tile.Prefab, typeof(ATilePrefab), false) as ATilePrefab;
             tile.BitmaskMode = (BitmaskMode)EditorGUILayout.EnumPopup("Bitmask mode", tile.BitmaskMode);
             tile.ColliderDisabled = !EditorGUILayout.Toggle("Collider enabled", !tile.ColliderDisabled);
             tile.RandomVariations = EditorGUILayout.Toggle("variations enabled:", tile.RandomVariations);
-           // tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID); // or refresh id's
-           EditorGUILayout.LabelField($"ID: {tile.ID}");
+            // tile.ID = (ushort)EditorGUILayout.IntField("ID:", tile.ID); // or refresh id's
+
+            EditorGUILayout.LabelField($"ID: {tile.ID}");
+            tile.Name = EditorGUILayout.TextField($"Name:", tile.Name);
         }
 
         private static void DrawTileEditorParameterContainer(ATile tile, ref ATilesetEditorData data)

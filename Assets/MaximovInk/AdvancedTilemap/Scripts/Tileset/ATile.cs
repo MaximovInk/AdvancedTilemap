@@ -16,6 +16,7 @@ namespace MaximovInk.AdvancedTilemap
         public const ushort EMPTY = 0;
 
         public ushort ID;
+        public string Name;
 
         public List<ATileUV> Variations = new();
         public List<float> Probabilities = new();
