@@ -7,6 +7,7 @@ Features of alike Starbound & Terraria tiles, but with more features!
 ![yxUwy56](https://github.com/user-attachments/assets/291b4f2b-cdbb-48ed-b8fd-8e5b2d30ff84)
 
 Features:
+- [x] URP/Buildin shaders
 - [x] Infinity map
 - [x] Layers
 - [x] Chunk loader
